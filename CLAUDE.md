@@ -35,12 +35,13 @@ La seguridad antifraude es el criterio prioritario del proyecto. Al tocar dinero
 
 - **Git Flow**: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`. Nada se integra a `main` o `develop` sin Pull Request.
 - **Commits atómicos y reversibles** con Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`…); cada commit debe compilar y pasar las pruebas.
-- Pipeline CI (GitHub Actions): lint + tipos → tests (Jest / pytest) → SonarQube con quality gate bloqueante → deploy (`develop` → staging, `main` → producción).
+- Pipeline CI (GitHub Actions): lint + tipos → tests (Vitest / pytest / Playwright) → SonarQube con quality gate bloqueante → deploy (`develop` → staging, `main` → producción).
 - Grafana se usa para la trazabilidad del equipo de desarrollo (commits, PRs, despliegues, métricas DORA).
 - No usar Java ni Rust.
 - Para trabajo de UI, usar el skill `frontend-design` instalado en `.claude/skills/`.
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/001-fundaciones-stack/plan.md`
 <!-- SPECKIT END -->

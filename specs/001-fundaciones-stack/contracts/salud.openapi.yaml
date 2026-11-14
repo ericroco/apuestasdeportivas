@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Comprobación de salud (API y reportes)
+  version: 1.0.0
+  description: >
+    Contrato común de GET /health para apps/api y apps/reports. Es público (sin autenticación),
+    no lleva el prefijo /api y nunca expone credenciales, hosts ni mensajes de error internos.
+servers:
+  - url: http://localhost:3001
+    description: apps/api local
+  - url: http://localhost:8000
+    description: apps/reports local
+paths:
+  /health:
+    get:
+      summary: Estado del servicio y de sus dependencias
+      operationId: obtenerSalud
+      responses:
+        '200':
+          description: El servicio y todas sus dependencias responden.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaSalud' }
+              example:
+                estado: ok
+                servicio: api
+                version: 0.1.0
+                fecha: '2026-11-14T18:00:00.000Z'
+                dependencias:
+                  baseDeDatos: { estado: ok, latenciaMs: 3 }
+                  cache: { estado: ok, latenciaMs: 1 }
+        '503':
+          description: Al menos una dependencia no responde dentro de 2000 ms.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaSalud' }
+              example:
+                estado: error
+                servicio: api
+                version: 0.1.0
+                fecha: '2026-11-14T18:00:00.000Z'
+                dependencias:
+                  baseDeDatos: { estado: error, latenciaMs: 2000 }
+                  cache: { estado: ok, latenciaMs: 1 }
+components:
+  schemas:
+    EstadoDependencia:
+      type: object
+      required: [estado, latenciaMs]
+      additionalProperties: false
+      properties:
+        estado: { type: string, enum: [ok, error] }
+        latenciaMs: { type: integer, minimum: 0 }
+    RespuestaSalud:
+      type: object
+      required: [estado, servicio, version, fecha, dependencias]
+      additionalProperties: false
+      properties:
+        estado: { type: string, enum: [ok, error] }
+        servicio: { type: string, enum: [api, reports] }
+        version: { type: string }
+        fecha: { type: string, format: date-time }
+        dependencias:
+          type: object
+          description: 'api: baseDeDatos y cache. reports: baseDeDatos.'
+          additionalProperties: { $ref: '#/components/schemas/EstadoDependencia' }

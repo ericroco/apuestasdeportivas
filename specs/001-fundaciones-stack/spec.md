@@ -167,8 +167,8 @@ muestra la actividad del repositorio.
   del usuario de la API.
 - **FR-010**: La API MUST aplicar cabeceras de seguridad HTTP, limitar el origen de las peticiones del navegador a
   la interfaz web configurada y aplicar un límite de peticiones por cliente por defecto.
-- **FR-011**: La API MUST validar y rechazar con error 400 los datos de entrada que no cumplan el esquema, y
-  descartar campos no declarados.
+- **FR-011**: Ante rutas inexistentes o errores no controlados, la API MUST responder con un formato de error
+  uniforme (código y mensaje) y sin trazas internas.
 
 **Calidad y flujo de trabajo**
 
