@@ -1,0 +1,13 @@
+// Esquema de Prisma de apps/api. El Spec 1 no crea modelos de negocio: cada spec agrega los suyos
+// (Spec 2: usuarios, auditoría, ledger, pagos; Spec 3: partidos, mercados, apuestas; Spec 4: cupones, alertas).
+// Reglas para migraciones en paralelo: ver CONTRIBUTING.md.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
