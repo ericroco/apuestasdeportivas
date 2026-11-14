@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+pnpm-lock.yaml
+apps/api/src/generated
+apps/reports
+playwright-report
+test-results
+# Documentación y artefactos de Spec Kit: se editan a mano
+*.md
+.specify
+.claude
+.agents

@@ -1,0 +1,2 @@
+# Invoca el binario local directamente (sin pnpm exec) para no depender del PATH de cmd en Windows.
+./node_modules/.bin/commitlint --edit "$1"
