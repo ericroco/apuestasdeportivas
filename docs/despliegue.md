@@ -35,7 +35,9 @@ A nivel de repositorio (Settings → Secrets and variables → Actions): `SONAR_
 2. Completar las variables marcadas `sync: false`:
    - API: `WEB_ORIGIN` = URL de staging de Vercel.
    - Reportes: `WEB_ORIGIN` y `REPORTS_DATABASE_URL` (ver paso 3).
-3. Crear el usuario de solo lectura (una vez), con la **External Database URL** de Render:
+3. Crear el usuario de solo lectura (una vez). `render.yaml` bloquea las conexiones externas a la BD
+   (`ipAllowList: []`), así que primero agrega **temporalmente** tu IP en la base de datos → Access Control. Luego,
+   con la **External Database URL**:
 
    ```bash
    psql "<External Database URL>" -v dbname=apuestas -v owner=apuestas \
@@ -43,8 +45,14 @@ A nivel de repositorio (Settings → Secrets and variables → Actions): `SONAR_
         -f infra/postgres/usuario-solo-lectura.sql
    ```
 
-   `REPORTS_DATABASE_URL` es la **Internal Database URL** con el usuario y la contraseña cambiados por
-   `reportes_lectura` y la que elegiste. Nunca uses la URL del dueño en reportes.
+   Quita tu IP de Access Control al terminar. `REPORTS_DATABASE_URL` es la **Internal Database URL** con el
+   usuario y la contraseña cambiados por `reportes_lectura` y la que elegiste. Nunca uses la URL del dueño en
+   reportes.
+
+   **Riesgo residual**: Render no da superusuario, así que el script no puede quitarle a PUBLIC la creación de
+   *large objects* (verás un `WARNING`). `reportes_lectura` sigue sin poder tocar tablas ni crear tablas
+   temporales, pero podría crear large objects si se filtrara su contraseña. En Docker y en CI sí se revoca, y
+   `tests/test_solo_lectura.py` lo verifica.
 4. Copiar los deploy hooks a los secretos del entorno `staging` de GitHub.
 5. Verificar `https://<api>.onrender.com/health` y `https://<reportes>.onrender.com/health`. El plan gratuito duerme
    los servicios sin tráfico: la primera petición tarda unos 50 s.
