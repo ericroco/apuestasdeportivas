@@ -60,6 +60,8 @@ function esRespuestaSalud(valor: unknown): valor is RespuestaSalud {
     (valor.servicio === 'api' || valor.servicio === 'reports') &&
     typeof valor.version === 'string' &&
     typeof valor.fecha === 'string' &&
+    // Una fecha inválida haría fallar el formateo y tumbaría la página de estado entera.
+    !Number.isNaN(Date.parse(valor.fecha)) &&
     esObjeto(valor.dependencias) &&
     Object.values(valor.dependencias).every(esEstadoDependencia)
   );

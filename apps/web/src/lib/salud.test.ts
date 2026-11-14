@@ -58,6 +58,12 @@ describe('consultarSalud', () => {
     await expect(consultarSalud('http://api:3001', { fetcher })).resolves.toBeNull();
   });
 
+  it('devuelve null cuando la fecha no es una fecha válida', async () => {
+    const fetcher = vi.fn().mockResolvedValue(respuestaJson({ ...SALUD_OK, fecha: 'ayer' }));
+
+    await expect(consultarSalud('http://api:3001', { fetcher })).resolves.toBeNull();
+  });
+
   it('cancela la consulta cuando supera el tiempo máximo', async () => {
     const fetcher = vi.fn(
       (_url: string, init?: RequestInit) =>
