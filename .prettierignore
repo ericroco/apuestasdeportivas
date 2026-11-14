@@ -13,3 +13,4 @@ test-results
 .specify
 .claude
 .agents
+skills-lock.json

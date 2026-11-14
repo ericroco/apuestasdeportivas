@@ -3,7 +3,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { REDIS } from '../redis/redis.constants.js';
 import { HealthService, TIMEOUT_DEPENDENCIA_MS } from './health.service.js';
 
-function crearServicio(dobles: { consultarBd: () => Promise<unknown>; pingRedis: () => Promise<unknown> }) {
+function crearServicio(dobles: {
+  consultarBd: () => Promise<unknown>;
+  pingRedis: () => Promise<unknown>;
+}) {
   return Test.createTestingModule({
     providers: [
       HealthService,
@@ -16,7 +19,8 @@ function crearServicio(dobles: { consultarBd: () => Promise<unknown>; pingRedis:
 }
 
 const responde = () => Promise.resolve('ok');
-const falla = () => Promise.reject(new Error('connect ECONNREFUSED 10.0.0.5:5432 usuario=apuestas'));
+const falla = () =>
+  Promise.reject(new Error('connect ECONNREFUSED 10.0.0.5:5432 usuario=apuestas'));
 const nuncaResponde = () => new Promise(() => undefined);
 
 describe('HealthService', () => {
@@ -64,7 +68,10 @@ describe('HealthService', () => {
     await vi.advanceTimersByTimeAsync(TIMEOUT_DEPENDENCIA_MS);
     const salud = await pendiente;
 
-    expect(salud.dependencias.baseDeDatos).toEqual({ estado: 'error', latenciaMs: TIMEOUT_DEPENDENCIA_MS });
+    expect(salud.dependencias.baseDeDatos).toEqual({
+      estado: 'error',
+      latenciaMs: TIMEOUT_DEPENDENCIA_MS,
+    });
   });
 
   it('no expone mensajes de error, hosts ni usuarios en la respuesta', async () => {

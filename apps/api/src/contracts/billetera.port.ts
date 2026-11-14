@@ -53,11 +53,17 @@ export interface BilleteraPort {
   /** Acredita el premio de una apuesta ganada al mismo tipo de saldo con que se apostó. */
   acreditarPremio(tx: ClienteTransaccional, operacion: OperacionApuesta): Promise<ResultadoAsiento>;
   /** Devuelve el monto de una apuesta anulada (partido cancelado o aplazado fuera de plazo). */
-  reembolsarApuesta(tx: ClienteTransaccional, operacion: OperacionApuesta): Promise<ResultadoAsiento>;
+  reembolsarApuesta(
+    tx: ClienteTransaccional,
+    operacion: OperacionApuesta,
+  ): Promise<ResultadoAsiento>;
   /** Acredita saldo de bono (bono de depósito, apuesta gratis). */
   acreditarBono(tx: ClienteTransaccional, operacion: OperacionBono): Promise<ResultadoAsiento>;
   /** Pasa saldo de bono a saldo real cuando se cumple el rollover. */
-  convertirBonoEnReal(tx: ClienteTransaccional, operacion: OperacionBono): Promise<ResultadoAsiento>;
+  convertirBonoEnReal(
+    tx: ClienteTransaccional,
+    operacion: OperacionBono,
+  ): Promise<ResultadoAsiento>;
   /** Saldos derivados del ledger. */
   obtenerSaldos(usuarioId: string, tx?: ClienteTransaccional): Promise<SaldosUsuario>;
 }

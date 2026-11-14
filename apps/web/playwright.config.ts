@@ -18,7 +18,10 @@ export default defineConfig({
   projects: [
     { name: 'escritorio', use: { ...devices['Desktop Chrome'] } },
     // Constitución, principio VII: usable desde 360 px.
-    { name: 'movil-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 } } },
+    {
+      name: 'movil-360',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 } },
+    },
   ],
   webServer: [
     {

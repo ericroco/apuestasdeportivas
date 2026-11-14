@@ -7,7 +7,10 @@ const SALUD_OK: RespuestaSalud = {
   servicio: 'api',
   version: '0.1.0',
   fecha: '2026-11-14T18:00:00.000Z',
-  dependencias: { baseDeDatos: { estado: 'ok', latenciaMs: 3 }, cache: { estado: 'ok', latenciaMs: 1 } },
+  dependencias: {
+    baseDeDatos: { estado: 'ok', latenciaMs: 3 },
+    cache: { estado: 'ok', latenciaMs: 1 },
+  },
 };
 
 function respuestaJson(cuerpo: unknown, status = 200): Response {
@@ -31,7 +34,11 @@ describe('consultarSalud', () => {
   });
 
   it('devuelve la salud también cuando el servicio responde 503 con el cuerpo del contrato', async () => {
-    const caida = { ...SALUD_OK, estado: 'error', dependencias: { baseDeDatos: { estado: 'error', latenciaMs: 2000 } } };
+    const caida = {
+      ...SALUD_OK,
+      estado: 'error',
+      dependencias: { baseDeDatos: { estado: 'error', latenciaMs: 2000 } },
+    };
     const fetcher = vi.fn().mockResolvedValue(respuestaJson(caida, 503));
 
     const salud = await consultarSalud('http://api:3001', { fetcher });
@@ -119,11 +126,18 @@ describe('resumirSalud', () => {
   });
 
   it('resume un servicio que no contestó como sin respuesta y sin dependencias', () => {
-    expect(resumirSalud(null)).toEqual({ situacion: 'sin-respuesta', version: null, dependencias: [] });
+    expect(resumirSalud(null)).toEqual({
+      situacion: 'sin-respuesta',
+      version: null,
+      dependencias: [],
+    });
   });
 
   it('usa la clave tal cual si la dependencia no tiene nombre conocido', () => {
-    const resumen = resumirSalud({ ...SALUD_OK, dependencias: { colas: { estado: 'ok', latenciaMs: 2 } } });
+    const resumen = resumirSalud({
+      ...SALUD_OK,
+      dependencias: { colas: { estado: 'ok', latenciaMs: 2 } },
+    });
 
     expect(resumen.dependencias[0]?.nombre).toBe('colas');
   });

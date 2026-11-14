@@ -9,13 +9,20 @@ const SALUD_OK: RespuestaSalud = {
   servicio: 'api',
   version: '0.1.0',
   fecha: '2026-11-14T18:00:00.000Z',
-  dependencias: { baseDeDatos: { estado: 'ok', latenciaMs: 3 }, cache: { estado: 'ok', latenciaMs: 1 } },
+  dependencias: {
+    baseDeDatos: { estado: 'ok', latenciaMs: 3 },
+    cache: { estado: 'ok', latenciaMs: 1 },
+  },
 };
 
 function renderizar(salud: RespuestaSalud | null): HTMLElement {
   render(
     <ul>
-      <EstadoServicio nombre="API" funcion="Saldos, apuestas y liquidación" resumen={resumirSalud(salud)} />
+      <EstadoServicio
+        nombre="API"
+        funcion="Saldos, apuestas y liquidación"
+        resumen={resumirSalud(salud)}
+      />
     </ul>,
   );
   return screen.getByRole('listitem', { name: 'API' });
@@ -36,7 +43,10 @@ describe('EstadoServicio', () => {
     const fila = renderizar({
       ...SALUD_OK,
       estado: 'error',
-      dependencias: { baseDeDatos: { estado: 'ok', latenciaMs: 3 }, cache: { estado: 'error', latenciaMs: 2000 } },
+      dependencias: {
+        baseDeDatos: { estado: 'ok', latenciaMs: 3 },
+        cache: { estado: 'error', latenciaMs: 2000 },
+      },
     });
 
     expect(within(fila).getByText('No disponible')).toBeInTheDocument();
