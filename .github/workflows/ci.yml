@@ -125,3 +125,76 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  sonar:
+    name: SonarQube Cloud
+    needs: calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Aviso si SonarQube no está configurado
+        if: env.SONAR_TOKEN == ''
+        run: echo "::notice title=SonarQube omitido::Falta el secreto SONAR_TOKEN. Ver docs/despliegue.md, sección SonarQube."
+      - uses: actions/checkout@v7
+        if: env.SONAR_TOKEN != ''
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        if: env.SONAR_TOKEN != ''
+        with:
+          name: cobertura
+          path: apps
+      - name: Rutas de lcov relativas a la raíz del repo
+        if: env.SONAR_TOKEN != ''
+        run: |
+          sed -i 's#^SF:#SF:apps/api/#' apps/api/coverage/lcov.info
+          sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
+      - uses: SonarSource/sonarqube-scan-action@v8
+        if: env.SONAR_TOKEN != ''
+
+  desplegar:
+    name: Desplegar
+    needs: [calidad, sonar]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Cada entorno de GitHub guarda sus propios secretos (hooks y tokens de staging o de producción).
+    environment: ${{ github.ref_name == 'main' && 'produccion' || 'staging' }}
+    env:
+      RENDER_DEPLOY_HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+      RENDER_DEPLOY_HOOK_REPORTS: ${{ secrets.RENDER_DEPLOY_HOOK_REPORTS }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ENTORNO: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      VERCEL_PROD: ${{ github.ref_name == 'main' && '--prod' || '' }}
+    steps:
+      - name: Render (API y reportes)
+        if: env.RENDER_DEPLOY_HOOK_API != '' && env.RENDER_DEPLOY_HOOK_REPORTS != ''
+        run: |
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_API" > /dev/null
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_REPORTS" > /dev/null
+      - name: Aviso si Render no está configurado
+        if: env.RENDER_DEPLOY_HOOK_API == '' || env.RENDER_DEPLOY_HOOK_REPORTS == ''
+        run: echo "::notice title=Render omitido::Faltan los deploy hooks del entorno. Ver docs/despliegue.md."
+
+      - uses: actions/checkout@v7
+        if: env.VERCEL_TOKEN != ''
+      - uses: pnpm/action-setup@v6
+        if: env.VERCEL_TOKEN != ''
+      - uses: actions/setup-node@v7
+        if: env.VERCEL_TOKEN != ''
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Vercel (web)
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          npx --yes vercel@65.16.0 pull --yes --environment="$VERCEL_ENTORNO" --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.16.0 build $VERCEL_PROD --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.16.0 deploy --prebuilt $VERCEL_PROD --token="$VERCEL_TOKEN"
+      - name: Aviso si Vercel no está configurado
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::notice title=Vercel omitido::Falta el secreto VERCEL_TOKEN del entorno. Ver docs/despliegue.md."
