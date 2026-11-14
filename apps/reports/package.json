@@ -1,0 +1,13 @@
+{
+  "name": "reports",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Puente para que pnpm y Turborepo ejecuten las tareas de la app Python con uv",
+  "scripts": {
+    "dev": "uv run python -m reports --reload",
+    "start": "uv run python -m reports",
+    "lint": "uv run ruff check . && uv run ruff format --check .",
+    "typecheck": "uv run mypy",
+    "test": "uv run pytest"
+  }
+}

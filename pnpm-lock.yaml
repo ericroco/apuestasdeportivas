@@ -112,6 +112,8 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@22.20.5)(@vitest/coverage-v8@4.1.12)(vite@8.3.8(@types/node@22.20.5)(jiti@2.7.0))
 
+  apps/reports: {}
+
   apps/web:
     dependencies:
       next:
