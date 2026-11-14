@@ -23,11 +23,11 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **Purpose**: monorepo, herramientas de formato y servicios locales
 
-- [ ] T001 Agregar `.gitattributes` (`* text=auto eol=lf`) y completar `.gitignore` (Node, Python, Playwright, Prisma)
-- [ ] T002 Crear `package.json` raíz (`packageManager: pnpm@11.9.0`, scripts `dev`, `lint`, `typecheck`, `test`, `test:e2e`, `build`, `db:migrate`, `reports:install`), `pnpm-workspace.yaml` (`apps/*`, `packages/*`, `allowBuilds`) y `turbo.json`
-- [ ] T003 [P] Configurar Prettier en `.prettierrc.json` y `.prettierignore`, y `.editorconfig`
-- [ ] T004 [P] Configurar Husky y commitlint en `.husky/commit-msg` y `commitlint.config.mjs`
-- [ ] T005 [P] Crear `docker-compose.yml` (PostgreSQL 17 + Redis 7 con healthchecks) e `infra/postgres/init/01-usuario-solo-lectura.sh`
+- [X] T001 Agregar `.gitattributes` (`* text=auto eol=lf`) y completar `.gitignore` (Node, Python, Playwright, Prisma)
+- [X] T002 Crear `package.json` raíz (`packageManager: pnpm@11.9.0`, scripts `dev`, `lint`, `typecheck`, `test`, `test:e2e`, `build`, `db:migrate`, `reports:install`), `pnpm-workspace.yaml` (`apps/*`, `packages/*`, `allowBuilds`) y `turbo.json`
+- [X] T003 [P] Configurar Prettier en `.prettierrc.json` y `.prettierignore`, y `.editorconfig`
+- [X] T004 [P] Configurar Husky y commitlint en `.husky/commit-msg` y `commitlint.config.mjs`
+- [X] T005 [P] Crear `docker-compose.yml` (PostgreSQL 17 + Redis 7 con healthchecks) e `infra/postgres/init/01-usuario-solo-lectura.sh`
 
 ---
 
@@ -37,13 +37,13 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **⚠️ CRITICAL**: ninguna historia empieza hasta terminar esta fase
 
-- [ ] T006 Crear `packages/shared` con el tipo `RespuestaSalud` en `packages/shared/src/salud.ts` y su build a `dist/`
-- [ ] T007 Generar `apps/api` con NestJS 12 (ESM, Vitest, Oxlint) y quitar el controlador de ejemplo en `apps/api/src/app.module.ts`
-- [ ] T008 Prueba y validación de entorno con zod en `apps/api/src/config/env.spec.ts` y `apps/api/src/config/env.ts`
-- [ ] T009 Configurar Prisma 7 en `apps/api/prisma/schema.prisma`, `apps/api/prisma.config.ts` y `apps/api/src/prisma/prisma.service.ts`
-- [ ] T010 [P] Crear el cliente Redis compartido en `apps/api/src/redis/redis.module.ts`
-- [ ] T011 [P] Crear `apps/reports` con uv (`pyproject.toml`, `package.json` puente) y su configuración en `apps/reports/src/reports/config.py`
-- [ ] T012 [P] Generar `apps/web` con Next.js 16 y configurar Vitest en `apps/web/vitest.config.mts`
+- [X] T006 Crear `packages/shared` con el tipo `RespuestaSalud` en `packages/shared/src/salud.ts` y su build a `dist/`
+- [X] T007 Generar `apps/api` con NestJS 12 (ESM, Vitest, Oxlint) y quitar el controlador de ejemplo en `apps/api/src/app.module.ts`
+- [X] T008 Prueba y validación de entorno con zod en `apps/api/src/config/env.spec.ts` y `apps/api/src/config/env.ts`
+- [X] T009 Configurar Prisma 7 en `apps/api/prisma/schema.prisma`, `apps/api/prisma.config.ts` y `apps/api/src/prisma/prisma.service.ts`
+- [X] T010 [P] Crear el cliente Redis compartido en `apps/api/src/redis/redis.module.ts`
+- [X] T011 [P] Crear `apps/reports` con uv (`pyproject.toml`, `package.json` puente) y su configuración en `apps/reports/src/reports/config.py`
+- [X] T012 [P] Generar `apps/web` con Next.js 16 y configurar Vitest en `apps/web/vitest.config.mts`
 
 **Checkpoint**: `pnpm install`, `pnpm lint`, `pnpm typecheck` y `pnpm test` pasan en las tres apps
 
@@ -57,20 +57,20 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T013 [P] [US1] Pruebas unitarias de salud (ok, BD caída, Redis caído, timeout) en `apps/api/src/health/health.service.spec.ts`
-- [ ] T014 [P] [US1] Prueba e2e de `/health`, error 404 uniforme y cabeceras de seguridad en `apps/api/test/health.e2e-spec.ts`
-- [ ] T015 [P] [US1] Pruebas de `/health` de reportes en `apps/reports/tests/test_health.py`
-- [ ] T016 [P] [US1] Pruebas del cliente de salud de la web en `apps/web/src/lib/salud.test.ts` y del componente en `apps/web/src/components/estado-servicio.test.tsx`
-- [ ] T017 [US1] Prueba E2E de la página de estado en `apps/web/e2e/estado.spec.ts` con `apps/web/playwright.config.ts`
+- [X] T013 [P] [US1] Pruebas unitarias de salud (ok, BD caída, Redis caído, timeout) en `apps/api/src/health/health.service.spec.ts`
+- [X] T014 [P] [US1] Prueba e2e de `/health`, error 404 uniforme y cabeceras de seguridad en `apps/api/test/health.e2e-spec.ts`
+- [X] T015 [P] [US1] Pruebas de `/health` de reportes en `apps/reports/tests/test_health.py`
+- [X] T016 [P] [US1] Pruebas del cliente de salud de la web en `apps/web/src/lib/salud.test.ts` y del componente en `apps/web/src/components/estado-servicio.test.tsx`
+- [X] T017 [US1] Prueba E2E de la página de estado en `apps/web/e2e/estado.spec.ts` con `apps/web/playwright.config.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Implementar `HealthService` y `HealthController` en `apps/api/src/health/`
-- [ ] T019 [US1] Configurar `apps/api/src/main.ts` (helmet, CORS, throttler, prefijo `/api`, apagado ordenado)
-- [ ] T020 [P] [US1] Implementar `/health` de reportes en `apps/reports/src/reports/health.py` y `apps/reports/src/reports/main.py`
-- [ ] T021 [P] [US1] Implementar el cliente de salud en `apps/web/src/lib/salud.ts`
-- [ ] T022 [US1] Implementar la página de estado en `apps/web/src/app/page.tsx` y `apps/web/src/components/estado-servicio.tsx` siguiendo `frontend-design`
-- [ ] T023 [P] [US1] Agregar `.env.example` en `apps/api/`, `apps/reports/` y `apps/web/`
+- [X] T018 [US1] Implementar `HealthService` y `HealthController` en `apps/api/src/health/`
+- [X] T019 [US1] Configurar `apps/api/src/main.ts` (helmet, CORS, throttler, prefijo `/api`, apagado ordenado)
+- [X] T020 [P] [US1] Implementar `/health` de reportes en `apps/reports/src/reports/health.py` y `apps/reports/src/reports/main.py`
+- [X] T021 [P] [US1] Implementar el cliente de salud en `apps/web/src/lib/salud.ts`
+- [X] T022 [US1] Implementar la página de estado en `apps/web/src/app/page.tsx` y `apps/web/src/components/estado-servicio.tsx` siguiendo `frontend-design`
+- [X] T023 [P] [US1] Agregar `.env.example` en `apps/api/`, `apps/reports/` y `apps/web/`
 
 **Checkpoint**: US1 funcional y verificable con `pnpm test:e2e`
 
@@ -82,8 +82,8 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **Independent Test**: un PR con una prueba en rojo queda bloqueado
 
-- [ ] T024 [US2] Crear el workflow `.github/workflows/ci.yml` con el job `calidad` (PostgreSQL y Redis como servicios, lint, typecheck, test, build, e2e) y el job `commits`
-- [ ] T025 [US2] Proteger `develop` y `main` (PR obligatorio, checks requeridos, sin push directo) y documentarlo en `CONTRIBUTING.md`
+- [X] T024 [US2] Crear el workflow `.github/workflows/ci.yml` con el job `calidad` (PostgreSQL y Redis como servicios, lint, typecheck, test, build, e2e) y el job `commits`
+- [X] T025 [US2] Proteger `develop` y `main` (PR obligatorio, checks requeridos, sin push directo) y documentarlo en `CONTRIBUTING.md`
 
 ---
 
@@ -93,10 +93,10 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **Independent Test**: integrar en `develop` y ver la salud de staging en verde
 
-- [ ] T026 [P] [US3] Crear el blueprint `render.yaml` (api, reports, Postgres, Key Value de staging)
-- [ ] T027 [P] [US3] Crear `apps/web/vercel.json`
-- [ ] T028 [US3] Agregar el job `deploy` a `.github/workflows/ci.yml` (deploy hooks de Render y CLI de Vercel; se omite sin secretos)
-- [ ] T029 [US3] Documentar cuentas, secretos y producción en `docs/despliegue.md`
+- [X] T026 [P] [US3] Crear el blueprint `render.yaml` (api, reports, Postgres, Key Value de staging)
+- [X] T027 [P] [US3] Crear `apps/web/vercel.json`
+- [X] T028 [US3] Agregar el job `deploy` a `.github/workflows/ci.yml` (deploy hooks de Render y CLI de Vercel; se omite sin secretos)
+- [X] T029 [US3] Documentar cuentas, secretos y producción en `docs/despliegue.md`
 
 ---
 
@@ -106,12 +106,12 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **Independent Test**: un integrante nuevo encuentra su spec, rama y contratos solo leyendo el repo
 
-- [ ] T030 [P] [US4] Prueba de que `reportes_lectura` no puede escribir en `apps/reports/tests/test_solo_lectura.py`
-- [ ] T031 [P] [US4] Declarar los puertos entre specs (sin implementación) en `apps/api/src/contracts/`
-- [ ] T032 [P] [US4] Escribir `docs/equipo/reparto.md`, `docs/equipo/contratos.md` y los briefs `docs/equipo/spec-2-ricardo.md`, `docs/equipo/spec-3-daniel.md`, `docs/equipo/spec-4-erick.md`
-- [ ] T033 [US4] Actualizar el catálogo `specs/README.md` a 4 specs del equipo
-- [ ] T034 [P] [US4] Crear `.github/PULL_REQUEST_TEMPLATE.md` y `.github/ISSUE_TEMPLATE/`
-- [ ] T035 [US4] Escribir `CONTRIBUTING.md` (Git Flow, `feature/spec-X`, Spec Kit, migraciones en paralelo, validación con zod)
+- [X] T030 [P] [US4] Prueba de que `reportes_lectura` no puede escribir en `apps/reports/tests/test_solo_lectura.py`
+- [X] T031 [P] [US4] Declarar los puertos entre specs (sin implementación) en `apps/api/src/contracts/`
+- [X] T032 [P] [US4] Escribir `docs/equipo/reparto.md`, `docs/equipo/contratos.md` y los briefs `docs/equipo/spec-2-ricardo.md`, `docs/equipo/spec-3-daniel.md`, `docs/equipo/spec-4-erick.md`
+- [X] T033 [US4] Actualizar el catálogo `specs/README.md` a 4 specs del equipo
+- [X] T034 [P] [US4] Crear `.github/PULL_REQUEST_TEMPLATE.md` y `.github/ISSUE_TEMPLATE/`
+- [X] T035 [US4] Escribir `CONTRIBUTING.md` (Git Flow, `feature/spec-X`, Spec Kit, migraciones en paralelo, validación con zod)
 
 ---
 
@@ -121,16 +121,16 @@ historia; las tareas de prueba de cada historia van antes que su implementación
 
 **Independent Test**: con `SONAR_TOKEN`, el PR muestra el análisis; sin él, el paso se omite con aviso
 
-- [ ] T036 [US5] Crear `sonar-project.properties` y el job `sonar` en `.github/workflows/ci.yml`
-- [ ] T037 [P] [US5] Documentar el tablero en `docs/trazabilidad-grafana.md`
+- [X] T036 [US5] Crear `sonar-project.properties` y el job `sonar` en `.github/workflows/ci.yml`
+- [X] T037 [P] [US5] Documentar el tablero en `docs/trazabilidad-grafana.md`
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T038 [P] Reescribir `README.md` con el estado real y los comandos
-- [ ] T039 [P] Agregar los comandos reales a `CLAUDE.md`
-- [ ] T040 Validar `quickstart.md` de punta a punta en una copia limpia y marcar las tareas como hechas
+- [X] T038 [P] Reescribir `README.md` con el estado real y los comandos
+- [X] T039 [P] Agregar los comandos reales a `CLAUDE.md`
+- [X] T040 Validar `quickstart.md` de punta a punta en una copia limpia y marcar las tareas como hechas
 
 ---
 
