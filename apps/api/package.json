@@ -12,7 +12,7 @@
     "start": "node dist/main.js",
     "lint": "oxlint --type-aware src/ test/",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --coverage && vitest run --config ./vitest.config.e2e.ts",
+    "test": "vitest run --coverage && vitest run --config ./vitest.config.e2e.ts --coverage",
     "test:unit": "vitest run",
     "test:int": "vitest run --config ./vitest.config.e2e.ts",
     "test:watch": "vitest"

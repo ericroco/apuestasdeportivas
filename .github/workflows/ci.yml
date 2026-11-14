@@ -113,7 +113,8 @@ jobs:
         with:
           name: cobertura
           path: |
-            apps/api/coverage/lcov.info
+            apps/api/coverage/unit/lcov.info
+            apps/api/coverage/integracion/lcov.info
             apps/web/coverage/lcov.info
             apps/reports/coverage.xml
           retention-days: 7
@@ -149,7 +150,7 @@ jobs:
       - name: Rutas de lcov relativas a la raíz del repo
         if: env.SONAR_TOKEN != ''
         run: |
-          sed -i 's#^SF:#SF:apps/api/#' apps/api/coverage/lcov.info
+          sed -i 's#^SF:#SF:apps/api/#' apps/api/coverage/unit/lcov.info apps/api/coverage/integracion/lcov.info
           sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
       - uses: SonarSource/sonarqube-scan-action@v8
         if: env.SONAR_TOKEN != ''

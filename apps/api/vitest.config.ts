@@ -12,6 +12,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/generated/**', 'src/main.ts', 'src/**/*.spec.ts'],
       reporter: ['text-summary', 'lcov'],
+      reportsDirectory: 'coverage/unit',
     },
   },
 });

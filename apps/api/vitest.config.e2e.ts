@@ -12,5 +12,13 @@ export default defineConfig({
     env: { ...loadEnv('test', process.cwd(), ''), NODE_ENV: 'test' },
     fileParallelism: false,
     passWithNoTests: true,
+    // SonarQube suma esta cobertura a la de las pruebas unitarias (sonar-project.properties).
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/generated/**', 'src/main.ts', 'src/**/*.spec.ts'],
+      reporter: ['text-summary', 'lcov'],
+      reportsDirectory: 'coverage/integracion',
+    },
   },
 });
