@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
+import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -17,6 +18,7 @@ import { RedisModule } from './redis/redis.module.js';
     }),
     PrismaModule,
     RedisModule,
+    HealthModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global
   // (denegación por defecto) lo registra el Spec 2 aquí mismo con APP_GUARD.
