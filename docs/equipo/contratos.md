@@ -83,6 +83,10 @@ Nombres y payloads en `eventos.ts` (`EVENTOS`, `MapaEventos`). Dentro de la API 
 Los eventos se emiten **después** de confirmar la transacción, y quien escucha es idempotente (puede recibir el
 mismo evento dos veces).
 
+Redis: el cliente inyectable `REDIS` (`apps/api/src/redis/`) es solo para comandos (caché, contadores, locks,
+`publish`). Para suscribirse usa `redis.duplicate()`. BullMQ abre sus propias conexiones con `REDIS_URL` y
+`maxRetriesPerRequest: null`; no reutiliza `REDIS`.
+
 ## 6. Token de acceso (JWT)
 
 Para que el servicio de reportes (Python) valide el mismo token que la API sin poder emitirlo:
