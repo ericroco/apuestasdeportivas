@@ -1,21 +1,31 @@
-import type { INestApplication } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import type { App } from 'supertest/types.js';
 import type { RespuestaSalud } from '@apuestas/shared';
 import { AppModule } from '../src/app.module.js';
 import { configurarApp } from '../src/configurar-app.js';
 import { ENTORNO, type Entorno } from '../src/config/env.js';
 
 // Prueba de integración contra PostgreSQL y Redis reales (docker compose en local, servicios en CI).
+async function crearApp(
+  controladores: Array<new () => unknown> = [],
+): Promise<NestExpressApplication> {
+  const modulo = await Test.createTestingModule({
+    imports: [AppModule],
+    controllers: controladores,
+  }).compile();
+  const app = modulo.createNestApplication<NestExpressApplication>();
+  configurarApp(app, app.get<Entorno>(ENTORNO));
+  await app.init();
+  return app;
+}
+
 describe('API: salud y seguridad base (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestExpressApplication;
 
   beforeAll(async () => {
-    const modulo = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = modulo.createNestApplication();
-    configurarApp(app, app.get<Entorno>(ENTORNO));
-    await app.init();
+    app = await crearApp();
   });
 
   afterAll(async () => {
@@ -68,5 +78,41 @@ describe('API: salud y seguridad base (e2e)', () => {
 
     expect(permitido.headers['access-control-allow-origin']).toBe(origen);
     expect(ajeno.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
+@Controller('prueba-limite')
+class ControladorLimitado {
+  @Get()
+  responder(): { ok: true } {
+    return { ok: true };
+  }
+}
+
+// En Render la API está detrás de un proxy: sin `trust proxy` todos los clientes comparten la IP del proxy
+// y el rate limiting bloquearía a todos a la vez (FR-010: el límite es por cliente).
+describe('API: rate limiting por cliente detrás del proxy (e2e)', () => {
+  const entornoOriginal = { ...process.env };
+  let app: NestExpressApplication;
+
+  beforeAll(async () => {
+    process.env.THROTTLE_LIMIT = '2';
+    process.env.TRUST_PROXY_HOPS = '1';
+    app = await crearApp([ControladorLimitado]);
+  });
+
+  afterAll(async () => {
+    await app.close();
+    process.env = entornoOriginal;
+  });
+
+  it('limita a cada cliente por su IP real y no por la del proxy', async () => {
+    const pedir = (ip: string) =>
+      request(app.getHttpServer()).get('/api/prueba-limite').set('X-Forwarded-For', ip);
+
+    await pedir('203.0.113.1').expect(200);
+    await pedir('203.0.113.1').expect(200);
+    await pedir('203.0.113.1').expect(429);
+    await pedir('203.0.113.2').expect(200);
   });
 });

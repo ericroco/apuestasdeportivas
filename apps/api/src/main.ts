@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { ENTORNO, ErrorConfiguracion, type Entorno, validarEntorno } from './config/env.js';
 import { configurarApp } from './configurar-app.js';
@@ -21,7 +22,7 @@ async function bootstrap(): Promise<void> {
     throw error;
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const entorno = app.get<Entorno>(ENTORNO);
   configurarApp(app, entorno);
   await app.listen(entorno.PORT);

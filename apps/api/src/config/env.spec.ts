@@ -15,6 +15,7 @@ describe('validarEntorno', () => {
       PORT: 3001,
       THROTTLE_LIMIT: 100,
       THROTTLE_TTL_MS: 60_000,
+      TRUST_PROXY_HOPS: 0,
     });
   });
 
@@ -23,6 +24,21 @@ describe('validarEntorno', () => {
 
     expect(entorno.PORT).toBe(4000);
     expect(entorno.THROTTLE_LIMIT).toBe(5);
+  });
+
+  it('normaliza WEB_ORIGIN al origen (sin barra final ni ruta) para que CORS coincida', () => {
+    const entorno = validarEntorno({
+      ...ENTORNO_MINIMO,
+      WEB_ORIGIN: 'https://web.example.app/inicio/',
+    });
+
+    expect(entorno.WEB_ORIGIN).toBe('https://web.example.app');
+  });
+
+  it('rechaza un TRUST_PROXY_HOPS negativo', () => {
+    expect(() => validarEntorno({ ...ENTORNO_MINIMO, TRUST_PROXY_HOPS: '-1' })).toThrow(
+      /TRUST_PROXY_HOPS/,
+    );
   });
 
   it('nombra la variable obligatoria que falta', () => {

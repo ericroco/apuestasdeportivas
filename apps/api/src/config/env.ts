@@ -8,9 +8,13 @@ const esquemaEntorno = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
-  WEB_ORIGIN: z.url({ protocol: /^https?$/ }),
+  // Se guarda solo el origen: CORS compara exacto con la cabecera Origin, que no lleva barra ni ruta.
+  WEB_ORIGIN: z.url({ protocol: /^https?$/ }).transform((url) => new URL(url).origin),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
   THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
+  // Proxies delante de la API en los que se confía para leer la IP real del cliente (Render: 1).
+  // En 0 se ignora X-Forwarded-For, que en local cualquiera podría falsificar.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
 });
 
 export type Entorno = Readonly<z.infer<typeof esquemaEntorno>>;
