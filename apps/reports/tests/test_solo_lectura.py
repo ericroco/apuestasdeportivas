@@ -71,3 +71,20 @@ def test_no_puede_escribir_aunque_desactive_el_modo_solo_lectura(lectura: Conexi
 
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         lectura.execute(sql.SQL("INSERT INTO {} VALUES (4)").format(TABLA))
+
+
+@pytest.mark.parametrize(
+    "sentencia",
+    [
+        sql.SQL("CREATE TEMP TABLE intrusa (id int)"),
+        sql.SQL("SELECT lo_from_bytea(0, 'datos'::bytea)"),
+        sql.SQL("SELECT lo_create(0)"),
+    ],
+    ids=["tabla-temporal", "lo_from_bytea", "lo_create"],
+)
+def test_no_puede_persistir_datos_por_otras_vias(lectura: Conexion, sentencia: sql.SQL) -> None:
+    # Aun desactivando el modo de solo lectura, ni tablas temporales ni large objects.
+    lectura.execute("SET default_transaction_read_only = off")
+
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        lectura.execute(sentencia)
