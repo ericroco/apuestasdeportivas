@@ -42,6 +42,10 @@ La seguridad antifraude es el criterio prioritario del proyecto. Al tocar dinero
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan:
-`specs/001-fundaciones-stack/plan.md`
+shell commands, and other important information, read the plan of the spec you are working on
+(this block already lists every team spec; do not rewrite it from /speckit-plan):
+- Spec 1: `specs/001-fundaciones-stack/plan.md`
+- Spec 2: `specs/002-identidad-billetera-pagos/plan.md`
+- Spec 3: `specs/003-partidos-apuestas-liquidacion/plan.md`
+- Spec 4: `specs/004-promociones-fraude-reportes/plan.md`
 <!-- SPECKIT END -->

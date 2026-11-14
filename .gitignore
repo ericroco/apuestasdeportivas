@@ -36,6 +36,9 @@ coverage.xml
 .env.*
 !.env.example
 
+# Spec Kit: puntero local a la spec en curso (cada rama tiene el suyo)
+.specify/feature.json
+
 # Editores
 .vscode/*
 !.vscode/extensions.json
