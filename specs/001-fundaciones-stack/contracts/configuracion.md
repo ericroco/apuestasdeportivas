@@ -62,3 +62,5 @@ Ninguna variable con secretos lleva el prefijo `NEXT_PUBLIC_`: todo lo que tenga
 | `POSTGRES_PORT` | `5432` | Puerto local de PostgreSQL |
 | `REDIS_PORT` | `6379` | Puerto local de Redis |
 | `REPORTES_PASSWORD` | `reportes_local` | Contraseña local del usuario `reportes_lectura` |
+| `MAILPIT_SMTP_PORT` | `1025` | Spec 2. Puerto SMTP local de Mailpit |
+| `MAILPIT_WEB_PORT` | `8025` | Spec 2. Bandeja web y API de Mailpit |

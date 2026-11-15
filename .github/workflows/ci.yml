@@ -72,6 +72,13 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      # Spec 2: buzón de pruebas para los correos de verificación y recuperación.
+      mailpit:
+        image: axllent/mailpit:v1.33.1
+        ports: ['1025:1025', '8025:8025']
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
