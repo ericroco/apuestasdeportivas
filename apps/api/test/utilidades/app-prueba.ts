@@ -1,4 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { getQueueToken } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import { COLAS } from '../../src/colas/nombres.js';
 import { join } from 'node:path';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
@@ -67,6 +70,9 @@ export async function crearAppPrueba(): Promise<AppPrueba> {
   await crearEsquemaPruebas(prisma);
   const billetera = app.get<BilleteraSqlDePrueba>(BILLETERA_PORT);
   const redis = app.get<Redis>(REDIS);
+  const colas = [COLAS.liquidacion, COLAS.apuestasVivo].map((nombre) =>
+    app.get<Queue>(getQueueToken(nombre)),
+  );
 
   return {
     app,
@@ -74,8 +80,20 @@ export async function crearAppPrueba(): Promise<AppPrueba> {
     billetera,
     auditoria,
     async limpiar() {
-      // TRUNCATE no dispara los disparadores de inmutabilidad (son por fila).
-      await prisma.$executeRawUnsafe(`TRUNCATE ${TABLAS_A_VACIAR.join(', ')} CASCADE`);
+      // Un trabajo de la prueba anterior (liquidación, apuesta en vivo) puede seguir corriendo: TRUNCATE necesita
+      // un bloqueo exclusivo y chocaría con él. Se espera a que las colas estén quietas y se reintenta si aun así
+      // PostgreSQL detecta un interbloqueo.
+      await esperarColasQuietas(colas);
+      for (let intento = 1; ; intento += 1) {
+        try {
+          // TRUNCATE no dispara los disparadores de inmutabilidad (son por fila).
+          await prisma.$executeRawUnsafe(`TRUNCATE ${TABLAS_A_VACIAR.join(', ')} CASCADE`);
+          break;
+        } catch (error) {
+          if (intento >= INTENTOS_LIMPIEZA) throw error;
+          await esperarColasQuietas(colas);
+        }
+      }
       auditoria.limpiar();
       // Contadores de presupuesto, temporadas y tickets del Spec 3 (solo claves de prueba locales).
       const claves = [
@@ -85,6 +103,19 @@ export async function crearAppPrueba(): Promise<AppPrueba> {
       if (claves.length) await redis.del(...claves);
     },
   };
+}
+
+const INTENTOS_LIMPIEZA = 5;
+const ESPERA_COLAS_MS = 10_000;
+
+/** Espera (con tope) a que no haya trabajos activos ni en espera inmediata en las colas del Spec 3. */
+async function esperarColasQuietas(colas: readonly Queue[]): Promise<void> {
+  const limite = Date.now() + ESPERA_COLAS_MS;
+  while (Date.now() < limite) {
+    const conteos = await Promise.all(colas.map((cola) => cola.getJobCounts('active', 'waiting')));
+    if (conteos.every((c) => (c['active'] ?? 0) === 0 && (c['waiting'] ?? 0) === 0)) return;
+    await new Promise((listo) => setTimeout(listo, 50));
+  }
 }
 
 /** Ejecuta esquema-pruebas.sql sentencia por sentencia (el driver no acepta varias en una llamada). */
