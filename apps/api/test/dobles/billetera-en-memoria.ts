@@ -12,7 +12,8 @@ import {
 } from '../../src/contracts/billetera.port.js';
 import { Prisma } from '../../src/generated/prisma/client.js';
 
-export type TipoOperacion = 'DEBITO_APUESTA' | 'PREMIO' | 'REEMBOLSO' | 'BONO' | 'CONVERSION';
+export type TipoOperacion =
+  'DEBITO_APUESTA' | 'PREMIO' | 'REEMBOLSO' | 'BONO' | 'CONVERSION' | 'REVERSION_PREMIO';
 
 export interface AsientoEnMemoria {
   readonly asientoId: string;
@@ -100,6 +101,20 @@ export class BilleteraEnMemoria implements BilleteraPort {
       { real: op.monto, bono: op.monto.negated() },
       op.referencia,
     );
+  }
+
+  /** Contrato 2 (Spec 2): asiento compensatorio que, a diferencia del débito, puede dejar el saldo negativo. */
+  async revertirPremio(_tx: ClienteTransaccional, op: OperacionApuesta): Promise<ResultadoAsiento> {
+    const previo = this.resultados.get(op.claveIdempotencia);
+    if (previo) return { asientoId: previo.asientoId, creado: false };
+    validarMonto(op.monto);
+    const actual = await this.obtenerSaldos(op.usuarioId);
+    const { real, bono } = enTipo(op.tipoSaldo, op.monto);
+    this.saldos.set(op.usuarioId, { real: actual.real.minus(real), bono: actual.bono.minus(bono) });
+    const asiento = { asientoId: randomUUID(), operacion: 'REVERSION_PREMIO' as const, ...op };
+    this.registro.push(asiento);
+    this.resultados.set(op.claveIdempotencia, { asientoId: asiento.asientoId, creado: true });
+    return { asientoId: asiento.asientoId, creado: true };
   }
 
   async obtenerSaldos(usuarioId: string): Promise<SaldosUsuario> {

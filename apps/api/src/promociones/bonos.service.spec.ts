@@ -15,12 +15,14 @@ import { Prisma, type Cupon } from '../generated/prisma/client.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { BonosService, type DepositoParaBono } from './bonos.service.js';
 import { CanjeService } from './canje.service.js';
+import { VARIABLES_SPEC2_DE_PRUEBA } from '../../test/ayudas/entorno-de-prueba.js';
 
 const d = (valor: string) => new Prisma.Decimal(valor);
 const AHORA = new Date('2026-11-15T12:00:00Z');
 const reloj: Reloj = { ahora: () => AHORA };
 const ENTORNO = validarEntorno({
   DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+  ...VARIABLES_SPEC2_DE_PRUEBA,
   REDIS_URL: 'redis://localhost:6379',
   WEB_ORIGIN: 'http://localhost:3000',
 });

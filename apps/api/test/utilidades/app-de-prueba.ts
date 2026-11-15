@@ -9,6 +9,10 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { AuditoriaEnMemoria } from '../dobles/auditoria-en-memoria.js';
 import { BilleteraEnMemoria } from '../dobles/billetera-en-memoria.js';
 import { DoblesSpec2Module } from '../dobles/dobles-spec2.module.js';
+import { GuardDePrueba } from '../dobles/guard-de-prueba.js';
+import { AUDITORIA_PORT } from '../../src/contracts/auditoria.port.js';
+import { BILLETERA_PORT } from '../../src/contracts/billetera.port.js';
+import { AutenticacionGuard } from '../../src/identidad/autenticacion.guard.js';
 
 export interface AppDePrueba {
   readonly app: NestExpressApplication;
@@ -30,7 +34,16 @@ export async function crearAppDePrueba(opciones: OpcionesAppDePrueba = {}): Prom
   const auditoria = (opciones.conAuditoria ?? true) ? new AuditoriaEnMemoria() : null;
   const modulo = await Test.createTestingModule({
     imports: [AppModule, DoblesSpec2Module.registrar({ billetera, auditoria })],
-  }).compile();
+  })
+    // El Spec 2 ya está integrado: su guard real (que exige un JWT) y sus puertos reales se reemplazan por los
+    // dobles de estas pruebas. `null` deja el puerto ausente para probar la falla cerrada (503).
+    .overrideProvider(AutenticacionGuard)
+    .useClass(GuardDePrueba)
+    .overrideProvider(BILLETERA_PORT)
+    .useValue(billetera)
+    .overrideProvider(AUDITORIA_PORT)
+    .useValue(auditoria)
+    .compile();
   const app = modulo.createNestApplication<NestExpressApplication>();
   configurarApp(app, app.get<Entorno>(ENTORNO));
   await app.init();

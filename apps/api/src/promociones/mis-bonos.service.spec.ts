@@ -4,11 +4,13 @@ import { validarEntorno } from '../config/env.js';
 import { Prisma } from '../generated/prisma/client.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { MisBonosService } from './mis-bonos.service.js';
+import { VARIABLES_SPEC2_DE_PRUEBA } from '../../test/ayudas/entorno-de-prueba.js';
 
 const AHORA = new Date('2026-11-15T12:00:00Z');
 const reloj: Reloj = { ahora: () => AHORA };
 const ENTORNO = validarEntorno({
   DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+  ...VARIABLES_SPEC2_DE_PRUEBA,
   REDIS_URL: 'redis://localhost:6379',
   WEB_ORIGIN: 'http://localhost:3000',
   CUPON_ROLLOVER_CUOTA_MINIMA: '1.75',

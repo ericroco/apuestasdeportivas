@@ -41,6 +41,7 @@ Guía completa: [`specs/001-fundaciones-stack/quickstart.md`](specs/001-fundacio
 | [`specs/README.md`](specs/README.md) | Catálogo de specs del equipo y su estado |
 | [`docs/equipo/reparto.md`](docs/equipo/reparto.md) | Quién hace qué, dependencias y calendario |
 | [`docs/equipo/contratos.md`](docs/equipo/contratos.md) | Contratos entre specs |
+| [`docs/equipo/spec-2-entrega.md`](docs/equipo/spec-2-entrega.md) | Entrega del Spec 2: qué hay, qué hacer tras el merge y qué cambia para los specs 3 y 4 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Flujo de trabajo: Spec Kit, ramas, PRs, commits, migraciones |
 | [`docs/despliegue.md`](docs/despliegue.md) | Render, Vercel, SonarQube y secretos |
 | [`docs/trazabilidad-grafana.md`](docs/trazabilidad-grafana.md) | Tablero de trazabilidad del equipo |

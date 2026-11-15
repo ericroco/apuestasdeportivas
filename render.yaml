@@ -34,6 +34,28 @@ services:
           property: connectionString
       - key: WEB_ORIGIN
         sync: false # URL de staging de Vercel, p. ej. https://apuestasdeportivas-git-develop.vercel.app
+      # Spec 2: identidad. Los secretos se cargan a mano en el panel (ver la tabla de configuracion.md).
+      - key: JWT_PRIVATE_KEY
+        sync: false # Ed25519 PKCS#8; solo en la API
+      - key: JWT_PUBLIC_KEY
+        sync: false # la misma que usa reportes
+      - key: TOTP_CLAVE_CIFRADO
+        sync: false # 32 bytes en base64
+      - key: TURNSTILE_SECRET
+        sync: false # secreto real de Turnstile (los de prueba se rechazan en producción)
+      - key: WEB_PROXY_SECRETO
+        sync: false # el mismo que en Vercel
+      - key: CORREO_TRANSPORTE
+        value: resend # el plan gratuito de Render puede bloquear el SMTP saliente
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CORREO_REMITENTE
+        sync: false
+      # Spec 2: Payphone sandbox (Payphone Developer).
+      - key: PAYPHONE_TOKEN
+        sync: false
+      - key: PAYPHONE_STORE_ID
+        sync: false
 
   - type: web
     name: apuestas-reports-staging
