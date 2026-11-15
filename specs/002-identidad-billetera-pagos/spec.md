@@ -195,8 +195,9 @@ volver de la pasarela sin pagar y alterar el monto devuelto, y comprobar que en 
    queda como fallida y el usuario ve el motivo.
 7. **Given** un usuario sin correo verificado, **When** intenta depositar, **Then** se le pide verificar el correo
    primero.
-8. **Given** que el usuario cerró el navegador tras pagar, **When** el sistema revisa las intenciones pendientes,
-   **Then** confirma el pago con la pasarela y lo acredita igual, una sola vez.
+8. **Given** que el usuario cerró el navegador tras pagar y no volvió a la aplicación, **When** pasan 15 minutos,
+   **Then** la intención queda "caducada" sin acreditar nada; la pasarela revierte por sí sola los pagos que no se
+   confirman en sus primeros 5 minutos, así que no hay cobro sin acreditación.
 
 ---
 
@@ -326,10 +327,10 @@ ese usuario y ver ambos cambios.
 - La credencial de renovación se usa a la vez desde dos pestañas: una gana y la otra recibe una sesión válida o
   debe volver a entrar, sin cerrar todas las sesiones por error.
 - El reloj del dispositivo del usuario está desfasado: los códigos 2FA admiten una ventana de ±30 segundos.
-- La pasarela no responde al confirmar: la intención queda pendiente y se reintenta; nunca se acredita sin
-  respuesta positiva.
-- La pasarela confirma un pago de una intención caducada: se acredita si el pago es auténtico y coincide en monto,
-  moneda y referencia, porque el dinero sí se cobró; queda auditado.
+- La pasarela no responde al confirmar: la intención queda pendiente y la página de regreso permite reintentar
+  durante el plazo de confirmación; nunca se acredita sin respuesta positiva.
+- La pasarela confirma como aprobado un pago de una intención ya caducada: se acredita si coincide en monto, moneda
+  y referencia, porque el dinero sí se cobró; queda auditado.
 - Un depósito con un monto con más de 2 decimales, negativo o cero: se rechaza.
 - La misma referencia de pago se presenta para dos usuarios distintos: solo se acredita a la intención original.
 - Un usuario suspendido con un retiro pendiente: el retiro sigue en revisión y el administrador decide.
@@ -461,8 +462,9 @@ ese usuario y ver ambos cambios.
 - **FR-048**: La confirmación DEBE ser idempotente: una transacción de la pasarela se acredita como máximo una vez.
 - **FR-049**: Una confirmación que no coincide con la intención DEBE rechazarse y generar un evento de auditoría de
   posible fraude.
-- **FR-050**: El sistema DEBE revisar periódicamente las intenciones pendientes y confirmarlas o marcarlas como
-  fallidas o caducadas según la pasarela.
+- **FR-050**: El sistema DEBE marcar como caducadas las intenciones pendientes sin confirmar a los 15 minutos (el
+  formulario de la pasarela caduca a los 10 y un pago sin confirmar se revierte a los 5). Si una confirmación no
+  coincide con la intención, además de rechazarla el sistema DEBE pedir el reverso del pago a la pasarela.
 - **FR-051**: Al confirmarse un depósito, el sistema DEBE registrar el método de pago y el titular informados por la
   pasarela, y emitir el evento "depósito confirmado" después de completar la operación.
 - **FR-052**: Las credenciales de la pasarela DEBEN vivir solo en el servidor.
