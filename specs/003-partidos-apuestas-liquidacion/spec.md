@@ -34,14 +34,14 @@ deportivos (API-Football).
 ### User Story 1 - Cartelera y gestión de partidos por el operador (Priority: P1)
 
 El operador da de alta un partido (competición, equipo local, equipo visitante, fecha y hora de inicio), le agrega
-mercados con sus selecciones y cuotas, y lo publica. Los visitantes y apostadores ven la cartelera de próximos
+mercados con sus selecciones y cuotas, y lo publica. Los apostadores ven la cartelera de próximos
 partidos y partidos en vivo, y abren el detalle de un partido para ver sus mercados y cuotas vigentes. El operador
 puede cambiar cuotas, suspender o reabrir un mercado y mover el partido entre estados permitidos.
 
 **Why this priority**: sin partidos ni mercados no hay sobre qué apostar; es la base de las demás historias y se
 puede demostrar sin depender del proveedor externo.
 
-**Independent Test**: como operador, crear un partido con un mercado y dos cuotas; como visitante, verlo en la
+**Independent Test**: como operador, crear un partido con un mercado y dos cuotas; como apostador, verlo en la
 cartelera y en su detalle; cambiar una cuota y comprobar que el detalle muestra la nueva y que el cambio quedó
 auditado.
 
@@ -318,7 +318,8 @@ auditado.
   operador; a partir de ahí la importación no sobrescribe sus cuotas.
 - **FR-007**: El sistema MUST impedir eliminar un partido o mercado con apuestas; solo se puede cancelar.
 - **FR-008**: La cartelera y el detalle de partidos (estado, marcador, mercados y cuotas vigentes) MUST poder
-  consultarse sin iniciar sesión; apostar exige sesión iniciada.
+  consultarse por cualquier usuario con sesión iniciada; el contrato de autenticación reserva el acceso sin sesión
+  para salud, login, registro y webhooks firmados.
 
 **Importación desde el proveedor de datos deportivos**
 
@@ -406,7 +407,8 @@ auditado.
 
 - **FR-039**: Toda ruta MUST exigir sesión y rol según el contrato 1: gestión de partidos, mercados, cuotas,
   estados, simulación y correcciones solo para operador o administrador; apuestas e historial solo para el
-  apostador dueño; cartelera y detalle públicos (FR-008).
+  apostador dueño; cartelera y detalle para cualquier usuario con sesión (FR-008). Un usuario con rol de operador
+  o administrador MUST NOT poder apostar, para que quien fija cuotas y resultados no apueste sobre ellos.
 - **FR-040**: El sistema MUST registrar en la auditoría, dentro de la misma operación que la acción: creación y
   cambios de estado de partidos por el operador, cambios de cuota, suspensión y reapertura de mercados, apuestas
   aceptadas, anulaciones, reembolsos, correcciones de resultado y re-liquidaciones, con quién, qué, cuándo, IP y
@@ -432,6 +434,7 @@ Exigido por la constitución (principio I). Cada vector tiene una prueba obligat
 | Doble reembolso de un partido aplazado | Reembolso idempotente | FR-027, FR-035 |
 | Modificar o borrar una apuesta aceptada | Inmutabilidad; anulación solo por regla y auditada | FR-021, FR-040 |
 | Manipular resultados o cuotas desde dentro | Solo operador/administrador, con motivo y auditoría | FR-036, FR-039, FR-040 |
+| Operador que apuesta sobre sus propias cuotas | Operador y administrador no pueden apostar | FR-039 |
 | Cobrar y gastar un premio luego corregido | Reversión compensatoria; con saldo negativo no se apuesta ni retira | FR-038 |
 | Agotar la cuota del proveedor | Presupuesto diario que nunca se supera | FR-010 |
 | Exposición de la credencial del proveedor | Solo el servidor consulta al proveedor | FR-009 |
