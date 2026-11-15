@@ -104,7 +104,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T035 [US5] Implementar el tiempo real base: `apps/api/src/tiempo-real/tickets.service.ts` (Redis `GETDEL`), `tiempo-real.gateway.ts` (CORS a `WEB_ORIGIN`, salas) y `notificador.service.ts`; emitir `partido.actualizado` tras el commit de `aplicarActualizacion()`
 - [ ] T036 [P] [US5] Exponer `GET /operador/proveedor/consumo` y su vista en `apps/web/src/app/operador/consumo/page.tsx`
 - [ ] T037 [US5] Construir la pantalla de simulación en `apps/web/src/app/operador/simulacion/page.tsx` y el marcador en vivo del detalle con `apps/web/src/lib/tiempo-real.ts`
-- [ ] T038 [US5] Crear el script de datos de demostración `apps/api/scripts/seed-partidos.ts` y el comando `seed:partidos` en `apps/api/package.json`
+- [x] T038 [US5] Crear el script de datos de demostración `apps/api/scripts/seed-partidos.ts` y el comando `seed:partidos` en `apps/api/package.json`
 
 **Checkpoint PR 1**: HU1 y HU5 completas; abrir PR 1 a `develop`
 
