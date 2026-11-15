@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
+import { FraudeModule } from './fraude/fraude.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { PromocionesModule } from './promociones/promociones.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -16,9 +19,13 @@ import { RedisModule } from './redis/redis.module.js';
         { ttl: entorno.THROTTLE_TTL_MS, limit: entorno.THROTTLE_LIMIT },
       ],
     }),
+    // Eventos de dominio dentro de la API (contrato 5); lo reutilizan los specs 2 y 3 para emitir.
+    EventEmitterModule.forRoot(),
     PrismaModule,
     RedisModule,
     HealthModule,
+    FraudeModule,
+    PromocionesModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global
   // (denegación por defecto) lo registra el Spec 2 aquí mismo con APP_GUARD.
