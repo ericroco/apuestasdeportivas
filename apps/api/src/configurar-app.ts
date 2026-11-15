@@ -1,3 +1,4 @@
+import { StandardSchemaValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { ErrorNegocioFilter } from './comun/error-negocio.filter.js';
@@ -14,6 +15,8 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
   app.useGlobalFilters(new ErrorNegocioFilter());
+  // Valida y transforma las entradas con el esquema zod de cada parámetro (`@Body({ schema })`).
+  app.useGlobalPipes(new StandardSchemaValidationPipe());
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableShutdownHooks();
 }

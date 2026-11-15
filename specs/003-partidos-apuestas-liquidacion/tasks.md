@@ -61,16 +61,16 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T014 [P] [US1] Pruebas de la tabla completa de transiciones permitidas y prohibidas en `apps/api/src/partidos/maquina-estados.spec.ts`
-- [ ] T015 [P] [US1] Pruebas de validación de mercados (selecciones completas por tipo, línea terminada en .5 solo en `MAS_MENOS_GOLES`, cuota > 1.00) en `apps/api/src/partidos/mercados.spec.ts`
-- [ ] T016 [US1] Prueba e2e del operador y la cartelera: alta de partido y mercado, cambio de cuota con historial y auditoría, transición inválida (409 `TRANSICION_INVALIDA`), apostador sin rol (403), cartelera paginada y sin rutas `DELETE`, en `apps/api/test/partidos.e2e-spec.ts`
+- [x] T014 [P] [US1] Pruebas de la tabla completa de transiciones permitidas y prohibidas en `apps/api/src/partidos/maquina-estados.spec.ts`
+- [x] T015 [P] [US1] Pruebas de validación de mercados (selecciones completas por tipo, línea terminada en .5 solo en `MAS_MENOS_GOLES`, cuota > 1.00) en `apps/api/src/partidos/mercados.spec.ts`
+- [x] T016 [US1] Prueba e2e del operador y la cartelera: alta de partido y mercado, cambio de cuota con historial y auditoría, transición inválida (409 `TRANSICION_INVALIDA`), apostador sin rol (403), cartelera paginada y sin rutas `DELETE`, en `apps/api/test/partidos.e2e-spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T017 [P] [US1] Implementar la máquina de estados (función pura) en `apps/api/src/partidos/maquina-estados.ts`
-- [ ] T018 [P] [US1] Implementar el catálogo de tipos de mercado y su validación en `apps/api/src/partidos/mercados.ts`
-- [ ] T019 [US1] Implementar `PartidosService` en `apps/api/src/partidos/partidos.service.ts`: alta y edición, `aplicarActualizacion()` (estado, marcador, `version`+1), mercados y cambio de cuota con `FOR UPDATE`, historial, auditoría y `gestionadoPorOperador`
-- [ ] T020 [US1] Crear los esquemas zod `.strict()` en `apps/api/src/partidos/partidos.esquemas.ts`, `cartelera.controller.ts`, `operador.controller.ts` (`@Roles('OPERADOR', 'ADMINISTRADOR')`) y `partidos.module.ts`; registrarlo en `apps/api/src/app.module.ts`
+- [x] T017 [P] [US1] Implementar la máquina de estados (función pura) en `apps/api/src/partidos/maquina-estados.ts`
+- [x] T018 [P] [US1] Implementar el catálogo de tipos de mercado y su validación en `apps/api/src/partidos/mercados.ts`
+- [x] T019 [US1] Implementar `PartidosService` en `apps/api/src/partidos/partidos.service.ts`: alta y edición, `aplicarActualizacion()` (estado, marcador, `version`+1), mercados y cambio de cuota con `FOR UPDATE`, historial, auditoría y `gestionadoPorOperador`
+- [x] T020 [US1] Crear los esquemas zod `.strict()` en `apps/api/src/partidos/partidos.esquemas.ts`, `cartelera.controller.ts`, `operador.controller.ts` (`@Roles('OPERADOR', 'ADMINISTRADOR')`) y `partidos.module.ts`; registrarlo en `apps/api/src/app.module.ts`
 - [ ] T021 [P] [US1] Crear el cliente REST de la web con validación de respuestas y sus pruebas en `apps/web/src/lib/api-partidos.ts` y `apps/web/src/lib/api-partidos.test.ts`
 - [ ] T022 [US1] Construir la cartelera y el detalle de partido con el skill `frontend-design`, mobile-first desde 360 px, en `apps/web/src/app/partidos/page.tsx` y `apps/web/src/app/partidos/[id]/page.tsx`
 - [ ] T023 [US1] Construir el panel del operador (lista, alta de partido, mercados, cambio de cuota y estados) en `apps/web/src/app/operador/partidos/`
