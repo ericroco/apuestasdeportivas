@@ -1,5 +1,5 @@
 import type { EstadoPartido } from '@apuestas/shared';
-import { ErrorNegocio } from '../comun/error-negocio.js';
+import { errorApuestas } from '../comun/errores-apuestas.js';
 
 /** Transiciones permitidas del partido (data-model.md, FR-002). Cualquier otra se rechaza. */
 const TRANSICIONES: Readonly<Record<EstadoPartido, readonly EstadoPartido[]>> = Object.freeze({
@@ -22,7 +22,7 @@ export function validarTransicion(desde: EstadoPartido, hacia: EstadoPartido): v
   const permitidas = TRANSICIONES[desde];
   if (!permitidas.includes(hacia)) {
     const opciones = permitidas.length ? permitidas.join(', ') : 'ninguna (estado final)';
-    throw new ErrorNegocio(
+    throw errorApuestas(
       'TRANSICION_INVALIDA',
       `No se puede pasar el partido de ${desde} a ${hacia}. Transiciones permitidas: ${opciones}.`,
       { desde, hacia, permitidas: [...permitidas] },

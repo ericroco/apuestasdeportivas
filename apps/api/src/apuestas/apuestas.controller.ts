@@ -2,7 +2,7 @@ import type { ApuestaDto, Pagina } from '@apuestas/shared';
 import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { ClienteDeLaPeticion, type DatosCliente } from '../comun/contexto-accion.js';
+import { ClienteDeLaPeticion, type DatosCliente } from '../comun/contexto-operacion.js';
 import { Roles, type UsuarioAutenticado, UsuarioActual } from '../contracts/index.js';
 import { idParam } from '../partidos/partidos.esquemas.js';
 import { AceptacionService } from './aceptacion.service.js';

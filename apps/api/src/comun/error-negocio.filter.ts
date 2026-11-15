@@ -1,20 +1,34 @@
 import { STATUS_CODES } from 'node:http';
-import { type ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
+import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
 import { ErrorNegocio } from './error-negocio.js';
 
-/** Formato uniforme de errores del Spec 1 más `codigo` y los datos del error de negocio. */
+export interface CuerpoErrorNegocio {
+  readonly statusCode: number;
+  readonly error: string;
+  readonly codigo: string;
+  readonly message: string;
+  readonly [dato: string]: unknown;
+}
+
+/** Cuerpo de la respuesta: los datos del error primero, para que no pisen los campos del formato. */
+export function cuerpoDeError(error: ErrorNegocio): CuerpoErrorNegocio {
+  return {
+    ...error.datos,
+    statusCode: error.estadoHttp,
+    error: STATUS_CODES[error.estadoHttp] ?? 'Error',
+    codigo: error.codigo,
+    message: error.message,
+  };
+}
+
+/** Responde los `ErrorNegocio` con el formato uniforme; el resto de excepciones sigue el filtro de Nest. */
 @Catch(ErrorNegocio)
 export class ErrorNegocioFilter implements ExceptionFilter<ErrorNegocio> {
+  private readonly logger = new Logger(ErrorNegocioFilter.name);
+
   catch(error: ErrorNegocio, host: ArgumentsHost): void {
-    const respuesta = host.switchToHttp().getResponse<Response>();
-    respuesta.status(error.estadoHttp).json({
-      // Los datos van primero: no pueden sobrescribir los campos del formato.
-      ...error.datos,
-      statusCode: error.estadoHttp,
-      error: STATUS_CODES[error.estadoHttp] ?? 'Error',
-      codigo: error.codigo,
-      message: error.message,
-    });
+    if (error.estadoHttp >= 500) this.logger.warn(`${error.codigo}: ${error.message}`);
+    host.switchToHttp().getResponse<Response>().status(error.estadoHttp).json(cuerpoDeError(error));
   }
 }

@@ -12,7 +12,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { ContextoAccion } from '../comun/contexto-accion.js';
+import type { ContextoOperacion } from '../comun/contexto-operacion.js';
 import {
   AUDITORIA_PORT,
   type AuditoriaPort,
@@ -121,7 +121,7 @@ export class PartidosService {
 
   async crearCompeticion(
     datos: CrearCompeticion,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<CompeticionDto> {
     return this.prisma.$transaction(async (tx) => {
       const competicion = await tx.competicion.create({
@@ -134,7 +134,7 @@ export class PartidosService {
     });
   }
 
-  async crearPartido(datos: CrearPartido, contexto: ContextoAccion): Promise<PartidoDetalleDto> {
+  async crearPartido(datos: CrearPartido, contexto: ContextoOperacion): Promise<PartidoDetalleDto> {
     return this.prisma.$transaction(async (tx) => {
       await this.exigirFutura(tx, datos.inicioEn);
       const competicion = await tx.competicion.findUnique({ where: { id: datos.competicionId } });
@@ -163,7 +163,7 @@ export class PartidosService {
   async editarPartido(
     id: string,
     datos: EditarPartido,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.prisma.$transaction(async (tx) => {
       const partido = await bloquearPartido(tx, id);
@@ -207,7 +207,7 @@ export class PartidosService {
   async aplicarActualizacion(
     id: string,
     cambio: ActualizacionPartido,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     const { detalle, cambio: huboCambio } = await this.prisma.$transaction(async (tx) => {
       const partido = await bloquearPartido(tx, id);
@@ -331,7 +331,7 @@ export class PartidosService {
 
   private auditar(
     tx: ClienteTransaccional,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
     accion: string,
     entidad: string,
     entidadId: string,

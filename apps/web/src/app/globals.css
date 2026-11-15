@@ -5,15 +5,23 @@
  * Papel frío y tinta azul marino; la franja amarilla y los estados verde/rojo guiñan al tricolor.
  * Contraste calculado (WCAG 2.1 AA pide 4.5:1 en texto normal): tinta/papel 14.8:1,
  * tinta-suave/papel 7.4:1, ok/papel 5.1:1, falla/papel y papel/falla 5.9:1, tinta/franja 9.5:1.
+ * Spec 4 (mostrador del operador y del administrador): papel-hondo es la superficie hundida de filtros y
+ * encabezados (tinta/papel-hondo 13.4:1, tinta-suave/papel-hondo 6.7:1); aviso marca la severidad media
+ * (aviso/papel 6.3:1); serie es la tinta de las barras del dashboard (serie/papel 6.3:1, 3:1 pide WCAG).
  */
 @theme {
   --color-mostrador: #14213d;
   --color-papel: #f5f7f4;
+  --color-papel-hondo: #e7ece7;
   --color-tinta: #14213d;
   --color-tinta-suave: #475166;
   --color-franja: #f2c230;
   --color-ok: #17784a;
   --color-falla: #b42a23;
+  --color-aviso: #8a4b00;
+  --color-serie: #3b5b92;
+  /* Pista de la barra de avance: un paso claro de la tinta (tinta/pista 11.5:1). */
+  --color-pista: #d5dbe6;
   --color-perforado: #c9d1cc;
 
   --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
@@ -79,4 +87,70 @@
   .sello {
     animation: none;
   }
+}
+
+/*
+ * Talón del cupón: el código impreso como el vale que entrega el operador. La franja amarilla es el
+ * talón y el corte perforado lo separa del valor; las muescas repiten las del boleto.
+ */
+.talon {
+  display: grid;
+  border-radius: 8px;
+  background-color: var(--color-franja);
+  color: var(--color-tinta);
+}
+
+.talon-corte {
+  position: relative;
+  border-top: 2px dashed rgb(20 33 61 / 0.45);
+}
+
+.talon-corte::before,
+.talon-corte::after {
+  content: '';
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: var(--color-papel);
+}
+
+.talon-corte::before {
+  left: -10px;
+}
+
+.talon-corte::after {
+  right: -10px;
+}
+
+@media (min-width: 40rem) {
+  .talon {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+
+  .talon-corte {
+    border-top: 0;
+    border-left: 2px dashed rgb(20 33 61 / 0.45);
+  }
+
+  .talon-corte::before,
+  .talon-corte::after {
+    left: -11px;
+    right: auto;
+  }
+
+  .talon-corte::before {
+    top: -10px;
+  }
+
+  .talon-corte::after {
+    top: auto;
+    bottom: -10px;
+  }
+}
+
+/* Columna de la gráfica diaria: la barra se oscurece al pasar el puntero (el valor está en su título). */
+.columna-serie:hover .barra-serie {
+  fill: var(--color-tinta);
 }

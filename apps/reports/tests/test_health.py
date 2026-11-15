@@ -7,6 +7,7 @@ from reports.config import ErrorConfiguracion, cargar_configuracion
 from reports.health import EstadoDependencia, SondaBaseDeDatos, comprobar_base_de_datos
 from reports.main import crear_app, obtener_sonda_base_de_datos
 
+from .claves import generar_ed25519, pem_publica
 from .conftest import ORIGEN_WEB
 
 
@@ -78,7 +79,10 @@ def test_configuracion_nombra_la_variable_que_falta_sin_mostrar_valores(
 
 
 @pytest.mark.integracion
-def test_health_contra_la_base_de_datos_real() -> None:
+def test_health_contra_la_base_de_datos_real(monkeypatch: pytest.MonkeyPatch) -> None:
+    # /health no usa el JWT: una clave de prueba evita depender de la de cada entorno.
+    monkeypatch.setenv("JWT_PUBLIC_KEY", pem_publica(generar_ed25519()))
+    monkeypatch.delenv("JWT_ALGORITHM", raising=False)
     cliente = TestClient(crear_app(cargar_configuracion()))
 
     respuesta = cliente.get("/health")

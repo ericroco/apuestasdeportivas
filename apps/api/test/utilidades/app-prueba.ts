@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { APP_GUARD } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
 import { ENTORNO, type Entorno } from '../../src/config/env.js';
 import { configurarApp } from '../../src/configurar-app.js';
 import { AUDITORIA_PORT, BILLETERA_PORT } from '../../src/contracts/index.js';
+import { AutenticacionGuard } from '../../src/identidad/autenticacion.guard.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { REDIS } from '../../src/redis/redis.constants.js';
 import type { Redis } from 'ioredis';
@@ -45,10 +45,11 @@ export interface AppPrueba {
  */
 export async function crearAppPrueba(): Promise<AppPrueba> {
   const auditoria = new AuditoriaEnMemoria();
-  const modulo = await Test.createTestingModule({
-    imports: [AppModule],
-    providers: [{ provide: APP_GUARD, useClass: GuardPrueba }],
-  })
+  // El guard real del Spec 2 se reemplaza por el de prueba, que fija el usuario desde una cabecera y aplica el
+  // mismo contrato (401 sin usuario, @Publico, @Roles). Las pruebas del Spec 2 usan el guard real.
+  const modulo = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(AutenticacionGuard)
+    .useClass(GuardPrueba)
     .overrideProvider(BILLETERA_PORT)
     .useFactory({
       factory: (prisma: PrismaService) => new BilleteraSqlDePrueba(prisma),

@@ -15,6 +15,37 @@ mensaje nombra la variable (FR-007). Los valores reales nunca se versionan: cada
 | `THROTTLE_LIMIT` | no | `100` | Peticiones permitidas por IP en la ventana |
 | `THROTTLE_TTL_MS` | no | `60000` | Ventana del rate limiting en ms |
 | `TRUST_PROXY_HOPS` | no | `0` | Proxies de confianza para leer la IP real del cliente; `1` en Render |
+| `JWT_PRIVATE_KEY` | **sí** | — | Spec 2. Clave privada Ed25519 (PEM PKCS#8, acepta `\n` escritos); solo en la API |
+| `JWT_PUBLIC_KEY` | **sí** | — | Spec 2. Clave pública Ed25519 (PEM SPKI); debe corresponder a la privada |
+| `JWT_ACCESS_TTL` | no | `900` | Spec 2. Segundos de vida del token de acceso (60 a 900) |
+| `JWT_REFRESH_TTL` | no | `604800` | Spec 2. Segundos de vida de la credencial de renovación |
+| `COOKIE_SECURE` | no | `true` | Spec 2. `false` solo en local por HTTP; obligatorio `true` en producción |
+| `TOTP_CLAVE_CIFRADO` | **sí** | — | Spec 2. 32 bytes en base64 para cifrar los secretos 2FA |
+| `TURNSTILE_SECRET` | **sí** | — | Spec 2. Secreto de Cloudflare Turnstile; los de prueba se rechazan en producción |
+| `WEB_PROXY_SECRETO` | **sí** | — | Spec 2. Secreto compartido con el proxy de la web (≥ 32 caracteres) |
+| `CORREO_TRANSPORTE` | no | `smtp` | Spec 2. `smtp` (Mailpit en local) o `resend` (staging) |
+| `SMTP_URL` | no | `smtp://localhost:1025` | Spec 2. Servidor SMTP (`smtp://` o `smtps://`) |
+| `RESEND_API_KEY` | si `resend` | — | Spec 2. Clave de la API de correo |
+| `CORREO_REMITENTE` | no | `Apuestas <no-responder@localhost>` | Spec 2. Remitente de los correos |
+| `BLOQUEO_INTENTOS` | no | `5` | Spec 2. Intentos fallidos antes del bloqueo |
+| `BLOQUEO_MINUTOS` | no | `15` | Spec 2. Duración del bloqueo |
+| `PAYPHONE_TOKEN` | en producción | `''` | Spec 2. Token de la app de Payphone Developer (sandbox); sin él, los depósitos no están disponibles |
+| `PAYPHONE_STORE_ID` | en producción | `''` | Spec 2. `storeId` de la app de Payphone |
+| `PAYPHONE_BASE_URL` | no | `https://pay.payphonetodoesposible.com` | Spec 2. API de Payphone |
+| `DEPOSITO_MIN` / `DEPOSITO_MAX` | no | `1.00` / `1000.00` | Spec 2. Límites de un depósito en USD |
+| `RETIRO_MIN` / `RETIRO_MAX` | no | `5.00` / `1000.00` | Spec 2. Límites de un retiro en USD |
+| `RETIRO_UMBRAL_REVISION` | no | `100.00` | Spec 2. Sobre este monto, el retiro espera la revisión del administrador |
+| `CUPON_ROLLOVER_MULTIPLICADOR` | no | `5` | Spec 4. Requisito de rollover = bono × multiplicador (1–50) |
+| `CUPON_ROLLOVER_CUOTA_MINIMA` | no | `1.50` | Spec 4. Cuota total mínima para que una apuesta cuente en el rollover (1.01–10) |
+| `BONO_VIGENCIA_DIAS` | no | `30` | Spec 4. Días para cumplir el rollover de un bono (1–365) |
+| `FRAUDE_IP_MAX_CUENTAS` | no | `3` | Spec 4. Cuentas por IP en la ventana antes de alertar (1–100) |
+| `FRAUDE_IP_VENTANA_HORAS` | no | `24` | Spec 4. Ventana de la regla de IP (1–720) |
+| `FRAUDE_APUESTA_FACTOR` | no | `10` | Spec 4. Veces el promedio de apuestas para alertar por monto (2–1000) |
+| `FRAUDE_APUESTA_HISTORIAL_MIN` | no | `5` | Spec 4. Apuestas previas necesarias para evaluar el monto (1–1000) |
+| `FRAUDE_RAFAGA_MAX_APUESTAS` | no | `10` | Spec 4. Apuestas en la ventana antes de alertar por ráfaga (2–1000) |
+| `FRAUDE_RAFAGA_VENTANA_SEG` | no | `60` | Spec 4. Ventana de la regla de ráfaga en segundos (5–3600) |
+| `FRAUDE_RETIRO_VENTANA_HORAS` | no | `24` | Spec 4. Ventana desde el último depósito al evaluar un retiro (1–720) |
+| `FRAUDE_RETIRO_ACTIVIDAD_MIN_PCT` | no | `50` | Spec 4. % del depósito que debe apostarse para no alertar al retirar (1–1000) |
 | `API_FOOTBALL_SIMULACION` | no | `true` | Spec 3. `true`: modo simulación, no se consulta al proveedor |
 | `API_FOOTBALL_KEY` | si `API_FOOTBALL_SIMULACION=false` | — | Spec 3. **Secreto** de API-Football; solo en el backend |
 | `API_FOOTBALL_BASE_URL` | no | `https://v3.football.api-sports.io` | Spec 3 |
@@ -28,6 +59,9 @@ mensaje nombra la variable (FR-007). Los valores reales nunca se versionan: cada
 | `APUESTA_RETARDO_VIVO_MS` | no | `5000` | Spec 3. Retardo de aceptación de apuestas en vivo |
 | `SUSPENSION_PLAZO_HORAS` | no | `48` | Spec 3. Plazo para reanudar un partido suspendido o aplazado |
 
+Los secretos del Spec 2 para desarrollo y CI se generan con
+`pnpm --filter api exec tsx scripts/generar-secretos.ts` (nunca se versionan ni se reutilizan en staging).
+
 Los specs siguientes agregan las suyas a esta tabla y al esquema de validación (`apps/api/src/config/env.ts`):
 Spec 2 (`JWT_*`, `PAYPHONE_*`), Spec 3 (`API_FOOTBALL_*`), Spec 4 (las de cupones y fraude).
 
@@ -38,6 +72,14 @@ Spec 2 (`JWT_*`, `PAYPHONE_*`), Spec 3 (`API_FOOTBALL_*`), Spec 4 (las de cupone
 | `PORT` | no | `8000` | Puerto HTTP (lo usa el comando de arranque) |
 | `REPORTS_DATABASE_URL` | **sí** | — | URL de PostgreSQL del usuario **`reportes_lectura`** |
 | `WEB_ORIGIN` | **sí** | — | Origen permitido por CORS |
+| `JWT_PUBLIC_KEY` | **sí** | — | Spec 4. Clave **pública** PEM con la que la API firma el token de acceso (contrato 6); los `\n` escapados se aceptan. Debe corresponder a `JWT_ALGORITHM` (Ed25519 o RSA de 2048 bits o más) |
+| `JWT_ALGORITHM` | no | `EdDSA` | Spec 4. `EdDSA` o `RS256`, el mismo con el que firma el Spec 2; nunca `none` ni HMAC |
+| `JWT_ISSUER` | no | `apuestas-api` | Spec 4. Claim `iss` esperado |
+| `JWT_AUDIENCE` | no | `apuestas` | Spec 4. Claim `aud` esperado |
+
+Reportes nunca recibe la clave privada. En local, mientras el Spec 2 no emita tokens,
+`uv run python -m reports.herramientas.clave_dev` (desde `apps/reports`) genera un par de prueba en memoria e imprime
+la clave pública para `.env` y un token de administrador de 15 minutos.
 
 ## apps/web
 
@@ -45,6 +87,8 @@ Spec 2 (`JWT_*`, `PAYPHONE_*`), Spec 3 (`API_FOOTBALL_*`), Spec 4 (las de cupone
 |----------|-------------|-------------|-------------|
 | `API_URL` | no | `http://localhost:3001` | URL de la API usada **desde el servidor** de Next.js |
 | `REPORTS_URL` | no | `http://localhost:8000` | URL de reportes usada desde el servidor de Next.js |
+| `WEB_PROXY_SECRETO` | **sí** | — | Spec 2. El mismo valor que en la API; solo en el servidor de Next.js |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | **sí** | — | Spec 2. Clave pública del widget de Turnstile (llega al navegador) |
 | `NEXT_PUBLIC_WS_URL` | no | `http://localhost:3001` | Spec 3. URL del gateway de tiempo real (no es secreto) |
 
 Ninguna variable con secretos lleva el prefijo `NEXT_PUBLIC_`: todo lo que tenga ese prefijo llega al navegador.
@@ -56,3 +100,5 @@ Ninguna variable con secretos lleva el prefijo `NEXT_PUBLIC_`: todo lo que tenga
 | `POSTGRES_PORT` | `5432` | Puerto local de PostgreSQL |
 | `REDIS_PORT` | `6379` | Puerto local de Redis |
 | `REPORTES_PASSWORD` | `reportes_local` | Contraseña local del usuario `reportes_lectura` |
+| `MAILPIT_SMTP_PORT` | `1025` | Spec 2. Puerto SMTP local de Mailpit |
+| `MAILPIT_WEB_PORT` | `8025` | Spec 2. Bandeja web y API de Mailpit |

@@ -1,8 +1,8 @@
 import type { PartidoDetalleDto } from '@apuestas/shared';
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { ContextoAccion } from '../comun/contexto-accion.js';
+import type { ContextoOperacion } from '../comun/contexto-operacion.js';
 import { aTexto, type Decimal } from '../comun/decimal.js';
-import { ErrorNegocio } from '../comun/error-negocio.js';
+import { errorApuestas } from '../comun/errores-apuestas.js';
 import {
   AUDITORIA_PORT,
   type AuditoriaPort,
@@ -28,7 +28,7 @@ export class MercadosService {
   async crearMercado(
     partidoId: string,
     datos: CrearMercado,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     const linea = datos.linea ?? null;
     validarMercado({ tipo: datos.tipo, linea, selecciones: datos.selecciones });
@@ -90,7 +90,7 @@ export class MercadosService {
   async cambiarCuota(
     seleccionId: string,
     cuota: Decimal,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     const detalle = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM seleccion WHERE id = ${seleccionId}::uuid FOR UPDATE`;
@@ -101,7 +101,7 @@ export class MercadosService {
       if (!seleccion) throw new NotFoundException('La selección no existe');
       const { mercado } = seleccion;
       if (mercado.estado === 'CERRADO' || esEstadoFinal(mercado.partido.estado)) {
-        throw new ErrorNegocio(
+        throw errorApuestas(
           'MERCADO_CERRADO',
           'No se puede cambiar la cuota de un mercado cerrado',
         );
@@ -146,12 +146,16 @@ export class MercadosService {
   suspender(
     mercadoId: string,
     motivo: string,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.cambiarEstado(mercadoId, 'SUSPENDIDO', motivo, contexto);
   }
 
-  reabrir(mercadoId: string, motivo: string, contexto: ContextoAccion): Promise<PartidoDetalleDto> {
+  reabrir(
+    mercadoId: string,
+    motivo: string,
+    contexto: ContextoOperacion,
+  ): Promise<PartidoDetalleDto> {
     return this.cambiarEstado(mercadoId, 'ABIERTO', motivo, contexto);
   }
 
@@ -159,7 +163,7 @@ export class MercadosService {
     mercadoId: string,
     estado: 'ABIERTO' | 'SUSPENDIDO',
     motivo: string,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     const detalle = await this.prisma.$transaction(async (tx) => {
       const encontrado = await tx.mercado.findUnique({ where: { id: mercadoId } });
@@ -168,7 +172,7 @@ export class MercadosService {
       const mercado = await tx.mercado.findUniqueOrThrow({ where: { id: mercadoId } });
 
       if (mercado.estado === 'CERRADO') {
-        throw new ErrorNegocio('MERCADO_CERRADO', 'El mercado está cerrado y no admite cambios');
+        throw errorApuestas('MERCADO_CERRADO', 'El mercado está cerrado y no admite cambios');
       }
       if (estado === 'ABIERTO') await this.exigirQuePuedaAbrirse(tx, partido, mercado.admiteVivo);
       if (mercado.estado === estado) return this.partidos.obtener(partido.id, tx);
@@ -194,7 +198,7 @@ export class MercadosService {
     const abrible =
       admiteApuestas(partido.estado) && (partido.estado === 'EN_VIVO' ? admiteVivo : !yaEmpezo);
     if (!abrible) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'MERCADO_CERRADO',
         'El partido no admite apuestas en este mercado ahora: no se puede reabrir',
       );
@@ -203,7 +207,7 @@ export class MercadosService {
 
   private auditar(
     tx: ClienteTransaccional,
-    contexto: ContextoAccion,
+    contexto: ContextoOperacion,
     accion: string,
     entidadId: string,
     datos: Record<string, unknown>,

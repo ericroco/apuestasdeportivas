@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type { ApuestaDto } from '@apuestas/shared';
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import type { DatosCliente } from '../comun/contexto-accion.js';
+import type { DatosCliente } from '../comun/contexto-operacion.js';
 import { aTexto, Decimal } from '../comun/decimal.js';
-import { ErrorNegocio } from '../comun/error-negocio.js';
+import { errorApuestas } from '../comun/errores-apuestas.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
 import {
   type ApuestaAceptada,
@@ -99,7 +99,7 @@ export class AceptacionService {
   ): Promise<ResultadoAceptacion> {
     // Quien fija cuotas y resultados no apuesta sobre ellos (FR-039).
     if (usuario.roles.some((rol) => (ROLES_SIN_APUESTAS as readonly string[]).includes(rol))) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'ROL_NO_PUEDE_APOSTAR',
         'Los operadores y administradores no pueden apostar.',
       );
@@ -142,7 +142,7 @@ export class AceptacionService {
     const cuotaBase = calcularCuotaTotal(vigentes.map((v) => new Decimal(v.cuota)));
     const saldos = await this.billetera.obtenerSaldos(usuarioId, tx);
     if (saldos.real.isNegative() || saldos.bono.isNegative()) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'SALDO_NEGATIVO',
         'Tu saldo es negativo por una corrección de resultado: no puedes apostar hasta regularizarlo.',
       );
@@ -254,17 +254,14 @@ export class AceptacionService {
   private exigirAbierto(vigente: SeleccionVigente): void {
     if (vigente.estado_partido === 'EN_VIVO' && vigente.estado_mercado === 'ABIERTO') {
       // T055 (HU7): aceptación en vivo con retardo y revalidación.
-      throw new ErrorNegocio(
-        'MERCADO_CERRADO',
-        'Las apuestas en vivo todavía no están disponibles.',
-      );
+      throw errorApuestas('MERCADO_CERRADO', 'Las apuestas en vivo todavía no están disponibles.');
     }
     const abierto =
       vigente.estado_partido === 'PROGRAMADO' &&
       vigente.estado_mercado === 'ABIERTO' &&
       vigente.inicio_en.getTime() > vigente.ahora.getTime();
     if (!abierto) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'MERCADO_CERRADO',
         'Este mercado ya no acepta apuestas: el partido empezó o el mercado está suspendido.',
         { seleccionId: vigente.seleccion_id },
@@ -278,7 +275,7 @@ export class AceptacionService {
       (pedida, i) => !pedida.cuotaVista.equals(new Decimal(vigentes[i]!.cuota)),
     );
     if (cambio) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'CUOTA_CAMBIADA',
         'La cuota cambió. Revisa las cuotas nuevas y confirma otra vez.',
         {
@@ -310,7 +307,7 @@ export class AceptacionService {
   ): Promise<Efecto> {
     if (!solicitud.codigoCupon) return { tipoSaldo: 'REAL', cuotaTotal, cuponId: null };
     if (!this.promociones) {
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'CUPON_INVALIDO',
         'Los cupones no están disponibles en este momento. Apuesta sin cupón o inténtalo más tarde.',
       );
@@ -328,8 +325,7 @@ export class AceptacionService {
         cuponId: efecto.cuponId,
       };
     } catch (error) {
-      if (error instanceof CuponInvalidoError)
-        throw new ErrorNegocio('CUPON_INVALIDO', error.message);
+      if (error instanceof CuponInvalidoError) throw errorApuestas('CUPON_INVALIDO', error.message);
       throw error;
     }
   }
@@ -353,7 +349,7 @@ export class AceptacionService {
     } catch (error) {
       if (!(error instanceof SaldoInsuficienteError)) throw error;
       const disponible = tipoSaldo === 'REAL' ? saldos.real : saldos.bono;
-      throw new ErrorNegocio(
+      throw errorApuestas(
         'SALDO_INSUFICIENTE',
         `Saldo insuficiente: tienes ${aTexto(disponible)} disponibles.`,
         { saldoDisponible: aTexto(disponible) },

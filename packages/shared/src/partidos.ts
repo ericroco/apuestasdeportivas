@@ -4,11 +4,8 @@
  * Los montos y las cuotas viajan como texto decimal ("10.50") para no perder precisión; las fechas en ISO 8601 UTC.
  */
 
-/** Texto decimal con dos decimales, p. ej. "10.50". */
-export type TextoDecimal = string;
-
-/** Fecha ISO 8601 en UTC. */
-export type FechaIso = string;
+// TextoDecimal y FechaIso son los mismos tipos del Spec 4: se reutilizan, no se duplican.
+import type { FechaIso, TextoDecimal } from './promociones.js';
 
 export const ESTADOS_PARTIDO = [
   'PROGRAMADO',

@@ -1,0 +1,342 @@
+// Spec 2: identidad, auditoría, libro contable, pagos y retiros (specs/002-identidad-billetera-pagos/data-model.md).
+// Tablas y columnas en snake_case porque las lee el servicio de reportes (contrato 7).
+// 🔒 = tabla sensible: la migración le quita todo permiso a reportes_lectura (research §14).
+
+enum Rol {
+  APOSTADOR
+  OPERADOR
+  ADMINISTRADOR
+
+  @@map("rol")
+}
+
+enum EstadoUsuario {
+  PENDIENTE_VERIFICACION
+  ACTIVO
+  SUSPENDIDO
+
+  @@map("estado_usuario")
+}
+
+enum PropositoEnlace {
+  VERIFICACION_CORREO
+  RECUPERACION_CONTRASENA
+
+  @@map("proposito_enlace")
+}
+
+enum TipoCuenta {
+  USUARIO_REAL
+  USUARIO_BONO
+  CASA
+  PASARELA
+  RETIROS_TRANSITO
+
+  @@map("tipo_cuenta")
+}
+
+enum TipoAsiento {
+  DEPOSITO
+  APUESTA
+  PREMIO
+  REEMBOLSO
+  BONO
+  CONVERSION_BONO
+  REVERSION_PREMIO
+  RETIRO_RESERVA
+  RETIRO_PAGO
+  RETIRO_DEVOLUCION
+
+  @@map("tipo_asiento")
+}
+
+model Usuario {
+  id                 String        @id @default(uuid()) @db.Uuid
+  /// En minúsculas y sin espacios alrededor (check en la migración).
+  email              String        @unique
+  nombreCompleto     String        @map("nombre_completo")
+  fechaNacimiento    DateTime      @map("fecha_nacimiento") @db.Date
+  roles              Rol[]         @default([APOSTADOR])
+  estado             EstadoUsuario @default(PENDIENTE_VERIFICACION)
+  correoVerificadoEn DateTime?     @map("correo_verificado_en") @db.Timestamptz(3)
+  intentosFallidos   Int           @default(0) @map("intentos_fallidos")
+  bloqueadoHasta     DateTime?     @map("bloqueado_hasta") @db.Timestamptz(3)
+  creadoEn           DateTime      @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn      DateTime      @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  credencial          Credencial?
+  segundoFactor       SegundoFactor?
+  codigosRecuperacion CodigoRecuperacion[]
+  sesiones            Sesion[]
+  enlacesCorreo       EnlaceCorreo[]
+  billetera           Billetera?
+  cuentas             CuentaContable[]
+  intencionesPago     IntencionPago[]
+  metodosPago         MetodoPago[]
+  retiros             Retiro[]             @relation("RetirosDelUsuario")
+  retirosResueltos    Retiro[]             @relation("RetirosResueltos")
+
+  @@map("usuario")
+}
+
+/// Registro de auditoría de solo inserción (contrato 3, FR-029 a FR-033). Disparadores impiden UPDATE, DELETE y
+/// TRUNCATE. `actorId` sin FK: `null` es el sistema y un evento nunca debe bloquear ni depender de otra tabla.
+model EventoAuditoria {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  /// `entidad.verbo_en_pasado`, p. ej. `apuesta.aceptada` (check en la migración).
+  accion      String
+  entidad     String
+  entidadId   String?  @map("entidad_id")
+  /// Sin contraseñas, tokens, secretos 2FA ni datos completos de pago (los quita el sanitizador).
+  datos       Json?
+  ip          String?
+  dispositivo String?
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@index([creadoEn])
+  @@index([actorId, creadoEn])
+  @@index([accion, creadoEn])
+  @@index([entidad, entidadId])
+  @@map("evento_auditoria")
+}
+
+/// 🔒 Hash Argon2id de la contraseña, separado de `usuario` para que reportes no lo vea.
+model Credencial {
+  usuarioId      String   @id @map("usuario_id") @db.Uuid
+  hashContrasena String   @map("hash_contrasena")
+  actualizadaEn  DateTime @default(now()) @map("actualizada_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("credencial")
+}
+
+/// 🔒 Secreto TOTP cifrado con AES-256-GCM (`iv.tag.cifrado` en base64). `activadoEn` nulo = activación pendiente.
+model SegundoFactor {
+  usuarioId       String    @id @map("usuario_id") @db.Uuid
+  secretoCifrado  String    @map("secreto_cifrado")
+  activadoEn      DateTime? @map("activado_en") @db.Timestamptz(3)
+  /// Periodo TOTP del último código aceptado: impide reutilizar un código.
+  ultimoPasoUsado BigInt?   @map("ultimo_paso_usado")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("segundo_factor")
+}
+
+/// 🔒 Códigos de recuperación de un solo uso, guardados como SHA-256.
+model CodigoRecuperacion {
+  id         String    @id @default(uuid()) @db.Uuid
+  usuarioId  String    @map("usuario_id") @db.Uuid
+  hashCodigo String    @map("hash_codigo")
+  usadoEn    DateTime? @map("usado_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@map("codigo_recuperacion")
+}
+
+/// 🔒 Credencial de renovación de un dispositivo (SHA-256). Cada rotación crea una fila nueva de la misma familia.
+model Sesion {
+  id          String    @id @default(uuid()) @db.Uuid
+  usuarioId   String    @map("usuario_id") @db.Uuid
+  familiaId   String    @map("familia_id") @db.Uuid
+  hashToken   String    @unique @map("hash_token")
+  usadaEn     DateTime? @map("usada_en") @db.Timestamptz(3)
+  revocadaEn  DateTime? @map("revocada_en") @db.Timestamptz(3)
+  expiraEn    DateTime  @map("expira_en") @db.Timestamptz(3)
+  ip          String?
+  dispositivo String?
+  creadaEn    DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@index([familiaId])
+  @@map("sesion")
+}
+
+/// 🔒 Enlace de un solo uso enviado por correo (verificación o recuperación), guardado como SHA-256.
+model EnlaceCorreo {
+  id        String          @id @default(uuid()) @db.Uuid
+  usuarioId String          @map("usuario_id") @db.Uuid
+  proposito PropositoEnlace
+  hashToken String          @unique @map("hash_token")
+  expiraEn  DateTime        @map("expira_en") @db.Timestamptz(3)
+  usadoEn   DateTime?       @map("usado_en") @db.Timestamptz(3)
+  creadoEn  DateTime        @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  /// Límite de reenvíos por hora (FR-004).
+  @@index([usuarioId, proposito, creadoEn])
+  @@map("enlace_correo")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Libro contable de doble entrada (FR-034 a FR-044, research §8). Asientos y líneas son de solo inserción.
+// ---------------------------------------------------------------------------------------------------------------
+
+/// Fila que se bloquea con FOR UPDATE para serializar el dinero de un usuario (FR-039).
+model Billetera {
+  usuarioId String   @id @map("usuario_id") @db.Uuid
+  creadaEn  DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("billetera")
+}
+
+/// `casa`, `pasarela`, `retiros_transito` (del sistema) y `usuario:<id>:real|bono`.
+model CuentaContable {
+  id        String     @id @default(uuid()) @db.Uuid
+  codigo    String     @unique
+  tipo      TipoCuenta
+  usuarioId String?    @map("usuario_id") @db.Uuid
+
+  usuario Usuario?       @relation(fields: [usuarioId], references: [id])
+  lineas  LineaAsiento[]
+
+  @@index([usuarioId])
+  @@map("cuenta_contable")
+}
+
+model Asiento {
+  id                String      @id @default(uuid()) @db.Uuid
+  tipo              TipoAsiento
+  /// `<entidad>:<id>:<operación>[:r<n>]` (contrato 2). Repetirla no crea otro asiento.
+  claveIdempotencia String      @unique @map("clave_idempotencia")
+  usuarioId         String?     @map("usuario_id") @db.Uuid
+  origenTipo        String      @map("origen_tipo")
+  origenId          String      @map("origen_id")
+  creadoEn          DateTime    @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  lineas LineaAsiento[]
+
+  @@index([usuarioId, creadoEn])
+  @@map("asiento")
+}
+
+/// Monto con signo: las cuentas de usuario suben con líneas positivas. Las líneas de un asiento suman cero.
+model LineaAsiento {
+  id        String   @id @default(uuid()) @db.Uuid
+  asientoId String   @map("asiento_id") @db.Uuid
+  cuentaId  String   @map("cuenta_id") @db.Uuid
+  monto     Decimal  @db.Decimal(14, 2)
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  asiento Asiento        @relation(fields: [asientoId], references: [id])
+  cuenta  CuentaContable @relation(fields: [cuentaId], references: [id])
+
+  @@index([cuentaId, creadoEn])
+  @@index([asientoId])
+  @@map("linea_asiento")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Depósitos con Payphone (FR-045 a FR-052, research §9 y §10).
+// ---------------------------------------------------------------------------------------------------------------
+
+enum EstadoIntencionPago {
+  PENDIENTE
+  CONFIRMADA
+  FALLIDA
+  CADUCADA
+  RECHAZADA_DISCREPANCIA
+
+  @@map("estado_intencion_pago")
+}
+
+enum TipoMetodoPago {
+  TARJETA
+  APP_PAYPHONE
+
+  @@map("tipo_metodo_pago")
+}
+
+/// Su `id` es el `clientTransactionId` de Payphone. Monto, moneda, usuario y cupón no cambian (disparador).
+model IntencionPago {
+  id                    String              @id @default(uuid()) @db.Uuid
+  usuarioId             String              @map("usuario_id") @db.Uuid
+  monto                 Decimal             @db.Decimal(14, 2)
+  moneda                String              @default("USD") @db.Char(3)
+  codigoCupon           String?             @map("codigo_cupon")
+  estado                EstadoIntencionPago @default(PENDIENTE)
+  payphonePaymentId     String?             @map("payphone_payment_id")
+  /// Una transacción de Payphone se acredita como máximo una vez (FR-048).
+  payphoneTransaccionId BigInt?             @unique @map("payphone_transaccion_id")
+  metodoPagoId          String?             @map("metodo_pago_id") @db.Uuid
+  motivoFallo           String?             @map("motivo_fallo")
+  ip                    String?
+  dispositivo           String?
+  creadaEn              DateTime            @default(now()) @map("creada_en") @db.Timestamptz(3)
+  expiraEn              DateTime            @map("expira_en") @db.Timestamptz(3)
+  resueltaEn            DateTime?           @map("resuelta_en") @db.Timestamptz(3)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id])
+  metodoPago MetodoPago? @relation(fields: [metodoPagoId], references: [id])
+
+  @@index([usuarioId, creadaEn])
+  @@index([estado, expiraEn])
+  @@map("intencion_pago")
+}
+
+/// Método y titular informados por Payphone en un depósito confirmado: los únicos destinos de retiro (FR-054).
+model MetodoPago {
+  id               String         @id @default(uuid()) @db.Uuid
+  usuarioId        String         @map("usuario_id") @db.Uuid
+  tipo             TipoMetodoPago
+  marca            String?
+  ultimosDigitos   String?        @map("ultimos_digitos")
+  titularNombre    String?        @map("titular_nombre")
+  titularDocumento String?        @map("titular_documento")
+  telefono         String?
+  huella           String
+  creadoEn         DateTime       @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  usuario     Usuario         @relation(fields: [usuarioId], references: [id])
+  intenciones IntencionPago[]
+  retiros     Retiro[]
+
+  @@unique([usuarioId, huella])
+  @@map("metodo_pago")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Retiros (FR-053 a FR-060, research §11). Pago simulado: el sandbox de Payphone no permite pagos salientes.
+// ---------------------------------------------------------------------------------------------------------------
+
+enum EstadoRetiro {
+  PENDIENTE_REVISION
+  PAGADO
+  RECHAZADO
+
+  @@map("estado_retiro")
+}
+
+/// Usuario, monto y método no cambian (disparador); solo avanza el estado.
+model Retiro {
+  id              String       @id @default(uuid()) @db.Uuid
+  usuarioId       String       @map("usuario_id") @db.Uuid
+  metodoPagoId    String       @map("metodo_pago_id") @db.Uuid
+  monto           Decimal      @db.Decimal(14, 2)
+  /// Enviada por el cliente: dos clics en "Solicitar retiro" crean un solo retiro.
+  claveSolicitud  String       @map("clave_solicitud") @db.Uuid
+  estado          EstadoRetiro @default(PENDIENTE_REVISION)
+  motivosRevision String[]     @default([]) @map("motivos_revision")
+  referenciaPago  String?      @map("referencia_pago")
+  resueltoPorId   String?      @map("resuelto_por_id") @db.Uuid
+  comentario      String?
+  creadoEn        DateTime     @default(now()) @map("creado_en") @db.Timestamptz(3)
+  resueltoEn      DateTime?    @map("resuelto_en") @db.Timestamptz(3)
+
+  usuario     Usuario    @relation("RetirosDelUsuario", fields: [usuarioId], references: [id])
+  metodoPago  MetodoPago @relation(fields: [metodoPagoId], references: [id])
+  resueltoPor Usuario?   @relation("RetirosResueltos", fields: [resueltoPorId], references: [id])
+
+  @@unique([usuarioId, claveSolicitud])
+  @@index([estado, creadoEn])
+  @@map("retiro")
+}

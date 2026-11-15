@@ -1,6 +1,6 @@
 import type { CompeticionDto, PartidoDetalleDto } from '@apuestas/shared';
 import { Body, Controller, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import { type ContextoAccion, ContextoOperador } from '../comun/contexto-accion.js';
+import { type ContextoOperacion, ContextoOperador } from '../comun/contexto-operacion.js';
 import { Roles } from '../contracts/index.js';
 import { MercadosService } from './mercados.service.js';
 import {
@@ -39,7 +39,7 @@ export class OperadorController {
   @Post('competiciones')
   crearCompeticion(
     @Body({ schema: crearCompeticionEsquema }) datos: CrearCompeticion,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<CompeticionDto> {
     return this.partidos.crearCompeticion(datos, contexto);
   }
@@ -47,7 +47,7 @@ export class OperadorController {
   @Post('partidos')
   crearPartido(
     @Body({ schema: crearPartidoEsquema }) datos: CrearPartido,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.partidos.crearPartido(datos, contexto);
   }
@@ -56,7 +56,7 @@ export class OperadorController {
   editarPartido(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: editarPartidoEsquema }) datos: EditarPartido,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.partidos.editarPartido(id, datos, contexto);
   }
@@ -66,7 +66,7 @@ export class OperadorController {
   cambiarEstado(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: cambioEstadoEsquema }) datos: CambioEstado,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.partidos.aplicarActualizacion(id, datos, contexto);
   }
@@ -76,7 +76,7 @@ export class OperadorController {
   actualizarMarcador(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: marcadorEsquema }) datos: Marcador,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.partidos.aplicarActualizacion(id, datos, contexto);
   }
@@ -85,7 +85,7 @@ export class OperadorController {
   crearMercado(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: crearMercadoEsquema }) datos: CrearMercado,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.mercados.crearMercado(id, datos, contexto);
   }
@@ -94,7 +94,7 @@ export class OperadorController {
   cambiarCuota(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: cambioCuotaEsquema }) datos: CambioCuota,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.mercados.cambiarCuota(id, datos.cuota, contexto);
   }
@@ -104,7 +104,7 @@ export class OperadorController {
   suspenderMercado(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: motivoEsquema }) datos: ConMotivo,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.mercados.suspender(id, datos.motivo, contexto);
   }
@@ -114,7 +114,7 @@ export class OperadorController {
   reabrirMercado(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: motivoEsquema }) datos: ConMotivo,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.mercados.reabrir(id, datos.motivo, contexto);
   }

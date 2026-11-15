@@ -64,6 +64,12 @@ export interface BilleteraPort {
     tx: ClienteTransaccional,
     operacion: OperacionBono,
   ): Promise<ResultadoAsiento>;
+  /**
+   * Revierte un premio ya acreditado (corrección de resultado, Spec 3). Asiento compensatorio al mismo tipo de
+   * saldo; a diferencia de `debitarApuesta`, NO lanza `SaldoInsuficienteError`: el saldo puede quedar negativo,
+   * y mientras lo sea el usuario no puede retirar. Clave: `apuesta:<id>:reversion:r<n>`.
+   */
+  revertirPremio(tx: ClienteTransaccional, operacion: OperacionApuesta): Promise<ResultadoAsiento>;
   /** Saldos derivados del ledger. */
   obtenerSaldos(usuarioId: string, tx?: ClienteTransaccional): Promise<SaldosUsuario>;
 }
@@ -72,4 +78,14 @@ export const BILLETERA_PORT = Symbol('BILLETERA_PORT');
 
 export class SaldoInsuficienteError extends Error {
   override readonly name = 'SaldoInsuficienteError';
+}
+
+/** La clave de idempotencia ya se usó con otros datos (usuario, tipo o monto): es un error de quien llama. */
+export class ConflictoIdempotenciaError extends Error {
+  override readonly name = 'ConflictoIdempotenciaError';
+}
+
+/** `acreditarBono` a un usuario sin correo verificado o suspendido (FR-006): el cupón no debe consumirse. */
+export class UsuarioNoHabilitadoError extends Error {
+  override readonly name = 'UsuarioNoHabilitadoError';
 }

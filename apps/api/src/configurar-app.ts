@@ -1,8 +1,10 @@
-import { StandardSchemaValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { ErrorNegocioFilter } from './comun/error-negocio.filter.js';
+import { crearPipeDeValidacion } from './comun/validacion.js';
 import type { Entorno } from './config/env.js';
+import { middlewareCliente } from './identidad/http/cliente-http.js';
 import { AdaptadorSocketIo } from './tiempo-real/adaptador-socket-io.js';
 
 /**
@@ -13,12 +15,16 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   // Sin esto, detrás del proxy de Render todos los clientes comparten una IP y el rate limiting no es por cliente.
   if (entorno.TRUST_PROXY_HOPS > 0) app.set('trust proxy', entorno.TRUST_PROXY_HOPS);
   app.use(helmet());
+  // Spec 2: cookies de sesión (contrato 6) e IP/dispositivo reales del cliente detrás del proxy de la web.
+  app.use(cookieParser());
+  app.use(middlewareCliente(entorno.WEB_PROXY_SECRETO));
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
+  // Spec 3: Socket.IO con CORS limitado al mismo origen de la web.
   app.useWebSocketAdapter(new AdaptadorSocketIo(app, entorno.WEB_ORIGIN));
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
-  app.useGlobalFilters(new ErrorNegocioFilter());
-  // Valida y transforma las entradas con el esquema zod de cada parámetro (`@Body({ schema })`).
-  app.useGlobalPipes(new StandardSchemaValidationPipe());
   app.setGlobalPrefix('api', { exclude: ['health'] });
+  // Errores de negocio con `codigo` estable y validación zod de `{ schema }` (400 DATOS_INVALIDOS).
+  app.useGlobalFilters(new ErrorNegocioFilter());
+  app.useGlobalPipes(crearPipeDeValidacion());
   app.enableShutdownHooks();
 }

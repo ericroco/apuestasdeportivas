@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { Publico } from '../src/contracts/autenticacion.js';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -83,7 +84,9 @@ describe('API: salud y seguridad base (e2e)', () => {
 
 @Controller('prueba-limite')
 class ControladorLimitado {
+  // Pública: esta prueba mide el rate limiting, no la autenticación (el guard global llega con el Spec 2).
   @Get()
+  @Publico()
   responder(): { ok: true } {
     return { ok: true };
   }

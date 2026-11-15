@@ -11,10 +11,10 @@ Fuente: fases de [`PLAN.md`](../PLAN.md). Reglas: [constitución](../.specify/me
 
 | # | Spec | Responsable | Rama | Fases | Alcance | Estado |
 |---|------|-------------|------|-------|---------|--------|
-| 1 | [`001-fundaciones-stack`](001-fundaciones-stack/spec.md) | Erick Rodas (líder) | `feature/spec-1` | F0 | Monorepo con las tres apps, BD y Redis locales, salud, CI/CD, SonarQube, despliegue, contratos entre specs | En revisión |
-| 2 | `002-identidad-billetera-pagos` | Ricardo | `feature/spec-2` | F1, F2, F6 | Registro, login, 2FA, roles, auditoría, ledger, billetera, depósitos Payphone y retiros | Pendiente |
-| 3 | [`003-partidos-apuestas-liquidacion`](003-partidos-apuestas-liquidacion/spec.md) | Daniel Campoverde | `feature/spec-3` | F3, F4, F5 | Partidos, mercados, worker de API-Football, apuestas simples y combinadas, liquidación en tiempo real, suspensiones | En curso |
-| 4 | `004-promociones-fraude-reportes` | Erick Rodas (líder) | `feature/spec-4` | F6, F7 | Cupones, rollover, detección de fraude, reportes en Python, dashboard y cierre | Pendiente |
+| 1 | [`001-fundaciones-stack`](001-fundaciones-stack/spec.md) | Erick Rodas (líder) | `feature/spec-1` | F0 | Monorepo con las tres apps, BD y Redis locales, salud, CI/CD, SonarQube, despliegue, contratos entre specs | Terminada |
+| 2 | [`002-identidad-billetera-pagos`](002-identidad-billetera-pagos/spec.md) | Ricardo | `feature/spec-2` | F1, F2, F6 | Registro, login, 2FA, roles, auditoría, ledger, billetera, depósitos Payphone y retiros | En revisión |
+| 3 | [`003-partidos-apuestas-liquidacion`](003-partidos-apuestas-liquidacion/spec.md) | Daniel Campoverde | `feature/spec-3` | F3, F4, F5 | Partidos, mercados, worker de API-Football, apuestas simples y combinadas, liquidación en tiempo real, suspensiones | En revisión |
+| 4 | [`004-promociones-fraude-reportes`](004-promociones-fraude-reportes/spec.md) | Erick Rodas (líder) | `feature/spec-4` | F6, F7 | Cupones, rollover, detección de fraude, reportes en Python, dashboard y cierre | En curso |
 
 Al crear o cerrar una spec, actualiza su fila (Pendiente → En curso → En revisión → Terminada).
 

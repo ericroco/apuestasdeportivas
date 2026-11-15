@@ -1,6 +1,6 @@
 import type { EstadoPartido } from '@apuestas/shared';
 import { Injectable, Logger } from '@nestjs/common';
-import { contextoSistema } from '../comun/contexto-accion.js';
+import { contextoSistema } from '../comun/contexto-operacion.js';
 import { Decimal } from '../comun/decimal.js';
 import { rutaDeEstados } from '../partidos/maquina-estados.js';
 import { MercadosService } from '../partidos/mercados.service.js';

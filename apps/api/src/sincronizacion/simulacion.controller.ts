@@ -1,7 +1,7 @@
 import type { PartidoDetalleDto } from '@apuestas/shared';
 import { Body, Controller, HttpCode, Inject, NotFoundException, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { type ContextoAccion, ContextoOperador } from '../comun/contexto-accion.js';
+import { type ContextoOperacion, ContextoOperador } from '../comun/contexto-operacion.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
 import { Roles } from '../contracts/index.js';
 import { idParam } from '../partidos/partidos.esquemas.js';
@@ -35,7 +35,7 @@ export class SimulacionController {
   async simular(
     @Param('id', { schema: idParam }) id: string,
     @Body({ schema: eventoEsquema }) evento: Evento,
-    @ContextoOperador() contexto: ContextoAccion,
+    @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     if (!this.entorno.API_FOOTBALL_SIMULACION) throw new NotFoundException();
     const partido = await this.partidos.obtener(id);

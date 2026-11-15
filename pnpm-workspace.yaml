@@ -5,6 +5,7 @@ packages:
 # pnpm 11 solo ejecuta scripts de instalación de las dependencias aprobadas aquí.
 allowBuilds:
   '@prisma/engines': true
+  argon2: true
   esbuild: false
   msgpackr-extract: false
   prisma: true

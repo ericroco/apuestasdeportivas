@@ -1,5 +1,5 @@
 import { aTexto, Decimal, multiplicar, redondear } from '../comun/decimal.js';
-import { ErrorNegocio } from '../comun/error-negocio.js';
+import { errorApuestas } from '../comun/errores-apuestas.js';
 
 /**
  * Reglas puras de la aceptación de apuestas (research.md §4 y §5, FR-019). Todo con Decimal, nunca `number`.
@@ -68,7 +68,7 @@ export function validarLimites({ monto, cuota, apostadoHoy, limites }: Validacio
 }
 
 function excedido(limite: string, valorPermitido: Decimal, mensaje: string): never {
-  throw new ErrorNegocio('LIMITE_EXCEDIDO', mensaje, {
+  throw errorApuestas('LIMITE_EXCEDIDO', mensaje, {
     limite,
     valorPermitido: aTexto(valorPermitido),
   });
@@ -78,14 +78,14 @@ function excedido(limite: string, valorPermitido: Decimal, mensaje: string): nev
 export function validarCombinada(partidoIds: readonly string[], maximo: number): void {
   if (partidoIds.length < 2) return;
   if (partidoIds.length > maximo) {
-    throw new ErrorNegocio(
+    throw errorApuestas(
       'COMBINADA_INVALIDA',
       `Una combinada admite como máximo ${maximo} selecciones.`,
       { maximo },
     );
   }
   if (new Set(partidoIds).size !== partidoIds.length) {
-    throw new ErrorNegocio(
+    throw errorApuestas(
       'COMBINADA_INVALIDA',
       'No puedes combinar dos selecciones del mismo partido.',
     );
