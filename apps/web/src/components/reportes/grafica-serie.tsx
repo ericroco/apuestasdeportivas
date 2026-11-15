@@ -109,9 +109,22 @@ function Rotulos({ grafica }: { readonly grafica: Grafica }) {
   );
 }
 
+const CELDA = 'px-3 py-1.5 text-right tabular-nums';
+const COLUMNAS_TABLA = ['Apuestas', 'Volumen', 'Premios pagados', 'GGR', 'Depósitos', 'Retiros'];
+
+function valoresDelDia(dia: DiaSerie): readonly string[] {
+  return [
+    formatearEntero(dia.apuestas),
+    formatearMonto(dia.volumen),
+    formatearMonto(dia.premiosPagados),
+    formatearMonto(dia.ggr),
+    formatearMonto(dia.depositos),
+    formatearMonto(dia.retiros),
+  ];
+}
+
 /** Tabla equivalente a la gráfica, con los montos tal como los entrega reportes. */
 function TablaSerie({ dias }: GraficaSerieProps) {
-  const celda = 'px-3 py-1.5 text-right tabular-nums';
   return (
     <details className="mt-3">
       <summary className="cursor-pointer font-semibold underline underline-offset-2">
@@ -125,24 +138,11 @@ function TablaSerie({ dias }: GraficaSerieProps) {
               <th scope="col" className="px-3 py-1.5 text-left">
                 Día
               </th>
-              <th scope="col" className={celda}>
-                Apuestas
-              </th>
-              <th scope="col" className={celda}>
-                Volumen
-              </th>
-              <th scope="col" className={celda}>
-                Premios pagados
-              </th>
-              <th scope="col" className={celda}>
-                GGR
-              </th>
-              <th scope="col" className={celda}>
-                Depósitos
-              </th>
-              <th scope="col" className={celda}>
-                Retiros
-              </th>
+              {COLUMNAS_TABLA.map((columna) => (
+                <th key={columna} scope="col" className={CELDA}>
+                  {columna}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-perforado divide-y">
@@ -151,12 +151,11 @@ function TablaSerie({ dias }: GraficaSerieProps) {
                 <th scope="row" className="px-3 py-1.5 text-left font-normal">
                   {formatearDia(dia.fecha)}
                 </th>
-                <td className={celda}>{formatearEntero(dia.apuestas)}</td>
-                <td className={celda}>{formatearMonto(dia.volumen)}</td>
-                <td className={celda}>{formatearMonto(dia.premiosPagados)}</td>
-                <td className={celda}>{formatearMonto(dia.ggr)}</td>
-                <td className={celda}>{formatearMonto(dia.depositos)}</td>
-                <td className={celda}>{formatearMonto(dia.retiros)}</td>
+                {valoresDelDia(dia).map((valor, indice) => (
+                  <td key={COLUMNAS_TABLA[indice]} className={CELDA}>
+                    {valor}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

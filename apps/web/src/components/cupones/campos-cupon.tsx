@@ -96,69 +96,57 @@ interface CamposDelTipoProps extends CamposProps {
   readonly tipo: TipoCupon | undefined;
 }
 
+interface DefinicionCampo {
+  readonly campo: CampoCupon;
+  readonly etiqueta: string;
+  readonly ayuda: string;
+}
+
+/** Campos de valor y condiciones de cada tipo (contracts/api-rest.md, `POST /cupones`). */
+const CAMPOS_POR_TIPO: Readonly<Record<TipoCupon, readonly DefinicionCampo[]>> = {
+  BONO_DEPOSITO: [
+    { campo: 'porcentaje', etiqueta: 'Porcentaje del depósito', ayuda: 'De 1 a 200 %.' },
+    { campo: 'topeBono', etiqueta: 'Tope del bono (USD)', ayuda: 'Lo máximo que recibe de bono.' },
+    {
+      campo: 'depositoMinimo',
+      etiqueta: 'Depósito mínimo (USD)',
+      ayuda: 'Escribe 0 si no hay mínimo.',
+    },
+  ],
+  APUESTA_GRATIS: [
+    {
+      campo: 'montoFijo',
+      etiqueta: 'Monto de la apuesta gratis (USD)',
+      ayuda: 'La apuesta no puede superarlo.',
+    },
+  ],
+  AUMENTO_CUOTA: [
+    {
+      campo: 'porcentaje',
+      etiqueta: 'Aumento de la cuota',
+      ayuda: 'De 1 a 100 % sobre la cuota total.',
+    },
+    {
+      campo: 'apuestaMaxima',
+      etiqueta: 'Apuesta máxima (USD)',
+      ayuda: 'Monto máximo de la apuesta con este cupón.',
+    },
+  ],
+};
+
 /** Valor y condiciones: solo los campos del tipo elegido (la API rechaza los de otro tipo). */
 export function CamposDelTipo({ tipo, ...props }: CamposDelTipoProps) {
-  switch (tipo) {
-    case 'BONO_DEPOSITO':
-      return (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <CampoTexto
-            {...props}
-            campo="porcentaje"
-            etiqueta="Porcentaje del depósito"
-            ayuda="De 1 a 200 %."
-            modo="decimal"
-          />
-          <CampoTexto
-            {...props}
-            campo="topeBono"
-            etiqueta="Tope del bono (USD)"
-            ayuda="Lo máximo que recibe de bono."
-            modo="decimal"
-          />
-          <CampoTexto
-            {...props}
-            campo="depositoMinimo"
-            etiqueta="Depósito mínimo (USD)"
-            ayuda="Escribe 0 si no hay mínimo."
-            modo="decimal"
-          />
-        </div>
-      );
-    case 'APUESTA_GRATIS':
-      return (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <CampoTexto
-            {...props}
-            campo="montoFijo"
-            etiqueta="Monto de la apuesta gratis (USD)"
-            ayuda="La apuesta no puede superarlo."
-            modo="decimal"
-          />
-        </div>
-      );
-    case 'AUMENTO_CUOTA':
-      return (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <CampoTexto
-            {...props}
-            campo="porcentaje"
-            etiqueta="Aumento de la cuota"
-            ayuda="De 1 a 100 % sobre la cuota total."
-            modo="decimal"
-          />
-          <CampoTexto
-            {...props}
-            campo="apuestaMaxima"
-            etiqueta="Apuesta máxima (USD)"
-            ayuda="Monto máximo de la apuesta con este cupón."
-            modo="decimal"
-          />
-        </div>
-      );
-    default:
-      return <p className="text-tinta-suave">Elige un tipo para ver su valor y sus condiciones.</p>;
+  if (!tipo) {
+    return <p className="text-tinta-suave">Elige un tipo para ver su valor y sus condiciones.</p>;
   }
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {CAMPOS_POR_TIPO[tipo].map((definicion) => (
+        // La clave incluye el tipo: al cambiar de tipo, el campo empieza vacío.
+        <CampoTexto key={`${tipo}-${definicion.campo}`} {...props} {...definicion} modo="decimal" />
+      ))}
+    </div>
+  );
 }
 
 export function CamposVigenciaYCupo(props: CamposProps) {

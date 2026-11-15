@@ -1,72 +1,10 @@
 import { ESTADOS_ALERTA, REGLAS_FRAUDE, SEVERIDADES_ALERTA } from '@apuestas/shared';
-import Link from 'next/link';
-import { BOTON_SECUNDARIO, CAMPO, ENLACE, ETIQUETA_CAMPO } from '@/components/comun/estilos';
+import { AccionesFiltro, CampoFiltro, Selector } from '@/components/comun/campos-filtro';
 import type { FiltrosAlertas as Filtros } from '@/lib/alertas/filtros';
 import { NOMBRE_ESTADO_ALERTA, NOMBRE_REGLA, NOMBRE_SEVERIDAD } from '@/lib/alertas/textos';
 
 interface FiltrosAlertasProps {
   readonly filtros: Filtros;
-}
-
-interface SelectorProps<T extends string> {
-  readonly id: string;
-  readonly nombre: string;
-  readonly etiqueta: string;
-  readonly valor: T | undefined;
-  readonly opciones: readonly T[];
-  readonly nombres: Readonly<Record<T, string>>;
-}
-
-function Selector<T extends string>({
-  id,
-  nombre,
-  etiqueta,
-  valor,
-  opciones,
-  nombres,
-}: SelectorProps<T>) {
-  return (
-    <div>
-      <label htmlFor={id} className={ETIQUETA_CAMPO}>
-        {etiqueta}
-      </label>
-      <select id={id} name={nombre} defaultValue={valor ?? ''} className={CAMPO}>
-        <option value="">Todas</option>
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {nombres[opcion]}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-interface CampoTextoProps {
-  readonly id: string;
-  readonly nombre: string;
-  readonly etiqueta: string;
-  readonly valor: string | undefined;
-  readonly tipo: 'search' | 'date';
-}
-
-function CampoTexto({ id, nombre, etiqueta, valor, tipo }: CampoTextoProps) {
-  return (
-    <div>
-      <label htmlFor={id} className={ETIQUETA_CAMPO}>
-        {etiqueta}
-      </label>
-      <input
-        id={id}
-        name={nombre}
-        type={tipo}
-        defaultValue={valor ?? ''}
-        autoComplete="off"
-        maxLength={100}
-        className={CAMPO}
-      />
-    </div>
-  );
 }
 
 function Selectores({ filtros }: FiltrosAlertasProps) {
@@ -79,6 +17,7 @@ function Selectores({ filtros }: FiltrosAlertasProps) {
         valor={filtros.estado}
         opciones={ESTADOS_ALERTA}
         nombres={NOMBRE_ESTADO_ALERTA}
+        todos="Todas"
       />
       <Selector
         id="filtro-severidad"
@@ -87,6 +26,7 @@ function Selectores({ filtros }: FiltrosAlertasProps) {
         valor={filtros.severidad}
         opciones={SEVERIDADES_ALERTA}
         nombres={NOMBRE_SEVERIDAD}
+        todos="Todas"
       />
       <Selector
         id="filtro-regla"
@@ -95,6 +35,7 @@ function Selectores({ filtros }: FiltrosAlertasProps) {
         valor={filtros.regla}
         opciones={REGLAS_FRAUDE}
         nombres={NOMBRE_REGLA}
+        todos="Todas"
       />
     </>
   );
@@ -110,7 +51,7 @@ export function FiltrosAlertas({ filtros }: FiltrosAlertasProps) {
       className="bg-papel-hondo -mx-4 mb-2 grid gap-3 px-4 py-4 sm:-mx-8 sm:grid-cols-2 sm:px-8 lg:grid-cols-3"
     >
       <Selectores filtros={filtros} />
-      <CampoTexto
+      <CampoFiltro
         id="filtro-usuario"
         nombre="usuarioId"
         etiqueta="Usuario (identificador)"
@@ -118,14 +59,14 @@ export function FiltrosAlertas({ filtros }: FiltrosAlertasProps) {
         tipo="search"
       />
       <div className="grid grid-cols-2 gap-3">
-        <CampoTexto
+        <CampoFiltro
           id="filtro-desde"
           nombre="desde"
           etiqueta="Desde"
           valor={filtros.desde}
           tipo="date"
         />
-        <CampoTexto
+        <CampoFiltro
           id="filtro-hasta"
           nombre="hasta"
           etiqueta="Hasta"
@@ -133,14 +74,7 @@ export function FiltrosAlertas({ filtros }: FiltrosAlertasProps) {
           tipo="date"
         />
       </div>
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-        <button type="submit" className={BOTON_SECUNDARIO}>
-          Filtrar alertas
-        </button>
-        <Link href="/admin/alertas" className={`${ENLACE} pb-2.5`}>
-          Quitar filtros
-        </Link>
-      </div>
+      <AccionesFiltro texto="Filtrar alertas" limpiar="/admin/alertas" />
     </form>
   );
 }

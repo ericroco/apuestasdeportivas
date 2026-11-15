@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { BOTON_SECUNDARIO, CAMPO, ENLACE, ETIQUETA_CAMPO } from '@/components/comun/estilos';
+import { CampoFiltro } from '@/components/comun/campos-filtro';
+import { BOTON_SECUNDARIO, ENLACE } from '@/components/comun/estilos';
 import {
   hrefReportes,
   rangoUltimosDias,
@@ -38,35 +39,6 @@ function Atajos({ filtros, hoy }: Pick<FiltrosReporteProps, 'filtros' | 'hoy'>) 
   );
 }
 
-interface CampoProps {
-  readonly id: string;
-  readonly nombre: keyof Filtros;
-  readonly etiqueta: string;
-  readonly valor: string | undefined;
-  readonly tipo: 'date' | 'search';
-  readonly requerido?: boolean;
-}
-
-function Campo({ id, nombre, etiqueta, valor, tipo, requerido = false }: CampoProps) {
-  return (
-    <div>
-      <label htmlFor={id} className={ETIQUETA_CAMPO}>
-        {etiqueta}
-      </label>
-      <input
-        id={id}
-        name={nombre}
-        type={tipo}
-        defaultValue={valor ?? ''}
-        required={requerido}
-        autoComplete="off"
-        maxLength={254}
-        className={CAMPO}
-      />
-    </div>
-  );
-}
-
 /** El filtro de competición se elige desde el desglose; aquí se ve y se quita. */
 function CompeticionFiltrada({ filtros, nombreCompeticion }: Omit<FiltrosReporteProps, 'hoy'>) {
   if (!filtros.competicionId) return null;
@@ -94,7 +66,7 @@ export function FiltrosReporte({ filtros, hoy, nombreCompeticion }: FiltrosRepor
     >
       <Atajos filtros={filtros} hoy={hoy} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.4fr_auto] lg:items-end">
-        <Campo
+        <CampoFiltro
           id="reporte-desde"
           nombre="desde"
           etiqueta="Desde"
@@ -102,7 +74,7 @@ export function FiltrosReporte({ filtros, hoy, nombreCompeticion }: FiltrosRepor
           tipo="date"
           requerido
         />
-        <Campo
+        <CampoFiltro
           id="reporte-hasta"
           nombre="hasta"
           etiqueta="Hasta"
@@ -110,19 +82,21 @@ export function FiltrosReporte({ filtros, hoy, nombreCompeticion }: FiltrosRepor
           tipo="date"
           requerido
         />
-        <Campo
+        <CampoFiltro
           id="reporte-deporte"
           nombre="deporte"
           etiqueta="Deporte"
           valor={filtros.deporte}
           tipo="search"
+          largoMaximo={254}
         />
-        <Campo
+        <CampoFiltro
           id="reporte-usuario"
           nombre="usuario"
           etiqueta="Usuario (identificador o correo)"
           valor={filtros.usuario}
           tipo="search"
+          largoMaximo={254}
         />
         <button type="submit" className={BOTON_SECUNDARIO}>
           Ver reporte

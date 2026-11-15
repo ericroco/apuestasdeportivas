@@ -1,6 +1,5 @@
 import { ESTADOS_CUPON, TIPOS_CUPON } from '@apuestas/shared';
-import Link from 'next/link';
-import { BOTON_SECUNDARIO, CAMPO, ENLACE, ETIQUETA_CAMPO } from '@/components/comun/estilos';
+import { AccionesFiltro, CampoFiltro, Selector } from '@/components/comun/campos-filtro';
 import type { FiltrosCupones as Filtros } from '@/lib/cupones/filtros';
 import { NOMBRE_ESTADO, NOMBRE_TIPO } from '@/lib/cupones/textos';
 
@@ -18,62 +17,36 @@ export function FiltrosCupones({ filtros }: FiltrosCuponesProps) {
       method="get"
       action="/operador/cupones"
       aria-label="Filtrar cupones"
-      className="bg-papel-hondo -mx-4 mb-2 grid gap-3 px-4 py-4 sm:-mx-8 sm:grid-cols-[1.4fr_1fr_1fr_auto] sm:items-end sm:px-8"
+      className="bg-papel-hondo -mx-4 mb-2 grid gap-3 px-4 py-4 sm:-mx-8 sm:grid-cols-[1.4fr_1fr_1fr_auto] sm:px-8"
     >
-      <div>
-        <label htmlFor="filtro-busqueda" className={ETIQUETA_CAMPO}>
-          Código
-        </label>
-        <input
-          id="filtro-busqueda"
-          name="busqueda"
-          type="search"
-          defaultValue={filtros.busqueda ?? ''}
-          placeholder="Empieza por…"
-          maxLength={20}
-          autoComplete="off"
-          className={CAMPO}
-        />
-      </div>
-      <div>
-        <label htmlFor="filtro-estado" className={ETIQUETA_CAMPO}>
-          Estado
-        </label>
-        <select
-          id="filtro-estado"
-          name="estado"
-          defaultValue={filtros.estado ?? ''}
-          className={CAMPO}
-        >
-          <option value="">Todos</option>
-          {ESTADOS_CUPON.map((estado) => (
-            <option key={estado} value={estado}>
-              {NOMBRE_ESTADO[estado]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="filtro-tipo" className={ETIQUETA_CAMPO}>
-          Tipo
-        </label>
-        <select id="filtro-tipo" name="tipo" defaultValue={filtros.tipo ?? ''} className={CAMPO}>
-          <option value="">Todos</option>
-          {TIPOS_CUPON.map((tipo) => (
-            <option key={tipo} value={tipo}>
-              {NOMBRE_TIPO[tipo]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button type="submit" className={BOTON_SECUNDARIO}>
-          Filtrar cupones
-        </button>
-        <Link href="/operador/cupones" className={ENLACE}>
-          Quitar filtros
-        </Link>
-      </div>
+      <CampoFiltro
+        id="filtro-busqueda"
+        nombre="busqueda"
+        etiqueta="Código"
+        valor={filtros.busqueda}
+        tipo="search"
+        placeholder="Empieza por…"
+        largoMaximo={20}
+      />
+      <Selector
+        id="filtro-estado"
+        nombre="estado"
+        etiqueta="Estado"
+        valor={filtros.estado}
+        opciones={ESTADOS_CUPON}
+        nombres={NOMBRE_ESTADO}
+        todos="Todos"
+      />
+      <Selector
+        id="filtro-tipo"
+        nombre="tipo"
+        etiqueta="Tipo"
+        valor={filtros.tipo}
+        opciones={TIPOS_CUPON}
+        nombres={NOMBRE_TIPO}
+        todos="Todos"
+      />
+      <AccionesFiltro texto="Filtrar cupones" limpiar="/operador/cupones" />
     </form>
   );
 }
