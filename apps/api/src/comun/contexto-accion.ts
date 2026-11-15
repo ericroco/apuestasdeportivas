@@ -17,6 +17,23 @@ export function contextoSistema(origen: Exclude<OrigenDato, 'OPERADOR'>): Contex
   return { actorId: null, origen };
 }
 
+/** IP y dispositivo del cliente de la petición, para la auditoría de acciones del apostador. */
+export interface DatosCliente {
+  readonly ip?: string;
+  readonly dispositivo?: string;
+}
+
+export const ClienteDeLaPeticion = createParamDecorator(
+  (_dato: unknown, contexto: ExecutionContext): DatosCliente => {
+    const solicitud = contexto.switchToHttp().getRequest<Request>();
+    const dispositivo = solicitud.get('user-agent');
+    return {
+      ...(solicitud.ip ? { ip: solicitud.ip } : {}),
+      ...(dispositivo ? { dispositivo } : {}),
+    };
+  },
+);
+
 /** Inyecta el ContextoAccion del operador autenticado, con la IP y el dispositivo de la petición. */
 export const ContextoOperador = createParamDecorator(
   (_dato: unknown, contexto: ExecutionContext): ContextoAccion => {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ApuestasModule } from './apuestas/apuestas.module.js';
 import { ColasModule } from './colas/colas.module.js';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
@@ -31,6 +32,7 @@ import { RedisModule } from './redis/redis.module.js';
     HealthModule,
     PartidosModule,
     SincronizacionModule,
+    ApuestasModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global
   // (denegación por defecto) lo registra el Spec 2 aquí mismo con APP_GUARD.

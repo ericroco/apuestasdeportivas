@@ -118,17 +118,17 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T039 [P] [US2] Pruebas de cuota total, ganancia potencial y límites (mínimo, máximo, diario y ganancia máxima) en `apps/api/src/apuestas/calculo.spec.ts`
-- [ ] T040 [US2] Prueba e2e de abuso: sin saldo (no queda apuesta ni asiento), después del inicio con otra hora del cliente, cuota distinta (409 con `cuotasVigentes`), fuera de límites, saldo negativo, rol operador (403), cupón sin Spec 4 (422) y campos extra en el cuerpo (400), en `apps/api/test/apuestas-abuso.e2e-spec.ts`
-- [ ] T041 [US2] Prueba e2e de concurrencia: 20 apuestas simultáneas del mismo usuario nunca superan su saldo, y dos envíos con la misma `claveSolicitud` dejan una sola apuesta y un solo descuento, en `apps/api/test/apuestas-concurrencia.e2e-spec.ts`
-- [ ] T042 [US2] Prueba e2e de inmutabilidad: no existen `PUT`, `PATCH` ni `DELETE` sobre apuestas y los disparadores rechazan un `UPDATE` de `monto` y un `DELETE` hechos por SQL, en `apps/api/test/apuestas-inmutables.e2e-spec.ts`
+- [x] T039 [P] [US2] Pruebas de cuota total, ganancia potencial y límites (mínimo, máximo, diario y ganancia máxima) en `apps/api/src/apuestas/calculo.spec.ts`
+- [x] T040 [US2] Prueba e2e de abuso: sin saldo (no queda apuesta ni asiento), después del inicio con otra hora del cliente, cuota distinta (409 con `cuotasVigentes`), fuera de límites, saldo negativo, rol operador (403), cupón sin Spec 4 (422) y campos extra en el cuerpo (400), en `apps/api/test/apuestas-abuso.e2e-spec.ts`
+- [x] T041 [US2] Prueba e2e de concurrencia: 20 apuestas simultáneas del mismo usuario nunca superan su saldo, y dos envíos con la misma `claveSolicitud` dejan una sola apuesta y un solo descuento, en `apps/api/test/apuestas-concurrencia.e2e-spec.ts`
+- [x] T042 [US2] Prueba e2e de inmutabilidad: no existen `PUT`, `PATCH` ni `DELETE` sobre apuestas y los disparadores rechazan un `UPDATE` de `monto` y un `DELETE` hechos por SQL, en `apps/api/test/apuestas-inmutables.e2e-spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Implementar `apps/api/src/apuestas/calculo.ts`
-- [ ] T044 [US2] Implementar la aceptación atómica de research.md §4 (pasos 1 a 8), con `PROMOCIONES_APUESTA_PORT` inyectado con `@Optional()`, en `apps/api/src/apuestas/aceptacion.service.ts`
-- [ ] T045 [US2] Crear `apps/api/src/apuestas/apuestas.esquemas.ts`, `apuestas.controller.ts` (`POST`, lista y detalle solo del dueño, `@Throttle`, rechazo de los roles operador y administrador) y `apuestas.module.ts`
-- [ ] T046 [US2] Emitir `apuesta.aceptada` (contrato 5) después del commit y comprobarlo en `apps/api/test/apuestas-abuso.e2e-spec.ts`
+- [x] T043 [P] [US2] Implementar `apps/api/src/apuestas/calculo.ts`
+- [x] T044 [US2] Implementar la aceptación atómica de research.md §4 (pasos 1 a 8), con `PROMOCIONES_APUESTA_PORT` inyectado con `@Optional()`, en `apps/api/src/apuestas/aceptacion.service.ts`
+- [x] T045 [US2] Crear `apps/api/src/apuestas/apuestas.esquemas.ts`, `apuestas.controller.ts` (`POST`, lista y detalle solo del dueño, `@Throttle`, rechazo de los roles operador y administrador) y `apuestas.module.ts`
+- [x] T046 [US2] Emitir `apuesta.aceptada` (contrato 5) después del commit y comprobarlo en `apps/api/test/apuestas-abuso.e2e-spec.ts`
 - [ ] T047 [P] [US2] Construir el boleto (contexto de React, `sessionStorage`, ganancia potencial solo informativa, reconfirmación con las cuotas nuevas) con sus pruebas en `apps/web/src/components/boleto/`
 - [ ] T048 [US2] Construir "Mis apuestas" (estados, selecciones, monto, cuota congelada, premio) en `apps/web/src/app/mis-apuestas/page.tsx`
 - [ ] T049 [US2] Prueba de Playwright del criterio de cierre de F4 (imposible apostar sin saldo, después del inicio o con una cuota distinta) en `apps/web/e2e/apuestas.spec.ts`; depende del login del Spec 2
