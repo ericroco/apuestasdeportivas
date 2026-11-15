@@ -34,7 +34,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
   la web (T024, T034, T040, T045, T050, T062, T070, T076, T079) se reducen a una por formulario con su validación
   principal.
 - **Se simplifican**: la lista de contraseñas comunes de T031 son unas 120 de 12 caracteres o más (las más cortas ya las rechaza la longitud mínima), en `contrasenas-comunes.ts` en lugar de un `.txt` (`nest build` no copia archivos de texto a `dist`).
-- **Se quitan**: T071 (E2E de depósito; los vectores de pagos están en `depositos.e2e-spec.ts`) y T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
+- **Se quitan**: T071 y T080 (E2E de depósito y de retiros; los vectores están en `depositos.e2e-spec.ts` y `retiros.e2e-spec.ts`) y T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
   `frontend-design`) y se revisa a mano en T083.
 - **Verificación**: por commit, lint, tipos y las pruebas afectadas; la suite completa y el E2E al cerrar cada
   bloque.
@@ -251,13 +251,13 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T073 [P] [US7] Escribir `apps/api/test/retiros.e2e-spec.ts`: sin 2FA, sin código válido, sin verificar, sin depósito previo o con rol operador rechazado; método de otro usuario rechazado; monto sobre el saldo real o con saldo negativo rechazado; bono no retirable; bajo el umbral queda `PAGADO` con `SIM-` y dos asientos; sobre el umbral o con `RIESGO_PORT` que pide revisión queda `PENDIENTE_REVISION` con motivos; sin `RIESGO_PORT` se aplica solo el umbral; dos solicitudes simultáneas que superan el saldo aceptan una; la misma `claveSolicitud` no duplica; evento `retiro.solicitado`
+- [x] T073 [P] [US7] Escribir `apps/api/test/retiros.e2e-spec.ts`: sin 2FA, sin código válido, sin verificar, sin depósito previo o con rol operador rechazado; método de otro usuario rechazado; monto sobre el saldo real o con saldo negativo rechazado; bono no retirable; bajo el umbral queda `PAGADO` con `SIM-` y dos asientos; sobre el umbral o con `RIESGO_PORT` que pide revisión queda `PENDIENTE_REVISION` con motivos; sin `RIESGO_PORT` se aplica solo el umbral; dos solicitudes simultáneas que superan el saldo aceptan una; la misma `claveSolicitud` no duplica; evento `retiro.solicitado`
 
 ### Implementation for User Story 7
 
-- [ ] T074 [US7] Agregar el enum `EstadoRetiro` y el modelo `Retiro` a `identidad.prisma` y generar la migración `spec2_retiros` con el disparador de columnas congeladas (`apps/api/prisma/migrations/<fecha>_spec2_retiros/migration.sql`); agregar `RETIRO_MIN`, `RETIRO_MAX` y `RETIRO_UMBRAL_REVISION` a `apps/api/src/config/env.ts` con sus pruebas si no se agregaron en T002
-- [ ] T075 [US7] Crear `apps/api/src/retiros/retiros.service.ts` (validaciones, `RIESGO_PORT` con `@Optional()`, reserva, pago automático y evento tras el commit), `apps/api/src/retiros/retiros.controller.ts` y `apps/api/src/retiros/retiros.module.ts`; agregar `GET /billetera/metodos-retiro` a `apps/api/src/billetera/billetera.controller.ts`
-- [ ] T076 [P] [US7] Crear la pantalla `apps/web/src/app/billetera/retirar/page.tsx` (monto, método, código 2FA, aviso de revisión) con su prueba
+- [x] T074 [US7] Agregar el enum `EstadoRetiro` y el modelo `Retiro` a `identidad.prisma` y generar la migración `spec2_retiros` con el disparador de columnas congeladas (`apps/api/prisma/migrations/<fecha>_spec2_retiros/migration.sql`); agregar `RETIRO_MIN`, `RETIRO_MAX` y `RETIRO_UMBRAL_REVISION` a `apps/api/src/config/env.ts` con sus pruebas si no se agregaron en T002
+- [x] T075 [US7] Crear `apps/api/src/retiros/retiros.service.ts` (validaciones, `RIESGO_PORT` con `@Optional()`, reserva, pago automático y evento tras el commit), `apps/api/src/retiros/retiros.controller.ts` y `apps/api/src/retiros/retiros.module.ts`; agregar `GET /billetera/metodos-retiro` a `apps/api/src/billetera/billetera.controller.ts`
+- [x] T076 [P] [US7] Crear la pantalla `apps/web/src/app/billetera/retirar/page.tsx` (monto, método, código 2FA, aviso de revisión) con su prueba
 
 **Checkpoint**: los apostadores retiran ganancias de forma segura
 
@@ -271,13 +271,13 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 8 ⚠️
 
-- [ ] T077 [P] [US8] Escribir `apps/api/test/retiros-admin.e2e-spec.ts`: aprobar exige 2FA, deja `PAGADO` con referencia simulada y asiento de pago; rechazar devuelve el saldo con su motivo; aprobar o rechazar dos veces (o a la vez) no repite efectos; un administrador no resuelve su propio retiro; apostador y operador reciben 403
+- [x] T077 [P] [US8] Escribir `apps/api/test/retiros-admin.e2e-spec.ts`: aprobar exige 2FA, deja `PAGADO` con referencia simulada y asiento de pago; rechazar devuelve el saldo con su motivo; aprobar o rechazar dos veces (o a la vez) no repite efectos; un administrador no resuelve su propio retiro; apostador y operador reciben 403
 
 ### Implementation for User Story 8
 
-- [ ] T078 [US8] Agregar la aprobación y el rechazo a `apps/api/src/retiros/retiros.service.ts` y crear `apps/api/src/retiros/retiros-admin.controller.ts` (`GET /admin/retiros`, `POST /admin/retiros/:id/aprobacion`, `/rechazo`)
-- [ ] T079 [P] [US8] Crear la pantalla `apps/web/src/app/admin/retiros/page.tsx` (pendientes con usuario, motivos e historial; aprobar o rechazar con código 2FA) con su prueba
-- [ ] T080 [US8] Escribir el E2E `apps/web/e2e/retiro.spec.ts` (retiro bajo el umbral pagado, retiro sobre el umbral aprobado por el administrador, casos de abuso)
+- [x] T078 [US8] Agregar la aprobación y el rechazo a `apps/api/src/retiros/retiros.service.ts` y crear `apps/api/src/retiros/retiros-admin.controller.ts` (`GET /admin/retiros`, `POST /admin/retiros/:id/aprobacion`, `/rechazo`)
+- [x] T079 [P] [US8] Crear la pantalla `apps/web/src/app/admin/retiros/page.tsx` (pendientes con usuario, motivos e historial; aprobar o rechazar con código 2FA) con su prueba
+- [ ] ~~T080~~ (quitada por el ritmo del 2026-11-15: los casos de retiro y abuso están en `apps/api/test/retiros.e2e-spec.ts`) Escribir el E2E `apps/web/e2e/retiro.spec.ts` (retiro bajo el umbral pagado, retiro sobre el umbral aprobado por el administrador, casos de abuso)
 
 **Checkpoint**: PR 3 listo
 
@@ -286,8 +286,8 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 ## Phase 12: Polish & Cross-Cutting Concerns
 
 - [ ] ~~T081~~ (quitada, ver "Ajuste de alcance") Revisar la accesibilidad de todas las pantallas del spec (navegación por teclado, foco visible, contraste, 360 px) y agregar comprobaciones automáticas con `@axe-core/playwright` en `apps/web/e2e/accesibilidad.spec.ts` (SC-009)
-- [ ] T082 [P] Repasar la tabla de vectores de fraude de spec.md y verificar que cada fila tiene su prueba; dejar la referencia a la prueba en `specs/002-identidad-billetera-pagos/checklists/fraude.md`
-- [ ] T083 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm test:e2e`, seguir `quickstart.md` de punta a punta y actualizar `specs/README.md` a "En revisión"
+- [x] T082 [P] Repasar la tabla de vectores de fraude de spec.md y verificar que cada fila tiene su prueba; dejar la referencia a la prueba en `specs/002-identidad-billetera-pagos/checklists/fraude.md`
+- [x] T083 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm test:e2e`, seguir `quickstart.md` de punta a punta y actualizar `specs/README.md` a "En revisión"
 
 ---
 
