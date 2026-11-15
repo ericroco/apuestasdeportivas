@@ -7,6 +7,7 @@ import { Hoja } from '@/components/comun/hoja';
 import { FiltrosReporte } from '@/components/reportes/filtros-reporte';
 import { ErroresFiltros, Tablero } from '@/components/reportes/tablero';
 import type { ParametrosBusqueda } from '@/lib/parametros';
+import { leerMotivoExportacion } from '@/lib/reportes/exportacion';
 import { hoyUtc, hrefReportes, leerFiltrosReporte } from '@/lib/reportes/filtros';
 import { obtenerTablero } from '@/lib/servidor/reportes';
 import { clienteReportesDeLaSesion, leerTokenAcceso } from '@/lib/servidor/sesion';
@@ -48,7 +49,14 @@ async function ContenidoReportes({
   }
   const resultado = await obtenerTablero(await clienteReportesDeLaSesion(), lectura.filtros);
   if (resultado.tipo === 'ok') {
-    return <Tablero tablero={resultado.datos} filtros={lectura.filtros} hoy={hoy} />;
+    return (
+      <Tablero
+        tablero={resultado.datos}
+        filtros={lectura.filtros}
+        hoy={hoy}
+        motivoExportacion={leerMotivoExportacion(parametros)}
+      />
+    );
   }
   const aviso = (
     <EstadoAcceso

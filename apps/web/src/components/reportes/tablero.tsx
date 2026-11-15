@@ -1,7 +1,9 @@
-import { esPeriodoVacio } from '@/lib/reportes/tablero';
+import type { MotivoExportacion } from '@/lib/reportes/exportacion';
 import type { FiltrosReporte as Filtros } from '@/lib/reportes/filtros';
+import { esPeriodoVacio } from '@/lib/reportes/tablero';
 import type { Tablero as DatosTablero } from '@/lib/servidor/reportes';
 import { Competiciones } from './competiciones';
+import { AvisoExportacion, BotonesExportar } from './exportar';
 import { FiltrosReporte } from './filtros-reporte';
 import { GraficaSerie } from './grafica-serie';
 import { Metricas } from './metricas';
@@ -10,6 +12,8 @@ interface TableroProps {
   readonly tablero: DatosTablero;
   readonly filtros: Filtros;
   readonly hoy: string;
+  /** Motivo con el que volvió una descarga fallida. */
+  readonly motivoExportacion?: MotivoExportacion;
 }
 
 /** Errores de formato de los filtros: se corrigen antes de consultar a reportes. */
@@ -27,7 +31,7 @@ export function ErroresFiltros({ errores }: { readonly errores: readonly string[
 }
 
 /** Dashboard del periodo: filtros arriba y, debajo, todo lo que esos filtros acotan. */
-export function Tablero({ tablero, filtros, hoy }: TableroProps) {
+export function Tablero({ tablero, filtros, hoy, motivoExportacion }: TableroProps) {
   const { resumen, serie, competiciones } = tablero;
   const nombreCompeticion = competiciones.competiciones.find(
     (competicion) => competicion.competicionId === filtros.competicionId,
@@ -35,6 +39,8 @@ export function Tablero({ tablero, filtros, hoy }: TableroProps) {
   return (
     <>
       <FiltrosReporte filtros={filtros} hoy={hoy} nombreCompeticion={nombreCompeticion} />
+      {motivoExportacion && <AvisoExportacion motivo={motivoExportacion} />}
+      <BotonesExportar filtros={filtros} generadoEn={resumen.generadoEn} />
       {esPeriodoVacio(resumen) && (
         <p role="status" className="border-tinta mt-6 border-l-4 pl-3">
           <strong className="font-display block text-2xl">Sin datos en este periodo.</strong>
