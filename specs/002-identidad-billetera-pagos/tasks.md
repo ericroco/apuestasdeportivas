@@ -21,17 +21,35 @@ commit para que cada commit pase CI.
 - **[P]**: se puede hacer en paralelo (archivos distintos, sin dependencias pendientes)
 - **[Story]**: historia a la que pertenece (US1…US9 = historias 1…9 de la spec)
 
+## Ajuste de alcance de las pruebas (2026-11-15, tras el Bloque 1)
+
+Para avanzar más rápido en un proyecto académico, sin incumplir la constitución ni el brief:
+
+- **Se mantienen**: al menos una prueba de integración por historia (principio IV), todas las pruebas de la tabla
+  de vectores de fraude de spec.md (concurrencia, idempotencia, abuso, roles, inmutabilidad) y la prueba de
+  cobertura de rutas (T025).
+- **Se recortan**: las pruebas unitarias de funciones auxiliares que ya cubren las de integración. En T009, T011,
+  T013, T014, T018, T029, T039, T041, T053, T063 y T064 se escribe la implementación y su comportamiento se
+  prueba desde la prueba de integración de su historia, no con un `*.spec.ts` propio. Las pruebas de pantallas de
+  la web (T024, T034, T040, T045, T050, T062, T070, T076, T079) se reducen a una por formulario con su validación
+  principal.
+- **Se simplifican**: la lista de contraseñas comunes de T031 tiene las 200 más frecuentes, no 10 000.
+- **Se quitan**: T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
+  `frontend-design`) y se revisa a mano en T083.
+- **Verificación**: por commit, lint, tipos y las pruebas afectadas; la suite completa y el E2E al cerrar cada
+  bloque.
+
 ---
 
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: dependencias, configuración y servicios locales
 
-- [ ] T001 Instalar en la API `jose`, `argon2`, `otpauth`, `qrcode`, `nodemailer`, `cookie-parser`, `@nestjs/event-emitter` y `@nestjs/schedule`, y como desarrollo `tsx`, `@types/nodemailer`, `@types/qrcode` y `@types/cookie-parser` (`apps/api/package.json`, `pnpm-lock.yaml`)
-- [ ] T002 Escribir primero las pruebas de las variables nuevas de autenticación, correo y proxy (obligatorias, valores por defecto, `JWT_ACCESS_TTL` ≤ 900, `TOTP_CLAVE_CIFRADO` de 32 bytes, `SMTP_URL` obligatoria si `CORREO_TRANSPORTE=smtp`, `RESEND_API_KEY` si `resend`) en `apps/api/src/config/env.spec.ts` y luego agregarlas a `apps/api/src/config/env.ts` (contracts/configuracion.md); agregar valores de prueba (claves Ed25519 solo para CI, secreto de prueba de Turnstile, servicio Mailpit) a `.github/workflows/ci.yml` en el mismo commit para que CI no falle, y avisar en el PR que las variables deben existir en Render y Vercel antes del merge
-- [ ] T003 [P] Documentar las variables en `apps/api/.env.example` (claves de prueba de Turnstile, Mailpit), `apps/web/.env.example` (`WEB_PROXY_SECRETO`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) y `specs/001-fundaciones-stack/contracts/configuracion.md`
-- [ ] T004 [P] Agregar el servicio `mailpit` (`axllent/mailpit`, puertos 1025 y 8025, healthcheck) a `docker-compose.yml`
-- [ ] T005 [P] Agregar la validación de las variables nuevas de la web (`WEB_PROXY_SECRETO`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) en `apps/web/src/lib/entorno.ts` con su prueba en `apps/web/src/lib/entorno.test.ts`
+- [x] T001 Instalar en la API `jose`, `argon2`, `otpauth`, `qrcode`, `nodemailer`, `cookie-parser`, `@nestjs/event-emitter` y `@nestjs/schedule`, y como desarrollo `tsx`, `@types/nodemailer`, `@types/qrcode` y `@types/cookie-parser` (`apps/api/package.json`, `pnpm-lock.yaml`)
+- [x] T002 Escribir primero las pruebas de las variables nuevas de autenticación, correo y proxy (obligatorias, valores por defecto, `JWT_ACCESS_TTL` ≤ 900, `TOTP_CLAVE_CIFRADO` de 32 bytes, `SMTP_URL` obligatoria si `CORREO_TRANSPORTE=smtp`, `RESEND_API_KEY` si `resend`) en `apps/api/src/config/env.spec.ts` y luego agregarlas a `apps/api/src/config/env.ts` (contracts/configuracion.md); agregar valores de prueba (claves Ed25519 solo para CI, secreto de prueba de Turnstile, servicio Mailpit) a `.github/workflows/ci.yml` en el mismo commit para que CI no falle, y avisar en el PR que las variables deben existir en Render y Vercel antes del merge
+- [x] T003 [P] Documentar las variables en `apps/api/.env.example` (claves de prueba de Turnstile, Mailpit), `apps/web/.env.example` (`WEB_PROXY_SECRETO`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) y `specs/001-fundaciones-stack/contracts/configuracion.md`
+- [x] T004 [P] Agregar el servicio `mailpit` (`axllent/mailpit`, puertos 1025 y 8025, healthcheck) a `docker-compose.yml`
+- [x] T005 [P] Agregar la validación de las variables nuevas de la web (`WEB_PROXY_SECRETO`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) en `apps/web/src/lib/entorno.ts` con su prueba en `apps/web/src/lib/entorno.test.ts`
 
 ---
 
@@ -41,9 +59,9 @@ commit para que cada commit pase CI.
 
 **⚠️ CRITICAL**: ninguna historia empieza hasta terminar esta fase
 
-- [ ] T006 Escribir en `apps/api/prisma/schema/identidad.prisma` los enums `Rol`, `EstadoUsuario` y `PropositoEnlace` y los modelos `Usuario`, `Credencial`, `SegundoFactor`, `CodigoRecuperacion`, `Sesion` y `EnlaceCorreo` según data-model.md (`@@map`/`@map`, `@db.Uuid`, índices y únicos)
-- [ ] T007 Generar la migración `spec2_identidad` con `pnpm --filter api exec prisma migrate dev --name spec2_identidad` y agregar a su `migration.sql` el bloque `DO` que hace `REVOKE ALL` de `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` a `reportes_lectura` si el rol existe (`apps/api/prisma/migrations/<fecha>_spec2_identidad/migration.sql`, research §14)
-- [ ] T008 Agregar el modelo `EventoAuditoria` a `identidad.prisma` y generar la migración `spec2_auditoria` con los disparadores `BEFORE UPDATE OR DELETE` y `BEFORE TRUNCATE` que lanzan excepción (`apps/api/prisma/migrations/<fecha>_spec2_auditoria/migration.sql`)
+- [x] T006 Escribir en `apps/api/prisma/schema/identidad.prisma` los enums `Rol`, `EstadoUsuario` y `PropositoEnlace` y los modelos `Usuario`, `Credencial`, `SegundoFactor`, `CodigoRecuperacion`, `Sesion` y `EnlaceCorreo` según data-model.md (`@@map`/`@map`, `@db.Uuid`, índices y únicos)
+- [x] T007 Generar la migración `spec2_identidad` con `pnpm --filter api exec prisma migrate dev --name spec2_identidad` y agregar a su `migration.sql` el bloque `DO` que hace `REVOKE ALL` de `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` a `reportes_lectura` si el rol existe (`apps/api/prisma/migrations/<fecha>_spec2_identidad/migration.sql`, research §14)
+- [x] T008 Agregar el modelo `EventoAuditoria` a `identidad.prisma` y generar la migración `spec2_auditoria` con los disparadores `BEFORE UPDATE OR DELETE` y `BEFORE TRUNCATE` que lanzan excepción (`apps/api/prisma/migrations/<fecha>_spec2_auditoria/migration.sql`)
 - [ ] T009 [P] Escribir primero `apps/api/src/auditoria/sanitizar.spec.ts` (claves sensibles anidadas, arreglos, valores no objeto) y luego `apps/api/src/auditoria/sanitizar.ts`
 - [ ] T010 Escribir primero `apps/api/test/auditoria.e2e-spec.ts` (inserta con y sin `tx`, se revierte junto con un `tx` fallido, `UPDATE`/`DELETE`/`TRUNCATE` fallan, `datos` sanitizados) y luego `apps/api/src/auditoria/auditoria.service.ts` y `apps/api/src/auditoria/auditoria.module.ts` (global, provee `AUDITORIA_PORT`)
 - [ ] T011 [P] Escribir primero `apps/api/src/identidad/http/cliente-http.spec.ts` (usa `x-cliente-ip` solo con `x-proxy-secreto` válido, comparación en tiempo constante, cae a `request.ip`) y luego `apps/api/src/identidad/http/cliente-http.ts` y el decorador `@ClienteActual()` (IP y dispositivo)
@@ -74,11 +92,11 @@ commit para que cada commit pase CI.
 ### Tests for User Story 3 ⚠️
 
 - [ ] T025 [P] [US3] Escribir `apps/api/test/cobertura-rutas.e2e-spec.ts`: recorre con `DiscoveryService` todas las rutas de la app y comprueba que sin sesión responden 401, salvo la lista blanca explícita de rutas públicas (research §12)
-- [ ] T026 [P] [US3] Escribir `apps/api/test/reportes-credenciales.e2e-spec.ts`: con `REPORTS_DATABASE_URL`, leer `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` falla y leer `usuario` funciona (FR-064)
+- [x] T026 [P] [US3] Escribir `apps/api/test/reportes-credenciales.e2e-spec.ts`: con `REPORTS_DATABASE_URL`, leer `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` falla y leer `usuario` funciona (FR-064)
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Agregar al final de `infra/postgres/usuario-solo-lectura.sql` el `REVOKE` de las tablas sensibles protegido con `to_regclass` (cambios-contratos §6, revisor Erick)
+- [x] T027 [US3] Agregar al final de `infra/postgres/usuario-solo-lectura.sql` el `REVOKE` de las tablas sensibles protegido con `to_regclass` (cambios-contratos §6, revisor Erick)
 - [ ] T028 [US3] Documentar en `docs/equipo/contratos.md` §1 y §6 el proxy `/api/*`, `llamarApi()` y las claims `sid` y `alc` (cambios-contratos §3 y §4)
 
 **Checkpoint**: la cobertura de rutas protege a los specs 3 y 4 desde su primer controlador
@@ -267,7 +285,7 @@ commit para que cada commit pase CI.
 
 ## Phase 12: Polish & Cross-Cutting Concerns
 
-- [ ] T081 [P] Revisar la accesibilidad de todas las pantallas del spec (navegación por teclado, foco visible, contraste, 360 px) y agregar comprobaciones automáticas con `@axe-core/playwright` en `apps/web/e2e/accesibilidad.spec.ts` (SC-009)
+- [ ] ~~T081~~ (quitada, ver "Ajuste de alcance") Revisar la accesibilidad de todas las pantallas del spec (navegación por teclado, foco visible, contraste, 360 px) y agregar comprobaciones automáticas con `@axe-core/playwright` en `apps/web/e2e/accesibilidad.spec.ts` (SC-009)
 - [ ] T082 [P] Repasar la tabla de vectores de fraude de spec.md y verificar que cada fila tiene su prueba; dejar la referencia a la prueba en `specs/002-identidad-billetera-pagos/checklists/fraude.md`
 - [ ] T083 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm test:e2e`, seguir `quickstart.md` de punta a punta y actualizar `specs/README.md` a "En revisión"
 
