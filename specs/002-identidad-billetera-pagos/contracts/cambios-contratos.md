@@ -66,6 +66,8 @@ devuelva el permiso a `reportes_lectura` (research §14).
 | `.github/workflows/ci.yml` | 1, 2 y 3 | Servicio Mailpit y valores de prueba de las variables nuevas (claves Ed25519 solo para CI, secreto de prueba de Turnstile) |
 | `apps/web/playwright.config.ts` | 1 y 2 | Variables de las apps y `globalSetup` con la pasarela falsa |
 | `apps/web/next.config.ts` | 1 | Se quita el comentario pendiente de la CSP, que pasa a `src/proxy.ts` |
+| `render.yaml` | 1, 2 y 3 | Variables nuevas de la API (`sync: false` para los secretos) |
+| `pnpm-workspace.yaml` | 1 | `allowBuilds`: `argon2` sí (carga su binario), `esbuild` no |
 
 ## 8. Aviso de tipos (sin cambio de firma)
 
