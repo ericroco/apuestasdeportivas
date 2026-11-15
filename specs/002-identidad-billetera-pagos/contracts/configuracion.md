@@ -3,6 +3,9 @@
 Se agregan a la validación de cada app, a su `.env.example` y a
 `specs/001-fundaciones-stack/contracts/configuracion.md`. Ningún secreto lleva el prefijo `NEXT_PUBLIC_`.
 
+Cada variable entra en el PR que la usa: las de autenticación, correo y proxy en el PR 1; `PAYPHONE_*` y
+`DEPOSITO_*` en el PR 2; `RETIRO_*` en el PR 3. Antes de cada merge deben existir en Render y Vercel.
+
 ## apps/api
 
 | Variable | Obligatoria | Por defecto | Descripción |

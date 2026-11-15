@@ -30,8 +30,9 @@ Decisiones técnicas del Spec 2. Cada sección: decisión, razón y alternativas
   `aud: apuestas`) más dos aditivas: `sid` (id de la sesión, para cerrarla) y `alc` (alcance: `completo` o
   `activar-2fa`). `exp` = 15 minutos. Reportes verifica con PyJWT + `cryptography` (soportan EdDSA).
 - **Revocación inmediata** (suspensión, cambio de contraseña o de roles): Redis guarda
-  `identidad:revocado-antes:<usuarioId>` = instante, con caducidad igual a la del acceso. El guard rechaza tokens con
-  `iat` anterior. Reportes no consulta Redis: acepta como riesgo residual hasta 15 minutos (solo administradores).
+  `identidad:revocado-antes:<usuarioId>` = instante en segundos, con caducidad igual a la del acceso. El guard rechaza
+  los tokens con `iat < revocadoAntes`; un token emitido en el mismo segundo (por ejemplo, al iniciar sesión justo
+  después de cambiar la contraseña) sigue sirviendo, porque la sesión anterior ya quedó revocada en la base de datos. Reportes no consulta Redis: acepta como riesgo residual hasta 15 minutos (solo administradores).
 - **Alternativas**: RS256 (claves y firmas más grandes, sin ventaja); HS256 (reportes podría emitir tokens);
   consultar la base de datos en cada petición (latencia innecesaria).
 
@@ -111,6 +112,9 @@ Decisiones técnicas del Spec 2. Cada sección: decisión, razón y alternativas
   tipo y monto, devuelve `{ asientoId, creado: false }`; si existe con otros datos, lanza
   `ConflictoIdempotenciaError` (un error del llamador). El índice único es la última defensa.
 - **Saldo negativo**: solo `revertirPremio` omite la comprobación de saldo (aclaración del 2026-11-15).
+- **Usuarios sin verificar**: `acreditarBono` lanza `UsuarioNoHabilitadoError` si el usuario no verificó su correo o
+  está suspendido (FR-006). Así el Spec 3 no necesita conocer la verificación: un usuario sin verificar nunca tiene
+  saldo y `debitarApuesta` lanza `SaldoInsuficienteError`.
 - **Saldo resultante en movimientos**: se calcula al consultar con `SUM(monto) OVER (PARTITION BY cuenta ORDER BY
   creado_en, id)`; no se guarda.
 - **Alternativas**: columna de saldo actualizada (viola el principio II); `SERIALIZABLE` con reintentos (más abortos
@@ -215,7 +219,19 @@ Fuente: [documentación de Payphone](https://docs.payphone.app/boton-de-pago-por
   paleta del Spec 1.
 - **Montos en la web**: se muestran tal como los manda la API (texto decimal); la web no suma ni resta saldos.
 
-## 17. Primer administrador y datos de prueba
+## 17. Aislamiento de las pruebas con un libro inmutable
+
+- **Decisión**: las pruebas de integración no borran nada. Cada prueba crea sus usuarios con correos únicos
+  (`<prueba>-<uuid>@prueba.local`), sus claves de idempotencia con UUID y sus intenciones nuevas, y solo hace
+  aserciones sobre esos datos: saldos de sus propios usuarios, eventos de auditoría filtrados por su `entidad_id`.
+  Las cuentas del sistema (`CASA`, `PASARELA`, `RETIROS_TRANSITO`) se verifican por diferencia antes y después, no
+  por valor absoluto. En CI la base es nueva en cada ejecución; en local se reinicia con `docker compose down -v`.
+- **Razón**: los disparadores de inmutabilidad (§8) bloquean `DELETE` y `TRUNCATE`, y debilitarlos para las pruebas
+  (por ejemplo, con una variable de sesión que los desactive) abriría la misma puerta en producción.
+- **Alternativas**: base de datos por archivo de prueba (lento en CI); transacción por prueba con rollback (no sirve
+  para las pruebas de concurrencia, que necesitan transacciones confirmadas en paralelo).
+
+## 18. Primer administrador y datos de prueba
 
 - **Decisión**: script `apps/api/scripts/crear-administrador.ts` (con `tsx`) que pide correo y contraseña por la
   terminal y crea un usuario verificado con rol `ADMINISTRADOR`. Al entrar por primera vez, el guard le exige

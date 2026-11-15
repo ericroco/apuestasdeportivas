@@ -305,9 +305,9 @@ ese usuario y ver ambos cambios.
 
 **Acceptance Scenarios**:
 
-1. **Given** un administrador con 2FA activo, **When** asigna o quita un rol, **Then** el cambio aplica desde la
-   siguiente renovación de sesión del usuario afectado (como máximo 15 minutos) y queda auditado con el rol
-   anterior y el nuevo.
+1. **Given** un administrador con 2FA activo, **When** asigna o quita un rol, **Then** el cambio aplica de inmediato
+   (el acceso anterior del usuario afectado deja de servir y la renovación le entrega los roles nuevos) y queda
+   auditado con el rol anterior y el nuevo.
 2. **Given** el único administrador activo, **When** intenta quitarse el rol de administrador o suspenderse,
    **Then** se rechaza.
 3. **Given** una cuenta suspendida, **When** su dueño usa una sesión abierta, **Then** se rechaza de inmediato.
@@ -355,7 +355,8 @@ ese usuario y ver ambos cambios.
 - **FR-004**: El sistema DEBE enviar un enlace de verificación de un solo uso que caduca a las 24 horas, y permitir
   pedir uno nuevo como máximo 3 veces por hora.
 - **FR-005**: El registro NO DEBE revelar si un correo ya tiene cuenta.
-- **FR-006**: Un usuario sin correo verificado NO DEBE poder depositar, apostar ni retirar.
+- **FR-006**: Un usuario sin correo verificado NO DEBE poder depositar, apostar ni retirar, ni recibir bonos. Como
+  todo saldo entra por un depósito o un bono, su saldo es siempre 0 y la billetera rechaza cualquier apuesta.
 - **FR-007**: Toda cuenta nueva DEBE tener solo el rol apostador.
 
 #### Sesión y acceso
@@ -450,8 +451,6 @@ ese usuario y ver ambos cambios.
 
 #### Depósitos
 
-- **FR-068**: Depositar y retirar DEBE estar permitido solo a usuarios con el rol apostador que no tengan además el
-  rol operador ni administrador.
 - **FR-045**: El apostador verificado DEBE poder iniciar un depósito con un monto entre los límites configurados
   (por defecto, entre 1.00 y 1 000.00 USD) y, opcionalmente, un código de cupón.
 - **FR-046**: Antes de ir a la pasarela, el sistema DEBE registrar la intención de pago con el usuario, el monto, la
@@ -489,6 +488,8 @@ ese usuario y ver ambos cambios.
   sus propios retiros.
 - **FR-060**: Al solicitarse un retiro, el sistema DEBE emitir el evento "retiro solicitado" después de completar la
   operación.
+- **FR-068**: Depositar y retirar DEBE estar permitido solo a usuarios con el rol apostador que no tengan además el
+  rol operador ni administrador.
 
 #### Interfaz
 

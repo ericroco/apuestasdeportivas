@@ -50,7 +50,8 @@ Leyenda de acceso: **P** = `@Publico()`, **A** = autenticado (cualquier rol), **
 | `GET /depositos/:id` | APOSTADOR (dueño) | — | `{ id, estado, monto, motivoFallo? }` |
 
 `/depositos/confirmar` es pública porque la autoridad es la respuesta de Payphone, no el navegador: con datos
-inventados, Confirm falla o no coincide y no se acredita nada (FR-047).
+inventados, Confirm falla o no coincide y no se acredita nada (FR-047). Como cada llamada consulta a Payphone con el
+token del comercio, tiene un límite de 10 por minuto e IP.
 
 ## Retiros (`/api/retiros`)
 

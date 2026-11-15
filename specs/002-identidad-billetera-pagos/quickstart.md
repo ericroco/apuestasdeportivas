@@ -52,5 +52,20 @@ Pide correo y contraseña. Al entrar por primera vez, la web pide activar el 2FA
 | Web | `pnpm --filter web exec vitest run` |
 | E2E (Playwright, levanta las tres apps y la pasarela falsa) | `pnpm test:e2e` |
 
+Las pruebas no borran datos (el libro contable y la auditoría son inmutables; research §17): cada una crea los suyos.
+Para empezar con la base vacía en local:
+
+```bash
+docker compose down -v
+```
+
+```bash
+docker compose up -d
+```
+
+```bash
+pnpm db:migrate
+```
+
 Las pruebas de integración necesitan `REPORTS_DATABASE_URL` (usuario `reportes_lectura`) para comprobar que no lee
 las tablas sensibles; en local se agrega a `apps/api/.env` con la contraseña de `docker-compose.yml`.
