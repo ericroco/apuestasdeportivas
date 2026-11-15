@@ -20,7 +20,3 @@ export type FalloConsulta =
 export type Resultado<T> = { readonly tipo: 'ok'; readonly datos: T } | FalloConsulta;
 
 export type TipoFallo = FalloConsulta['tipo'];
-
-export function esFallo<T>(resultado: Resultado<T>): resultado is FalloConsulta {
-  return resultado.tipo !== 'ok';
-}

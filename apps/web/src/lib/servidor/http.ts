@@ -84,6 +84,14 @@ export function falloPorEstado(estado: number, error: ErrorDeServicio): FalloCon
   };
 }
 
+/** Fallo de una respuesta que no es 2xx, con el `codigo` y el mensaje de su cuerpo de error. */
+export async function falloDeRespuesta(
+  respuesta: Response,
+  leerError: LectorError,
+): Promise<FalloConsulta> {
+  return falloPorEstado(respuesta.status, leerError(await leerJson(respuesta)));
+}
+
 /**
  * Convierte la respuesta en un `Resultado`. La respuesta viene de otro servicio: se valida con su
  * esquema y, si no cumple el contrato, se trata como "no disponible" (nunca se muestran datos dudosos).
@@ -94,8 +102,7 @@ export async function interpretar<T>(
   leerError: LectorError,
 ): Promise<Resultado<T>> {
   if (respuesta === null) return { tipo: 'no-disponible' };
-  const cuerpo = await leerJson(respuesta);
-  if (!respuesta.ok) return falloPorEstado(respuesta.status, leerError(cuerpo));
-  const validado = esquema.safeParse(cuerpo);
+  if (!respuesta.ok) return falloDeRespuesta(respuesta, leerError);
+  const validado = esquema.safeParse(await leerJson(respuesta));
   return validado.success ? { tipo: 'ok', datos: validado.data } : { tipo: 'no-disponible' };
 }

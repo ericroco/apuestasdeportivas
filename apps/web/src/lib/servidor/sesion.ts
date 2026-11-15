@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { crearClienteApi, type ClienteApi } from './api';
+import { crearClienteReportes, type ClienteReportes } from './reportes';
 
 /**
  * Cookie httpOnly que deja el login del Spec 2 (docs/equipo/contratos.md §6). Se lee solo en el servidor
@@ -26,4 +27,9 @@ export function urlReportes(): string {
 /** Cliente de la API con el token de la petición en curso. */
 export async function clienteApiDeLaSesion(): Promise<ClienteApi> {
   return crearClienteApi({ urlBase: urlApi(), token: await leerTokenAcceso() });
+}
+
+/** Cliente de reportes con el token de la petición en curso. */
+export async function clienteReportesDeLaSesion(): Promise<ClienteReportes> {
+  return crearClienteReportes({ urlBase: urlReportes(), token: await leerTokenAcceso() });
 }
