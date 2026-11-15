@@ -69,6 +69,12 @@ export const marcadorEsquema = z
   .strict();
 export type Marcador = z.infer<typeof marcadorEsquema>;
 
+/** Resultado final del tiempo reglamentario (POST /operador/partidos/:id/resultado); el motivo es obligatorio. */
+export const resultadoEsquema = z
+  .object({ golesLocal: goles, golesVisitante: goles, motivo })
+  .strict();
+export type Resultado = z.infer<typeof resultadoEsquema>;
+
 export const crearMercadoEsquema = z
   .object({
     tipo: z.enum(TIPOS_MERCADO),

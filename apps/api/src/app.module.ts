@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module.js';
 import { AutenticacionGuard } from './identidad/autenticacion.guard.js';
 import { ThrottlerPorCliente } from './identidad/http/throttler-por-cliente.guard.js';
 import { IdentidadModule } from './identidad/identidad.module.js';
+import { LiquidacionModule } from './liquidacion/liquidacion.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
 import { PartidosModule } from './partidos/partidos.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -49,6 +50,7 @@ import { SincronizacionModule } from './sincronizacion/sincronizacion.module.js'
     PartidosModule,
     SincronizacionModule,
     ApuestasModule,
+    LiquidacionModule,
   ],
   // Los guards globales corren en este orden (constitución, principio I):
   // 1) rate limiting por la IP real del cliente; 2) autenticación y roles con denegación por defecto (contrato 1).

@@ -182,17 +182,17 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T057 [P] [US3] Pruebas de las reglas de los 4 tipos de mercado, líneas y mercados decididos antes del final en `apps/api/src/liquidacion/reglas-mercado.spec.ts`
-- [ ] T058 [P] [US3] Pruebas del estado de la apuesta (simple, combinada, anuladas a 1.00 y todas anuladas) en `apps/api/src/liquidacion/estado-apuesta.spec.ts`
-- [ ] T059 [US3] Prueba e2e de liquidación: las ganadoras reciben monto × cuota en su mismo tipo de saldo, las perdedoras no tienen movimiento, se emite `apuesta.liquidada` y el aviso por WebSocket llega en ≤ 5 s medido, en `apps/api/test/liquidacion.e2e-spec.ts`
-- [ ] T060 [US3] Prueba e2e de idempotencia: 5 reprocesos del mismo resultado, trabajo duplicado y caída a mitad (error de la billetera en la tercera apuesta y reintento) dejan los saldos exactos, en `apps/api/test/liquidacion-idempotencia.e2e-spec.ts`
+- [x] T057 [P] [US3] Pruebas de las reglas de los 4 tipos de mercado, líneas y mercados decididos antes del final en `apps/api/src/liquidacion/reglas-mercado.spec.ts`
+- [x] T058 [P] [US3] Pruebas del estado de la apuesta (simple, combinada, anuladas a 1.00 y todas anuladas) en `apps/api/src/liquidacion/estado-apuesta.spec.ts`
+- [x] T059 [US3] Prueba e2e de liquidación: las ganadoras reciben monto × cuota en su mismo tipo de saldo, las perdedoras no tienen movimiento, se emite `apuesta.liquidada` y el aviso por WebSocket llega en ≤ 5 s medido, en `apps/api/test/liquidacion.e2e-spec.ts`
+- [x] T060 [US3] Prueba e2e de idempotencia: 5 reprocesos del mismo resultado, trabajo duplicado y caída a mitad (error de la billetera en la tercera apuesta y reintento) dejan los saldos exactos, en `apps/api/test/liquidacion-idempotencia.e2e-spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T061 [P] [US3] Implementar `apps/api/src/liquidacion/reglas-mercado.ts`
-- [ ] T062 [P] [US3] Implementar `apps/api/src/liquidacion/estado-apuesta.ts`
-- [ ] T063 [US3] Implementar `apps/api/src/liquidacion/liquidacion.service.ts` (una transacción por apuesta, `FOR UPDATE`, fila en `liquidacion`, billetera y auditoría; evento y aviso después del commit)
-- [ ] T064 [US3] Implementar `apps/api/src/liquidacion/liquidacion.processor.ts`, encolar con `jobId = liquidar:<partidoId>:v<versión>` desde `aplicarActualizacion()` al finalizar, y crear `POST /operador/partidos/:id/resultado` para finalizar
+- [x] T061 [P] [US3] Implementar `apps/api/src/liquidacion/reglas-mercado.ts`
+- [x] T062 [P] [US3] Implementar `apps/api/src/liquidacion/estado-apuesta.ts`
+- [x] T063 [US3] Implementar `apps/api/src/liquidacion/liquidacion.service.ts` (una transacción por apuesta, `FOR UPDATE`, fila en `liquidacion`, billetera y auditoría; evento y aviso después del commit)
+- [x] T064 [US3] Implementar `apps/api/src/liquidacion/liquidacion.processor.ts`, encolar con `jobId = liquidar:<partidoId>:v<versión>` desde `aplicarActualizacion()` al finalizar, y crear `POST /operador/partidos/:id/resultado` para finalizar
 - [ ] T065 [US3] Actualizar "Mis apuestas" en vivo con `apuesta.liquidada` en `apps/web/src/app/mis-apuestas/`
 
 ---

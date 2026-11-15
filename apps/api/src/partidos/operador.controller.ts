@@ -21,6 +21,8 @@ import {
   type Marcador,
   marcadorEsquema,
   motivoEsquema,
+  type Resultado,
+  resultadoEsquema,
 } from './partidos.esquemas.js';
 import { PartidosService } from './partidos.service.js';
 
@@ -79,6 +81,17 @@ export class OperadorController {
     @ContextoOperador() contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     return this.partidos.aplicarActualizacion(id, datos, contexto);
+  }
+
+  /** Finaliza el partido con su resultado; la liquidación de sus apuestas se encola sola (FR-025). */
+  @Post('partidos/:id/resultado')
+  @HttpCode(200)
+  registrarResultado(
+    @Param('id', { schema: idParam }) id: string,
+    @Body({ schema: resultadoEsquema }) datos: Resultado,
+    @ContextoOperador() contexto: ContextoOperacion,
+  ): Promise<PartidoDetalleDto> {
+    return this.partidos.registrarResultado(id, datos, contexto);
   }
 
   @Post('partidos/:id/mercados')

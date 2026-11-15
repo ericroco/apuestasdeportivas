@@ -10,6 +10,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import type { ContextoOperacion } from '../comun/contexto-operacion.js';
@@ -21,7 +22,11 @@ import {
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificadorService } from '../tiempo-real/notificador.service.js';
-import { validarTransicion } from './maquina-estados.js';
+import { encolarLiquidacion } from '../liquidacion/liquidacion.processor.js';
+import { COLAS } from '../colas/nombres.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import { rutaDeEstados, validarTransicion } from './maquina-estados.js';
 import {
   aCompeticionDto,
   aPartidoDetalleDto,
@@ -76,7 +81,10 @@ export class PartidosService {
     private readonly prisma: PrismaService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
     private readonly notificador: NotificadorService,
+    @InjectQueue(COLAS.liquidacion) private readonly colaLiquidacion: Queue,
   ) {}
+
+  private readonly logger = new Logger('Partidos');
 
   // --- Consultas (cartelera y detalle) ---
 
@@ -209,12 +217,12 @@ export class PartidosService {
     cambio: ActualizacionPartido,
     contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
-    const { detalle, cambio: huboCambio } = await this.prisma.$transaction(async (tx) => {
+    const resultado = await this.prisma.$transaction(async (tx) => {
       const partido = await bloquearPartido(tx, id);
       const cambiaEstado = cambio.estado !== undefined && cambio.estado !== partido.estado;
       const cambiaMarcador = this.cambiaMarcador(partido, cambio);
       if (!cambiaEstado && !cambiaMarcador)
-        return { detalle: await this.obtener(id, tx), cambio: false };
+        return { detalle: await this.obtener(id, tx), cambio: false, liquidar: undefined };
 
       let datos: Prisma.PartidoUpdateInput = { version: { increment: 1 } };
       if (cambiaEstado && cambio.estado) {
@@ -234,13 +242,61 @@ export class PartidosService {
           minuto: cambio.minuto,
         });
       }
-      await tx.partido.update({ where: { id }, data: datos });
-      // T064 (HU3): encolar la liquidación al pasar a FINALIZADO.
-      return { detalle: await this.obtener(id, tx), cambio: true };
+      const actualizado = await tx.partido.update({ where: { id }, data: datos });
+      const finalizo = cambiaEstado && cambio.estado === 'FINALIZADO';
+      return {
+        detalle: await this.obtener(id, tx),
+        cambio: true,
+        liquidar: finalizo ? actualizado.versionResultado : undefined,
+      };
     });
-    // Solo después del commit: nunca se avisa de un cambio que se revirtió.
+    const { detalle, cambio: huboCambio, liquidar } = resultado;
+    // Solo después del commit: nunca se avisa ni se liquida un cambio que se revirtió.
     if (huboCambio) this.notificador.partidoActualizado(detalle);
+    if (liquidar !== undefined) await this.encolarLiquidacion(id, liquidar);
     return detalle;
+  }
+
+  /**
+   * Finaliza un partido con su marcador del tiempo reglamentario (POST /operador/partidos/:id/resultado). Si el
+   * partido no pasó por "en vivo", recorre la máquina de estados paso a paso. Corregir un resultado ya finalizado
+   * es la HU8.
+   */
+  async registrarResultado(
+    id: string,
+    datos: { golesLocal: number; golesVisitante: number; motivo: string },
+    contexto: ContextoOperacion,
+  ): Promise<PartidoDetalleDto> {
+    const partido = await this.obtener(id);
+    if (partido.estado === 'FINALIZADO') {
+      throw new ConflictException(
+        'El partido ya está finalizado: la corrección de resultados es la HU8',
+      );
+    }
+    const ruta = rutaDeEstados(partido.estado, 'FINALIZADO');
+    if (!ruta?.length) validarTransicion(partido.estado, 'FINALIZADO');
+    let detalle = partido;
+    for (const estado of ruta ?? []) {
+      const marcador =
+        estado === 'FINALIZADO'
+          ? { golesLocal: datos.golesLocal, golesVisitante: datos.golesVisitante }
+          : {};
+      detalle = await this.aplicarActualizacion(
+        id,
+        { estado, motivo: datos.motivo, ...marcador },
+        contexto,
+      );
+    }
+    return detalle;
+  }
+
+  /** La cola persiste el trabajo; si Redis falla, el arranque del procesador lo vuelve a encolar (FR-028). */
+  private async encolarLiquidacion(partidoId: string, versionResultado: number): Promise<void> {
+    try {
+      await encolarLiquidacion(this.colaLiquidacion, { partidoId, versionResultado });
+    } catch (error) {
+      this.logger.error(`No se pudo encolar la liquidación de ${partidoId}: ${String(error)}`);
+    }
   }
 
   private cambiaMarcador(partido: Partido, cambio: ActualizacionPartido): boolean {

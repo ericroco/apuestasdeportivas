@@ -1,4 +1,6 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { COLAS } from '../colas/nombres.js';
 import { TiempoRealModule } from '../tiempo-real/tiempo-real.module.js';
 import { CarteleraController } from './cartelera.controller.js';
 import { MercadosService } from './mercados.service.js';
@@ -7,7 +9,7 @@ import { PartidosService } from './partidos.service.js';
 
 /** HU1: partidos, mercados, cuotas y cartelera. PartidosService.aplicarActualizacion lo usa la sincronización. */
 @Module({
-  imports: [TiempoRealModule],
+  imports: [TiempoRealModule, BullModule.registerQueue({ name: COLAS.liquidacion })],
   controllers: [CarteleraController, OperadorController],
   providers: [PartidosService, MercadosService],
   exports: [PartidosService, MercadosService],
