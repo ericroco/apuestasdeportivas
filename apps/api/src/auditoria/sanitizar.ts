@@ -22,9 +22,7 @@ function sanitizarValor(valor: unknown, profundidad: number): unknown {
   if (valor instanceof Date) return valor.toISOString();
   if (valor !== null && typeof valor === 'object') {
     // Decimal de Prisma y similares: se guardan como texto, no como objeto interno.
-    if (typeof (valor as { toFixed?: unknown }).toFixed === 'function' && 'd' in valor) {
-      return String(valor);
-    }
+    if (esDecimal(valor)) return valor.toFixed();
     return Object.fromEntries(
       Object.entries(valor).map(([clave, interno]) => [
         clave,
@@ -34,4 +32,8 @@ function sanitizarValor(valor: unknown, profundidad: number): unknown {
   }
   if (typeof valor === 'bigint') return valor.toString();
   return valor;
+}
+
+function esDecimal(valor: object): valor is { toFixed(): string } {
+  return typeof (valor as { toFixed?: unknown }).toFixed === 'function' && 'd' in valor;
 }
