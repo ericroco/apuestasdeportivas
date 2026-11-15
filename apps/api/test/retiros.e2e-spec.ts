@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { Global, Module } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -23,10 +22,6 @@ const riesgo: RiesgoPort = {
         : { requiereRevision: false, motivos: [] },
     ),
 };
-
-@Global()
-@Module({ providers: [{ provide: RIESGO_PORT, useValue: riesgo }], exports: [RIESGO_PORT] })
-class RiesgoDePrueba {}
 
 // HU7 y HU8, y el vector "retiro sin 2FA o a otro titular" del brief (FR-053 a FR-060).
 describe('Retiros (e2e)', () => {
@@ -92,7 +87,8 @@ describe('Retiros (e2e)', () => {
   };
 
   beforeAll(async () => {
-    app = await crearAppDePrueba({ modulos: [RiesgoDePrueba] });
+    // RIESGO_PORT real (FraudeModule del Spec 4) reemplazado por uno predecible para esta prueba.
+    app = await crearAppDePrueba({ sustituir: [{ token: RIESGO_PORT, valor: riesgo }] });
     prisma = app.get(PrismaService);
     billetera = app.get(BILLETERA_PORT);
     libro = app.get(LibroContableService);

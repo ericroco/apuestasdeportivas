@@ -1,0 +1,212 @@
+// Spec 4 (Erick): cupones, canjes, bonos con rollover, actividad observada y alertas de fraude.
+// Ver specs/004-promociones-fraude-reportes/data-model.md.
+// - El usuario se guarda como texto (sin clave foránea) hasta que exista el modelo Usuario del Spec 2.
+// - Los CHECK por tipo de cupón, `canjes <= cupo_total` y el índice único parcial de bono activo están en el SQL
+//   de la migración spec4_promociones_fraude: Prisma no los declara.
+// - Este spec no guarda saldos: todo movimiento de dinero lo hace la billetera del Spec 2.
+
+enum TipoCupon {
+  BONO_DEPOSITO
+  APUESTA_GRATIS
+  AUMENTO_CUOTA
+
+  @@map("tipo_cupon")
+}
+
+enum EstadoCupon {
+  ACTIVO
+  PAUSADO
+
+  @@map("estado_cupon")
+}
+
+enum OrigenCanje {
+  APUESTA
+  DEPOSITO
+
+  @@map("origen_canje")
+}
+
+enum EstadoCanje {
+  ACEPTADO
+  RECHAZADO
+
+  @@map("estado_canje")
+}
+
+enum EstadoBono {
+  ACTIVO
+  CUMPLIDO
+  VENCIDO
+
+  @@map("estado_bono")
+}
+
+enum TipoActividad {
+  REGISTRO
+  DEPOSITO
+  APUESTA_ACEPTADA
+  APUESTA_LIQUIDADA
+  RETIRO
+
+  @@map("tipo_actividad")
+}
+
+enum ReglaFraude {
+  CUENTAS_DISPOSITIVO
+  CUENTAS_IP
+  METODO_PAGO_COMPARTIDO
+  CUPON_CUENTA_MULTIPLE
+  APUESTA_MONTO_ANOMALO
+  RAFAGA_APUESTAS
+  RETIRO_TRAS_DEPOSITO
+
+  @@map("regla_fraude")
+}
+
+enum SeveridadAlerta {
+  MEDIA
+  ALTA
+
+  @@map("severidad_alerta")
+}
+
+enum EstadoAlerta {
+  ABIERTA
+  CONFIRMADA
+  DESCARTADA
+
+  @@map("estado_alerta")
+}
+
+/// Cupón de promoción. Tipo, valor y condiciones son inmutables cuando ya tiene canjes.
+model Cupon {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Normalizado: sin espacios y en mayúsculas, `^[A-Z0-9]{4,20}$`.
+  codigo           String      @unique @db.VarChar(20)
+  tipo             TipoCupon
+  /// BONO_DEPOSITO: 1–200; AUMENTO_CUOTA: 1–100; nulo en APUESTA_GRATIS.
+  porcentaje       Decimal?    @db.Decimal(5, 2)
+  montoFijo        Decimal?    @map("monto_fijo") @db.Decimal(14, 2)
+  topeBono         Decimal?    @map("tope_bono") @db.Decimal(14, 2)
+  depositoMinimo   Decimal?    @map("deposito_minimo") @db.Decimal(14, 2)
+  apuestaMaxima    Decimal?    @map("apuesta_maxima") @db.Decimal(14, 2)
+  iniciaEn         DateTime    @map("inicia_en") @db.Timestamptz(3)
+  terminaEn        DateTime    @map("termina_en") @db.Timestamptz(3)
+  cupoTotal        Int         @map("cupo_total")
+  limitePorUsuario Int         @default(1) @map("limite_por_usuario")
+  /// Canjes aceptados; se incrementa con la fila bloqueada (`SELECT … FOR UPDATE`).
+  canjes           Int         @default(0)
+  estado           EstadoCupon @default(ACTIVO)
+  creadoPor        String      @map("creado_por")
+  creadoEn         DateTime    @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn    DateTime    @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  historialCanjes CanjeCupon[]
+  bonos           Bono[]
+
+  @@index([creadoEn])
+  @@map("cupon")
+}
+
+/// Un uso de un cupón, aceptado o rechazado con su motivo. Los rechazos en apuestas no se guardan (se revierten
+/// con la transacción de la apuesta); los rechazos en depósitos sí.
+model CanjeCupon {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Nulo si el código no existía.
+  cuponId          String?     @map("cupon_id") @db.Uuid
+  codigo           String      @db.VarChar(40)
+  usuarioId        String      @map("usuario_id")
+  origen           OrigenCanje
+  /// `depositoId` en depósitos; nulo en apuestas (la apuesta del Spec 3 guarda el cupón).
+  referenciaId     String?     @map("referencia_id")
+  estado           EstadoCanje
+  /// Código de rechazo (motivos.ts); nulo si se aceptó.
+  motivo           String?
+  /// n-ésimo canje aceptado del usuario en el cupón: forma parte de la clave de idempotencia del bono.
+  numero           Int?
+  metodoPagoHuella String?     @map("metodo_pago_huella")
+  creadoEn         DateTime    @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  cupon Cupon? @relation(fields: [cuponId], references: [id], onDelete: Restrict)
+  bono  Bono?
+
+  @@unique([origen, referenciaId])
+  @@unique([cuponId, usuarioId, numero])
+  @@index([usuarioId, creadoEn])
+  @@index([cuponId, estado])
+  @@map("canje_cupon")
+}
+
+/// Bono otorgado por un canje. Como máximo uno ACTIVO por usuario (índice único parcial en la migración).
+model Bono {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId       String     @map("usuario_id")
+  cuponId         String     @map("cupon_id") @db.Uuid
+  canjeId         String     @unique @map("canje_id") @db.Uuid
+  monto           Decimal    @db.Decimal(14, 2)
+  /// monto × CUPON_ROLLOVER_MULTIPLICADOR.
+  requisito       Decimal    @db.Decimal(14, 2)
+  /// Solo crece.
+  avance          Decimal    @default(0) @db.Decimal(14, 2)
+  estado          EstadoBono @default(ACTIVO)
+  otorgadoEn      DateTime   @map("otorgado_en") @db.Timestamptz(3)
+  venceEn         DateTime   @map("vence_en") @db.Timestamptz(3)
+  cumplidoEn      DateTime?  @map("cumplido_en") @db.Timestamptz(3)
+  /// Saldo de bono convertido en real al cumplir el rollover.
+  montoConvertido Decimal?   @map("monto_convertido") @db.Decimal(14, 2)
+
+  cupon Cupon      @relation(fields: [cuponId], references: [id], onDelete: Restrict)
+  canje CanjeCupon @relation(fields: [canjeId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId, estado])
+  @@index([cuponId])
+  @@map("bono")
+}
+
+/// Actividad observada desde los eventos de dominio (append-only). `(tipo, referencia_id)` único hace idempotentes
+/// a los listeners.
+model ActividadUsuario {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId        String        @map("usuario_id")
+  tipo             TipoActividad
+  /// `usuarioId`, `depositoId`, `apuestaId` o `retiroId` según el tipo.
+  referenciaId     String        @map("referencia_id")
+  monto            Decimal?      @db.Decimal(14, 2)
+  /// Cuota total de APUESTA_ACEPTADA; nula si el evento no la trae (la apuesta no suma rollover).
+  cuota            Decimal?      @db.Decimal(12, 2)
+  tipoSaldo        String?       @map("tipo_saldo")
+  resultado        String?
+  ip               String?
+  dispositivo      String?
+  metodoPagoHuella String?       @map("metodo_pago_huella")
+  /// Hora del servidor al recibir el evento.
+  ocurridoEn       DateTime      @default(now()) @map("ocurrido_en") @db.Timestamptz(3)
+
+  @@unique([tipo, referenciaId])
+  @@index([usuarioId, tipo, ocurridoEn])
+  @@index([dispositivo])
+  @@index([ip, ocurridoEn])
+  @@index([metodoPagoHuella])
+  @@map("actividad_usuario")
+}
+
+/// Alerta de fraude para revisión humana. No bloquea la cuenta (eso es del Spec 2).
+model AlertaFraude {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regla              ReglaFraude
+  severidad          SeveridadAlerta
+  usuarioId          String          @map("usuario_id")
+  evidencia          Json            @db.JsonB
+  /// La misma regla no crea dos alertas para la misma evidencia (data-model.md).
+  claveDeduplicacion String          @unique @map("clave_deduplicacion")
+  estado             EstadoAlerta    @default(ABIERTA)
+  nota               String?
+  resueltaPor        String?         @map("resuelta_por")
+  resueltaEn         DateTime?       @map("resuelta_en") @db.Timestamptz(3)
+  creadaEn           DateTime        @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  @@index([estado, creadaEn])
+  @@index([usuarioId, estado])
+  @@map("alerta_fraude")
+}

@@ -38,6 +38,27 @@ function montoTexto(porDefecto: string) {
     .default(porDefecto);
 }
 
+/** Entero dentro de un rango, con valor por defecto (las variables llegan como texto). */
+const enteroEnRango = (minimo: number, maximo: number, porDefecto: number) =>
+  z.coerce.number().int().min(minimo).max(maximo).default(porDefecto);
+
+/**
+ * Cuota con hasta dos decimales entre 1.01 y 10, normalizada a texto con dos decimales ("2.5" → "2.50").
+ * Se compara en centésimos enteros para no depender de la aritmética de punto flotante.
+ */
+const cuotaMinimaRollover = z
+  .string()
+  .regex(/^\d{1,2}(\.\d{1,2})?$/, 'debe ser una cuota con hasta dos decimales')
+  .transform((valor) => {
+    const [entero = '0', decimales = ''] = valor.split('.');
+    return Number(entero) * 100 + Number(decimales.padEnd(2, '0'));
+  })
+  .refine((centesimos) => centesimos >= 101 && centesimos <= 1_000, 'debe estar entre 1.01 y 10')
+  .transform(
+    (centesimos) => `${Math.trunc(centesimos / 100)}.${String(centesimos % 100).padStart(2, '0')}`,
+  )
+  .default('1.50');
+
 const esquemaEntorno = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
@@ -87,6 +108,20 @@ const esquemaEntorno = z.object({
   RETIRO_MIN: montoTexto('5.00'),
   RETIRO_MAX: montoTexto('1000.00'),
   RETIRO_UMBRAL_REVISION: montoTexto('100.00'),
+
+  // Spec 4: cupones y rollover (specs/004-promociones-fraude-reportes/contracts/configuracion.md).
+  CUPON_ROLLOVER_MULTIPLICADOR: enteroEnRango(1, 50, 5),
+  CUPON_ROLLOVER_CUOTA_MINIMA: cuotaMinimaRollover,
+  BONO_VIGENCIA_DIAS: enteroEnRango(1, 365, 30),
+  // Spec 4: umbrales de las reglas de fraude.
+  FRAUDE_IP_MAX_CUENTAS: enteroEnRango(1, 100, 3),
+  FRAUDE_IP_VENTANA_HORAS: enteroEnRango(1, 720, 24),
+  FRAUDE_APUESTA_FACTOR: enteroEnRango(2, 1_000, 10),
+  FRAUDE_APUESTA_HISTORIAL_MIN: enteroEnRango(1, 1_000, 5),
+  FRAUDE_RAFAGA_MAX_APUESTAS: enteroEnRango(2, 1_000, 10),
+  FRAUDE_RAFAGA_VENTANA_SEG: enteroEnRango(5, 3_600, 60),
+  FRAUDE_RETIRO_VENTANA_HORAS: enteroEnRango(1, 720, 24),
+  FRAUDE_RETIRO_ACTIVIDAD_MIN_PCT: enteroEnRango(1, 1_000, 50),
 });
 
 /** Reglas que cruzan variables. Los mensajes nombran la variable, nunca su valor. */

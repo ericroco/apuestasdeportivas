@@ -26,6 +26,7 @@ env:
   # proxy se generan nuevas en cada ejecución (paso "Generar secretos efímeros"), nunca se versionan.
   TURNSTILE_SECRET: 1x0000000000000000000000000000000AA
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+  # Reportes verifica el token con la JWT_PUBLIC_KEY que genera ese mismo paso (par Ed25519 coherente con la API).
   TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:

@@ -77,6 +77,8 @@ services:
         sync: false # URL interna con el usuario reportes_lectura (nunca la del dueño)
       - key: WEB_ORIGIN
         sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false # clave pública PEM de la API (Spec 2); los \n escapados se aceptan
 
   - type: keyvalue
     name: apuestas-redis-staging

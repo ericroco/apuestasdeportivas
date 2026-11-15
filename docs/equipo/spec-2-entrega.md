@@ -48,6 +48,9 @@ Sin estos pasos **la API no arranca**: ahora exige variables nuevas.
 4. En `apps/web/.env.local`, copiar las variables nuevas de `apps/web/.env.example` y poner en `WEB_PROXY_SECRETO`
    **el mismo valor** que quedó en `apps/api/.env`.
 
+   En `apps/reports/.env`, poner en `JWT_PUBLIC_KEY` **la misma línea** `JWT_PUBLIC_KEY=…` de `apps/api/.env`
+   (reportes verifica los tokens con la clave pública de la API; sin ella el servicio de reportes no arranca).
+
 5. Crear tu administrador local (nunca hay una ruta HTTP para esto). Al entrar por primera vez la web te pedirá
    activar el 2FA:
 
@@ -114,7 +117,24 @@ paso está en [`docs/despliegue.md`](../despliegue.md), sección "Variables y se
 - **Render (reportes)**: `JWT_PUBLIC_KEY` (cuando el Spec 4 la use).
 - **Vercel (web)**: `WEB_PROXY_SECRETO` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 
-## 5. Decisiones y limitaciones conocidas
+## 5. Integración con el Spec 4 (merge de `develop`)
+
+Al traer `develop` con el Spec 4 ya integrado se resolvieron estos puntos (revísalos, Erick):
+
+- `configurar-app.ts` usa el `ErrorNegocioFilter` y el `crearPipeDeValidacion()` del Spec 4 (reemplazan al pipe del
+  Spec 2, que hacía lo mismo sin mensajes en español).
+- `env.ts`, `.env.example`, `ci.yml`, `configuracion.md` y `despliegue.md`: se conservaron las variables de los
+  dos specs. En CI se quitó la `JWT_PUBLIC_KEY` fija: el paso "Generar secretos efímeros" ya genera un par Ed25519
+  coherente que usan la API y reportes.
+- Pruebas del Spec 4: `test/utilidades/app-de-prueba.ts` reemplaza el guard real y los puertos reales por los
+  dobles (`overrideProvider`), y las 4 pruebas unitarias de promociones que llaman a `validarEntorno` agregan
+  `VARIABLES_SPEC2_DE_PRUEBA` (`test/ayudas/entorno-de-prueba.ts`). `BilleteraEnMemoria` implementa
+  `revertirPremio`.
+- `RIESGO_PORT` real (FraudeModule) ya evalúa los retiros del Spec 2.
+- En Node 24, `src/lib/reportes/grafica.test.ts` de la web espera `$25 k` y recibe `$25 K` (datos regionales ICU
+  distintos a los de Node 22, que usa CI). No lo causa el merge: en CI pasa.
+
+## 6. Decisiones y limitaciones conocidas
 
 - **Un solo PR** en lugar de tres: se acordó para no esperar los merges intermedios.
 - **CSP fija** en `apps/web/next.config.ts`, sin nonce: con `cacheComponents` un nonce obliga a renderizar cada
