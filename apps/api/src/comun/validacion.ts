@@ -1,4 +1,5 @@
 import { HttpStatus, StandardSchemaValidationPipe } from '@nestjs/common';
+import { z } from 'zod';
 import { ErrorNegocio } from './error-negocio.js';
 
 /** Máximo de problemas que se listan en el mensaje; el resto se resume. */
@@ -30,5 +31,7 @@ export function crearErrorDeValidacion(problemas: readonly ProblemaDeValidacion[
  * Sin un pipe registrado, `schema` no valida nada: por eso se registra en `configurarApp`.
  */
 export function crearPipeDeValidacion(): StandardSchemaValidationPipe {
+  // Mensajes de zod en español para que el cliente sepa qué corregir.
+  z.config(z.locales.es());
   return new StandardSchemaValidationPipe({ exceptionFactory: crearErrorDeValidacion });
 }
