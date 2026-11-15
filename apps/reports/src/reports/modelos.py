@@ -114,3 +114,11 @@ class CompeticionDesglose(_Modelo):
 class RespuestaCompeticiones(_Modelo):
     filtros: FiltrosAplicados
     competiciones: list[CompeticionDesglose]
+
+
+class Reporte(_Modelo):
+    """Lo que lleva una exportación, calculado en la misma instantánea de la base."""
+
+    resumen: RespuestaResumen
+    serie: RespuestaSerieDiaria
+    competiciones: RespuestaCompeticiones

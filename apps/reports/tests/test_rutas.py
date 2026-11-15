@@ -15,6 +15,7 @@ RUTAS = [
     f"/reportes/resumen?{RANGO}",
     f"/reportes/serie-diaria?{RANGO}",
     f"/reportes/competiciones?{RANGO}",
+    f"/reportes/exportar?{RANGO}&formato=csv",
 ]
 
 
@@ -94,6 +95,8 @@ def test_la_autenticacion_va_antes_que_los_filtros(cliente: TestClient, fabrica:
         "/reportes/serie-diaria?desde=2026-12-02&hasta=2026-12-01",
         "/reportes/competiciones?desde=2026-01-01&hasta=2027-12-31",
         f"/reportes/resumen?{RANGO}&competicionId=1%20OR%201%3D1",
+        f"/reportes/exportar?{RANGO}",
+        f"/reportes/exportar?{RANGO}&formato=xlsx",
     ],
 )
 def test_filtros_invalidos_responden_400_sin_abrir_la_base(

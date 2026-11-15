@@ -15,7 +15,12 @@ from reports.metricas import (
     construir_serie,
     marco_vacio,
 )
-from reports.modelos import RespuestaCompeticiones, RespuestaResumen, RespuestaSerieDiaria
+from reports.modelos import (
+    Reporte,
+    RespuestaCompeticiones,
+    RespuestaResumen,
+    RespuestaSerieDiaria,
+)
 
 
 def _criterios(conexion: Conexion, filtros: Filtros) -> Criterios | None:
@@ -70,3 +75,16 @@ def obtener_serie(conexion: Conexion, filtros: Filtros) -> RespuestaSerieDiaria:
 def obtener_competiciones(conexion: Conexion, filtros: Filtros) -> RespuestaCompeticiones:
     marco = _competiciones(conexion, _criterios(conexion, filtros))
     return construir_competiciones(filtros, marco)
+
+
+def obtener_reporte(conexion: Conexion, filtros: Filtros, generado_en: datetime) -> Reporte:
+    """Resumen, serie y desglose para exportar, sin repetir las consultas de la serie."""
+    criterios = _criterios(conexion, filtros)
+    datos = datos_resumen(conexion, criterios)
+    return Reporte(
+        resumen=construir_resumen(filtros, datos, generado_en),
+        serie=construir_serie(
+            filtros, datos.apuestas_por_dia, datos.depositos_por_dia, datos.retiros_por_dia
+        ),
+        competiciones=construir_competiciones(filtros, _competiciones(conexion, criterios)),
+    )

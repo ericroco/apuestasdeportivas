@@ -10,7 +10,7 @@ import time
 from collections.abc import Iterable, Iterator
 from datetime import datetime
 from decimal import Decimal
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from uuid import uuid4
 
 import psycopg
@@ -125,6 +125,11 @@ def cliente(
     urls: _Urls, esquemas: dict[str, str], clave_privada: ed25519.Ed25519PrivateKey
 ) -> TestClient:
     return _cliente(urls, esquemas["completo"], clave_privada)
+
+
+def _con_rango(ruta: str) -> str:
+    """Agrega RANGO a una ruta que ya puede traer su propia query (`params=` la reemplazaría)."""
+    return f"{ruta}{'&' if '?' in ruta else '?'}{urlencode(RANGO)}"
 
 
 def _resumen(cliente: TestClient, **filtros: str) -> dict[str, object]:
@@ -350,11 +355,34 @@ def test_un_correo_desconocido_deja_la_serie_y_el_desglose_en_cero(cliente: Test
     assert _desglose(cliente, usuario="nadie@example.com") == []
 
 
+def test_exportar_coincide_con_el_resumen_y_la_serie(cliente: TestClient) -> None:
+    csv = cliente.get("/reportes/exportar", params={**RANGO, "formato": "csv"})
+    pdf = cliente.get("/reportes/exportar", params={**RANGO, "formato": "pdf"})
+
+    assert csv.status_code == pdf.status_code == 200
+    texto = csv.content.decode("utf-8-sig")
+    assert "Volumen apostado,55.00" in texto
+    assert "GGR,8.75" in texto
+    assert "2026-12-02,2,17.25,0.00,12.00,0.00,40.00" in texto
+    assert "Serie A,futbol,2,32.00,32.00" in texto
+    assert pdf.content.startswith(b"%PDF")
+
+
+def test_exportar_con_un_correo_desconocido_da_ceros(cliente: TestClient) -> None:
+    respuesta = cliente.get(
+        "/reportes/exportar", params={**RANGO, "formato": "csv", "usuario": "nadie@example.com"}
+    )
+
+    assert respuesta.status_code == 200
+    assert "Volumen apostado,0.00" in respuesta.content.decode("utf-8-sig")
+
+
 @pytest.mark.parametrize(
     ("ruta", "estado"),
     [
         ("/reportes/resumen", 503),
         ("/reportes/serie-diaria", 503),
+        ("/reportes/exportar?formato=csv", 503),
         ("/reportes/competiciones", 200),
     ],
 )
@@ -367,7 +395,7 @@ def test_una_tabla_faltante_responde_503_solo_donde_se_usa(
 ) -> None:
     cliente = _cliente(urls, esquemas["sin_retiro"], clave_privada)
 
-    respuesta = cliente.get(ruta, params=RANGO)
+    respuesta = cliente.get(_con_rango(ruta))
 
     assert respuesta.status_code == estado
     if estado == 503:
@@ -382,6 +410,7 @@ def test_una_tabla_faltante_responde_503_solo_donde_se_usa(
         "/reportes/resumen?deporte=futbol",
         "/reportes/serie-diaria",
         "/reportes/competiciones",
+        "/reportes/exportar?formato=pdf",
     ],
 )
 def test_sin_las_tablas_de_otros_specs_responde_503(
@@ -389,7 +418,7 @@ def test_sin_las_tablas_de_otros_specs_responde_503(
 ) -> None:
     cliente = _cliente(urls, esquemas["vacio"], clave_privada)
 
-    respuesta = cliente.get(ruta, params=RANGO)
+    respuesta = cliente.get(_con_rango(ruta))
 
     assert respuesta.status_code == 503
     assert respuesta.json()["detail"]["codigo"] == "DATOS_NO_DISPONIBLES"
@@ -411,8 +440,8 @@ def test_ninguna_ruta_escribe_en_la_base(
 ) -> None:
     antes = _huella(propietario, esquemas["completo"])
 
-    for ruta in ["resumen", "serie-diaria", "competiciones"]:
-        assert cliente.get(f"/reportes/{ruta}", params=RANGO).status_code == 200
+    for ruta in ["resumen", "serie-diaria", "competiciones", "exportar?formato=csv"]:
+        assert cliente.get(_con_rango(f"/reportes/{ruta}")).status_code == 200
 
     assert _huella(propietario, esquemas["completo"]) == antes
 
