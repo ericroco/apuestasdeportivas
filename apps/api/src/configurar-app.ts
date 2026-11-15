@@ -1,5 +1,6 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import { ErrorNegocioFilter } from './comun/error-negocio.filter.js';
 import type { Entorno } from './config/env.js';
 
 /**
@@ -12,6 +13,7 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   app.use(helmet());
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
+  app.useGlobalFilters(new ErrorNegocioFilter());
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableShutdownHooks();
 }
