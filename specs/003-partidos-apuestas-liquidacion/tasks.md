@@ -87,21 +87,21 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T024 [P] [US5] Pruebas del mapeo de API-Football (estados, marcador reglamentario, mercados por nombre) con respuestas grabadas en `apps/api/src/sincronizacion/api-football.mapeo.spec.ts` y `apps/api/src/sincronizacion/__fixtures__/`
-- [ ] T025 [P] [US5] Pruebas de la frecuencia adaptativa (en vivo frente a futuros, reserva del 10 %, mínimo 15 s) en `apps/api/src/sincronizacion/frecuencia.spec.ts`
-- [ ] T026 [US5] Prueba e2e del presupuesto con un proveedor HTTP falso: con presupuesto 5, ningún número de ciclos supera 5 consultas, se avisa "agotado" y reimportar no duplica partidos, en `apps/api/test/sincronizacion-presupuesto.e2e-spec.ts`
-- [ ] T027 [US5] Prueba e2e de simulación: `INICIO`, `GOL` y `FINAL` cambian el partido por `aplicarActualizacion()`, y la ruta responde 404 con la simulación apagada, en `apps/api/test/simulacion.e2e-spec.ts`
-- [ ] T028 [US5] Prueba e2e de tiempo real: ticket de un solo uso, conexión rechazada sin ticket o con uno usado, y `partido.actualizado` llega a la sala `partido:<id>`, en `apps/api/test/tiempo-real.e2e-spec.ts`
+- [x] T024 [P] [US5] Pruebas del mapeo de API-Football (estados, marcador reglamentario, mercados por nombre) con respuestas grabadas en `apps/api/src/sincronizacion/api-football.mapeo.spec.ts` y `apps/api/src/sincronizacion/__fixtures__/`
+- [x] T025 [P] [US5] Pruebas de la frecuencia adaptativa (en vivo frente a futuros, reserva del 10 %, mínimo 15 s) en `apps/api/src/sincronizacion/frecuencia.spec.ts`
+- [x] T026 [US5] Prueba e2e del presupuesto con un proveedor HTTP falso: con presupuesto 5, ningún número de ciclos supera 5 consultas, se avisa "agotado" y reimportar no duplica partidos, en `apps/api/test/sincronizacion-presupuesto.e2e-spec.ts`
+- [x] T027 [US5] Prueba e2e de simulación: `INICIO`, `GOL` y `FINAL` cambian el partido por `aplicarActualizacion()`, y la ruta responde 404 con la simulación apagada, en `apps/api/test/simulacion.e2e-spec.ts`
+- [x] T028 [US5] Prueba e2e de tiempo real: ticket de un solo uso, conexión rechazada sin ticket o con uno usado, y `partido.actualizado` llega a la sala `partido:<id>`, en `apps/api/test/tiempo-real.e2e-spec.ts`
 
 ### Implementation for User Story 5
 
 - [ ] T029 [US5] Con una clave gratuita de API-Football, verificar los puntos marcados "(verificar)" en research.md §2 y §10 (cuota del plan, cabeceras, paginación de cuotas, códigos de estado, `score.fulltime`, nombres de mercados), corregir research.md si algo difiere y guardar respuestas de ejemplo sin la clave en `apps/api/src/sincronizacion/__fixtures__/`
-- [ ] T030 [P] [US5] Definir `ActualizacionPartido` y el token `PROVEEDOR_DEPORTIVO` en `apps/api/src/sincronizacion/proveedor-deportivo.port.ts`
-- [ ] T031 [US5] Implementar el contador atómico con Lua y la copia en `consumo_proveedor` en `apps/api/src/sincronizacion/presupuesto.service.ts`
-- [ ] T032 [US5] Implementar el mapeo y el cliente HTTP (timeout, cabecera de la clave, nunca registrar la clave en el log) en `apps/api/src/sincronizacion/api-football.mapeo.ts` y `apps/api/src/sincronizacion/api-football.proveedor.ts`
-- [ ] T033 [P] [US5] Implementar `apps/api/src/sincronizacion/simulador.proveedor.ts` y `apps/api/src/sincronizacion/simulacion.controller.ts`
-- [ ] T034 [US5] Implementar `apps/api/src/sincronizacion/frecuencia.ts`, el procesador con trabajos repetibles, concurrencia 1 y espera exponencial en `sincronizacion.processor.ts`, y `sincronizacion.module.ts`
-- [ ] T035 [US5] Implementar el tiempo real base: `apps/api/src/tiempo-real/tickets.service.ts` (Redis `GETDEL`), `tiempo-real.gateway.ts` (CORS a `WEB_ORIGIN`, salas) y `notificador.service.ts`; emitir `partido.actualizado` tras el commit de `aplicarActualizacion()`
+- [x] T030 [P] [US5] Definir `ActualizacionPartido` y el token `PROVEEDOR_DEPORTIVO` en `apps/api/src/sincronizacion/proveedor-deportivo.port.ts`
+- [x] T031 [US5] Implementar el contador atómico con Lua y la copia en `consumo_proveedor` en `apps/api/src/sincronizacion/presupuesto.service.ts`
+- [x] T032 [US5] Implementar el mapeo y el cliente HTTP (timeout, cabecera de la clave, nunca registrar la clave en el log) en `apps/api/src/sincronizacion/api-football.mapeo.ts` y `apps/api/src/sincronizacion/api-football.proveedor.ts`
+- [x] T033 [P] [US5] Implementar `apps/api/src/sincronizacion/simulador.proveedor.ts` y `apps/api/src/sincronizacion/simulacion.controller.ts`
+- [x] T034 [US5] Implementar `apps/api/src/sincronizacion/frecuencia.ts`, el procesador con trabajos repetibles, concurrencia 1 y espera exponencial en `sincronizacion.processor.ts`, y `sincronizacion.module.ts`
+- [x] T035 [US5] Implementar el tiempo real base: `apps/api/src/tiempo-real/tickets.service.ts` (Redis `GETDEL`), `tiempo-real.gateway.ts` (CORS a `WEB_ORIGIN`, salas) y `notificador.service.ts`; emitir `partido.actualizado` tras el commit de `aplicarActualizacion()`
 - [ ] T036 [P] [US5] Exponer `GET /operador/proveedor/consumo` y su vista en `apps/web/src/app/operador/consumo/page.tsx`
 - [ ] T037 [US5] Construir la pantalla de simulación en `apps/web/src/app/operador/simulacion/page.tsx` y el marcador en vivo del detalle con `apps/web/src/lib/tiempo-real.ts`
 - [ ] T038 [US5] Crear el script de datos de demostración `apps/api/scripts/seed-partidos.ts` y el comando `seed:partidos` en `apps/api/package.json`

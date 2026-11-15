@@ -9,6 +9,7 @@ import {
   type ClienteTransaccional,
 } from '../contracts/index.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificadorService } from '../tiempo-real/notificador.service.js';
 import { admiteApuestas, esEstadoFinal } from './maquina-estados.js';
 import { validarMercado } from './mercados.js';
 import type { CrearMercado } from './partidos.esquemas.js';
@@ -21,6 +22,7 @@ export class MercadosService {
     private readonly prisma: PrismaService,
     private readonly partidos: PartidosService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
+    private readonly notificador: NotificadorService,
   ) {}
 
   async crearMercado(
@@ -31,7 +33,7 @@ export class MercadosService {
     const linea = datos.linea ?? null;
     validarMercado({ tipo: datos.tipo, linea, selecciones: datos.selecciones });
 
-    return this.prisma.$transaction(async (tx) => {
+    const detalle = await this.prisma.$transaction(async (tx) => {
       // El bloqueo del partido serializa las altas: PostgreSQL no considera duplicadas dos líneas NULL.
       const partido = await bloquearPartido(tx, partidoId);
       if (esEstadoFinal(partido.estado)) {
@@ -73,6 +75,12 @@ export class MercadosService {
       });
       return this.partidos.obtener(partidoId, tx);
     });
+    const nuevo = detalle.mercados.find(
+      (m) =>
+        m.tipo === datos.tipo && (m.linea ?? null) === (linea ? Number(linea).toFixed(1) : null),
+    );
+    if (nuevo) this.notificador.mercadoActualizado(partidoId, nuevo);
+    return detalle;
   }
 
   /**
@@ -84,7 +92,7 @@ export class MercadosService {
     cuota: Decimal,
     contexto: ContextoAccion,
   ): Promise<PartidoDetalleDto> {
-    return this.prisma.$transaction(async (tx) => {
+    const detalle = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM seleccion WHERE id = ${seleccionId}::uuid FOR UPDATE`;
       const seleccion = await tx.seleccion.findUnique({
         where: { id: seleccionId },
@@ -127,9 +135,12 @@ export class MercadosService {
         cuotaAnterior: aTexto(seleccion.cuota),
         cuotaNueva: aTexto(cuota),
       });
-      // T035 (HU5): emitir `mercado.actualizado` por WebSocket después del commit.
       return this.partidos.obtener(mercado.partidoId, tx);
     });
+    // Solo después del commit.
+    const mercado = detalle.mercados.find((m) => m.selecciones.some((s) => s.id === seleccionId));
+    if (mercado) this.notificador.mercadoActualizado(detalle.id, mercado);
+    return detalle;
   }
 
   suspender(
@@ -150,7 +161,7 @@ export class MercadosService {
     motivo: string,
     contexto: ContextoAccion,
   ): Promise<PartidoDetalleDto> {
-    return this.prisma.$transaction(async (tx) => {
+    const detalle = await this.prisma.$transaction(async (tx) => {
       const encontrado = await tx.mercado.findUnique({ where: { id: mercadoId } });
       if (!encontrado) throw new NotFoundException('El mercado no existe');
       const partido = await bloquearPartido(tx, encontrado.partidoId);
@@ -168,6 +179,9 @@ export class MercadosService {
       await this.auditar(tx, contexto, accion, mercadoId, { partidoId: partido.id, motivo });
       return this.partidos.obtener(partido.id, tx);
     });
+    const mercado = detalle.mercados.find((m) => m.id === mercadoId);
+    if (mercado) this.notificador.mercadoActualizado(detalle.id, mercado);
+    return detalle;
   }
 
   /** Un mercado solo reabre si el partido admite apuestas en ese momento (FR-017). */

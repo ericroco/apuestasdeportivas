@@ -8,6 +8,8 @@ import { ENTORNO, type Entorno } from '../../src/config/env.js';
 import { configurarApp } from '../../src/configurar-app.js';
 import { AUDITORIA_PORT, BILLETERA_PORT } from '../../src/contracts/index.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
+import { REDIS } from '../../src/redis/redis.constants.js';
+import type { Redis } from 'ioredis';
 import { AuditoriaEnMemoria } from '../dobles/auditoria-memoria.double.js';
 import { BilleteraSqlDePrueba } from '../dobles/billetera-sql.double.js';
 import { GuardPrueba } from '../dobles/guard-prueba.js';
@@ -63,6 +65,7 @@ export async function crearAppPrueba(): Promise<AppPrueba> {
   const prisma = app.get(PrismaService);
   await crearEsquemaPruebas(prisma);
   const billetera = app.get<BilleteraSqlDePrueba>(BILLETERA_PORT);
+  const redis = app.get<Redis>(REDIS);
 
   return {
     app,
@@ -73,6 +76,12 @@ export async function crearAppPrueba(): Promise<AppPrueba> {
       // TRUNCATE no dispara los disparadores de inmutabilidad (son por fila).
       await prisma.$executeRawUnsafe(`TRUNCATE ${TABLAS_A_VACIAR.join(', ')} CASCADE`);
       auditoria.limpiar();
+      // Contadores de presupuesto, temporadas y tickets del Spec 3 (solo claves de prueba locales).
+      const claves = [
+        ...(await redis.keys('api-football:*')),
+        ...(await redis.keys('ws:ticket:*')),
+      ];
+      if (claves.length) await redis.del(...claves);
     },
   };
 }

@@ -3,6 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { ErrorNegocioFilter } from './comun/error-negocio.filter.js';
 import type { Entorno } from './config/env.js';
+import { AdaptadorSocketIo } from './tiempo-real/adaptador-socket-io.js';
 
 /**
  * Configuración HTTP común a main.ts y a las pruebas e2e, para que las pruebas
@@ -13,6 +14,7 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   if (entorno.TRUST_PROXY_HOPS > 0) app.set('trust proxy', entorno.TRUST_PROXY_HOPS);
   app.use(helmet());
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
+  app.useWebSocketAdapter(new AdaptadorSocketIo(app, entorno.WEB_ORIGIN));
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
   app.useGlobalFilters(new ErrorNegocioFilter());
   // Valida y transforma las entradas con el esquema zod de cada parámetro (`@Body({ schema })`).

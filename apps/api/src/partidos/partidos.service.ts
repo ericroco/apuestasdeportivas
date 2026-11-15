@@ -20,6 +20,7 @@ import {
 } from '../contracts/index.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NotificadorService } from '../tiempo-real/notificador.service.js';
 import { validarTransicion } from './maquina-estados.js';
 import {
   aCompeticionDto,
@@ -74,6 +75,7 @@ export class PartidosService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
+    private readonly notificador: NotificadorService,
   ) {}
 
   // --- Consultas (cartelera y detalle) ---
@@ -207,11 +209,12 @@ export class PartidosService {
     cambio: ActualizacionPartido,
     contexto: ContextoAccion,
   ): Promise<PartidoDetalleDto> {
-    return this.prisma.$transaction(async (tx) => {
+    const { detalle, cambio: huboCambio } = await this.prisma.$transaction(async (tx) => {
       const partido = await bloquearPartido(tx, id);
       const cambiaEstado = cambio.estado !== undefined && cambio.estado !== partido.estado;
       const cambiaMarcador = this.cambiaMarcador(partido, cambio);
-      if (!cambiaEstado && !cambiaMarcador) return this.obtener(id, tx);
+      if (!cambiaEstado && !cambiaMarcador)
+        return { detalle: await this.obtener(id, tx), cambio: false };
 
       let datos: Prisma.PartidoUpdateInput = { version: { increment: 1 } };
       if (cambiaEstado && cambio.estado) {
@@ -232,10 +235,12 @@ export class PartidosService {
         });
       }
       await tx.partido.update({ where: { id }, data: datos });
-      // T035 (HU5): emitir `partido.actualizado` por WebSocket después del commit.
       // T064 (HU3): encolar la liquidación al pasar a FINALIZADO.
-      return this.obtener(id, tx);
+      return { detalle: await this.obtener(id, tx), cambio: true };
     });
+    // Solo después del commit: nunca se avisa de un cambio que se revirtió.
+    if (huboCambio) this.notificador.partidoActualizado(detalle);
+    return detalle;
   }
 
   private cambiaMarcador(partido: Partido, cambio: ActualizacionPartido): boolean {
