@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ColasModule } from './colas/colas.module.js';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
@@ -18,6 +20,9 @@ import { RedisModule } from './redis/redis.module.js';
     }),
     PrismaModule,
     RedisModule,
+    // Eventos de dominio entre specs (contrato 5) dentro del proceso.
+    EventEmitterModule.forRoot(),
+    ColasModule,
     HealthModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global

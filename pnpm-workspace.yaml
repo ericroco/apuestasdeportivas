@@ -5,6 +5,7 @@ packages:
 # pnpm 11 solo ejecuta scripts de instalación de las dependencias aprobadas aquí.
 allowBuilds:
   '@prisma/engines': true
+  msgpackr-extract: false
   prisma: true
   sharp: false
   unrs-resolver: false

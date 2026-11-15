@@ -16,7 +16,8 @@
     "@apuestas/shared": "workspace:*",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@playwright/test": "~1.65.0",
