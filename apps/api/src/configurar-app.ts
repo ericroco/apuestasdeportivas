@@ -1,3 +1,4 @@
+import { StandardSchemaValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -18,5 +19,7 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
   app.setGlobalPrefix('api', { exclude: ['health'] });
+  // Valida con zod los parámetros declarados con `@Body({ schema })`, `@Query({ schema })`… (los tres specs).
+  app.useGlobalPipes(new StandardSchemaValidationPipe());
   app.enableShutdownHooks();
 }

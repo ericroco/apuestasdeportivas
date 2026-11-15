@@ -11,7 +11,11 @@ import { crearAppDePrueba } from './ayudas/app-prueba.js';
  * Rutas que pueden responder sin sesión (FR-024). Agregar una ruta aquí es una decisión de seguridad: va en el PR
  * con revisión. Formato "MÉTODO /ruta" tal como la declara el controlador (con el prefijo /api).
  */
-const RUTAS_PUBLICAS = new Set<string>(['GET /health']);
+const RUTAS_PUBLICAS = new Set<string>([
+  'GET /health',
+  'POST /api/identidad/registro',
+  'POST /api/identidad/correo/verificar',
+]);
 
 interface Ruta {
   readonly metodo: string;
