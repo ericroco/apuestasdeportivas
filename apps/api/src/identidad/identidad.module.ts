@@ -7,11 +7,14 @@ import { crearCorreo } from './correo/adaptadores.js';
 import { CORREO_PORT } from './correo/correo.port.js';
 import { EnlacesService } from './enlaces.service.js';
 import { IdentidadController } from './identidad.controller.js';
+import { RecuperacionService } from './recuperacion.service.js';
 import { RegistroService } from './registro.service.js';
+import { SesionController } from './sesion.controller.js';
+import { SesionesService } from './sesiones.service.js';
 import { TokensService } from './tokens.service.js';
 
 @Module({
-  controllers: [IdentidadController],
+  controllers: [IdentidadController, SesionController],
   providers: [
     TokensService,
     ContrasenasService,
@@ -19,12 +22,14 @@ import { TokensService } from './tokens.service.js';
     CaptchaService,
     EnlacesService,
     RegistroService,
+    SesionesService,
+    RecuperacionService,
     {
       provide: CORREO_PORT,
       inject: [ENTORNO],
       useFactory: (entorno: Entorno) => crearCorreo(entorno),
     },
   ],
-  exports: [TokensService, ContrasenasService, AutenticacionGuard, CORREO_PORT],
+  exports: [TokensService, ContrasenasService, AutenticacionGuard, SesionesService, CORREO_PORT],
 })
 export class IdentidadModule {}

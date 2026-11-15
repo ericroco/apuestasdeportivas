@@ -15,6 +15,10 @@ const RUTAS_PUBLICAS = new Set<string>([
   'GET /health',
   'POST /api/identidad/registro',
   'POST /api/identidad/correo/verificar',
+  'POST /api/identidad/sesion',
+  'POST /api/identidad/sesion/renovar',
+  'POST /api/identidad/contrasena/olvido',
+  'POST /api/identidad/contrasena/restablecer',
 ]);
 
 interface Ruta {
