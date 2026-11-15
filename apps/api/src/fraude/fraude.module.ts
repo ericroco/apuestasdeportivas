@@ -2,6 +2,8 @@ import { Global, Module } from '@nestjs/common';
 import { RIESGO_PORT } from '../contracts/promociones.port.js';
 import { ActividadListener } from './actividad.listener.js';
 import { ActividadService } from './actividad.service.js';
+import { AlertasController } from './alertas.controller.js';
+import { AlertasService } from './alertas.service.js';
 import { EvaluadorFraudeService } from './evaluador-fraude.service.js';
 import { RegistroAlertasService } from './registro-alertas.service.js';
 import { RiesgoAdapter } from './riesgo.adapter.js';
@@ -12,7 +14,9 @@ import { RiesgoAdapter } from './riesgo.adapter.js';
  */
 @Global()
 @Module({
+  controllers: [AlertasController],
   providers: [
+    AlertasService,
     ActividadService,
     ActividadListener,
     EvaluadorFraudeService,
