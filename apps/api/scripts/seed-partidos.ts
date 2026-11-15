@@ -42,7 +42,12 @@ const mercadosCompletos = (l: string, e: string, v: string): MercadoDemo[] => [
     tipo: 'DOBLE_OPORTUNIDAD',
     cuotas: { LOCAL_EMPATE: '1.30', EMPATE_VISITANTE: '1.75', LOCAL_VISITANTE: '1.33' },
   },
-  { tipo: 'MAS_MENOS_GOLES', linea: '2.5', admiteVivo: true, cuotas: { MAS: '1.95', MENOS: '1.85' } },
+  {
+    tipo: 'MAS_MENOS_GOLES',
+    linea: '2.5',
+    admiteVivo: true,
+    cuotas: { MAS: '1.95', MENOS: '1.85' },
+  },
   { tipo: 'AMBOS_MARCAN', admiteVivo: true, cuotas: { SI: '1.80', NO: '1.95' } },
 ];
 
@@ -51,9 +56,24 @@ const COMPETICIONES: ReadonlyArray<{ nombre: string; pais: string; partidos: Par
     nombre: 'LigaPro (demo)',
     pais: 'Ecuador',
     partidos: [
-      { local: 'Barcelona SC', visitante: 'Emelec', enMs: 30 * MINUTO, mercados: mercadosCompletos('2.10', '3.20', '3.40') },
-      { local: 'LDU Quito', visitante: 'Independiente del Valle', enMs: 2 * HORA, mercados: mercadosCompletos('2.45', '3.10', '2.80') },
-      { local: 'Aucas', visitante: 'El Nacional', enMs: 26 * HORA, mercados: mercadosCompletos('1.95', '3.30', '3.90') },
+      {
+        local: 'Barcelona SC',
+        visitante: 'Emelec',
+        enMs: 30 * MINUTO,
+        mercados: mercadosCompletos('2.10', '3.20', '3.40'),
+      },
+      {
+        local: 'LDU Quito',
+        visitante: 'Independiente del Valle',
+        enMs: 2 * HORA,
+        mercados: mercadosCompletos('2.45', '3.10', '2.80'),
+      },
+      {
+        local: 'Aucas',
+        visitante: 'El Nacional',
+        enMs: 26 * HORA,
+        mercados: mercadosCompletos('1.95', '3.30', '3.90'),
+      },
       {
         local: 'Universidad Católica',
         visitante: 'Orense',
@@ -67,8 +87,18 @@ const COMPETICIONES: ReadonlyArray<{ nombre: string; pais: string; partidos: Par
     nombre: 'Copa Demo Internacional',
     pais: 'Internacional',
     partidos: [
-      { local: 'Atlético Andino', visitante: 'Deportivo Pacífico', enMs: 3 * HORA, mercados: mercadosCompletos('2.30', '3.00', '3.10') },
-      { local: 'Real Cordillera', visitante: 'Unión del Sur', enMs: 50 * HORA, mercados: mercadosCompletos('1.85', '3.50', '4.20') },
+      {
+        local: 'Atlético Andino',
+        visitante: 'Deportivo Pacífico',
+        enMs: 3 * HORA,
+        mercados: mercadosCompletos('2.30', '3.00', '3.10'),
+      },
+      {
+        local: 'Real Cordillera',
+        visitante: 'Unión del Sur',
+        enMs: 50 * HORA,
+        mercados: mercadosCompletos('1.85', '3.50', '4.20'),
+      },
     ],
   },
 ];
@@ -81,7 +111,9 @@ async function sembrarCompeticion(definicion: (typeof COMPETICIONES)[number]): P
   const existente = await prisma.competicion.findFirst({ where: { nombre: definicion.nombre } });
   const competicion =
     existente ??
-    (await prisma.competicion.create({ data: { nombre: definicion.nombre, pais: definicion.pais } }));
+    (await prisma.competicion.create({
+      data: { nombre: definicion.nombre, pais: definicion.pais },
+    }));
   const porJugar = await prisma.partido.count({
     where: { competicionId: competicion.id, estado: { in: ['PROGRAMADO', 'EN_VIVO'] } },
   });
@@ -121,7 +153,11 @@ async function sembrarCompeticion(definicion: (typeof COMPETICIONES)[number]): P
     // Historial inicial: cada cuota tiene su primer valor registrado, como si la hubiera cargado alguien.
     await prisma.historialCuota.createMany({
       data: creado.mercados.flatMap((m) =>
-        m.selecciones.map((s) => ({ seleccionId: s.id, cuotaNueva: s.cuota, origen: 'SIMULACION' as const })),
+        m.selecciones.map((s) => ({
+          seleccionId: s.id,
+          cuotaNueva: s.cuota,
+          origen: 'SIMULACION' as const,
+        })),
       ),
     });
   }
