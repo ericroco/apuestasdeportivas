@@ -1,5 +1,9 @@
 """Claves y tokens de prueba: pares Ed25519 y RSA generados en memoria (nunca se versionan)."""
 
+import base64
+import hashlib
+import hmac
+import json
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -47,7 +51,39 @@ def claims_de_administrador(**cambios: object) -> dict[str, object]:
     return claims
 
 
-def emitir(clave: ClavePrivada, algoritmo: str = "EdDSA", **cambios: object) -> str:
+def _sin_nulos(cambios: dict[str, object]) -> dict[str, object]:
+    return {k: v for k, v in claims_de_administrador(**cambios).items() if v is not None}
+
+
+def emitir_con(clave: ClavePrivada, cambios: dict[str, object], algoritmo: str = "EdDSA") -> str:
     """Firma un token de administrador; `cambios` reemplaza claims (None los quita)."""
-    claims = {k: v for k, v in claims_de_administrador(**cambios).items() if v is not None}
-    return jwt.encode(claims, clave, algorithm=algoritmo)
+    return jwt.encode(_sin_nulos(cambios), clave, algorithm=algoritmo)
+
+
+def emitir(clave: ClavePrivada, algoritmo: str = "EdDSA", **cambios: object) -> str:
+    return emitir_con(clave, cambios, algoritmo)
+
+
+def _b64(datos: bytes) -> str:
+    return base64.urlsafe_b64encode(datos).rstrip(b"=").decode("ascii")
+
+
+def _segmentos(algoritmo: str, cambios: dict[str, object]) -> str:
+    claims = {
+        k: int(v.timestamp()) if isinstance(v, datetime) else v
+        for k, v in _sin_nulos(cambios).items()
+    }
+    cabecera = json.dumps({"alg": algoritmo, "typ": "JWT"}).encode()
+    return f"{_b64(cabecera)}.{_b64(json.dumps(claims).encode())}"
+
+
+def forjar_sin_firma(**cambios: object) -> str:
+    """Token con `alg: none` (ataque clásico: sin firma)."""
+    return f"{_segmentos('none', cambios)}."
+
+
+def forjar_hs256(secreto: bytes, **cambios: object) -> str:
+    """Token HS256 firmado con `secreto` (confusión de algoritmo: la clave pública como HMAC)."""
+    cuerpo = _segmentos("HS256", cambios)
+    firma = hmac.new(secreto, cuerpo.encode("ascii"), hashlib.sha256).digest()
+    return f"{cuerpo}.{_b64(firma)}"
