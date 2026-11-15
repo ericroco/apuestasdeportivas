@@ -33,7 +33,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
   prueba desde la prueba de integración de su historia, no con un `*.spec.ts` propio. Las pruebas de pantallas de
   la web (T024, T034, T040, T045, T050, T062, T070, T076, T079) se reducen a una por formulario con su validación
   principal.
-- **Se simplifican**: la lista de contraseñas comunes de T031 tiene las 200 más frecuentes, no 10 000.
+- **Se simplifican**: la lista de contraseñas comunes de T031 son unas 120 de 12 caracteres o más (las más cortas ya las rechaza la longitud mínima), en `contrasenas-comunes.ts` en lugar de un `.txt` (`nest build` no copia archivos de texto a `dist`).
 - **Se quitan**: T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
   `frontend-design`) y se revisa a mano en T083.
 - **Verificación**: por commit, lint, tipos y las pruebas afectadas; la suite completa y el E2E al cerrar cada
