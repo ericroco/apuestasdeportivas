@@ -1,0 +1,63 @@
+# Cambios propuestos a contratos de otros specs
+
+Según `docs/equipo/contratos.md`, una firma no cambia sin acuerdo: el cambio va en el PR del dueño con el otro
+integrante como revisor. Estos son los que necesita el Spec 4. Ninguno rompe a quien ya consume el contrato: todos
+son campos o columnas nuevas.
+
+## 1. `DepositoConfirmado.metodoPagoHuella` (dueño: Spec 2, Ricardo)
+
+**Motivo**: FR-006 y FR-018 (un cupón por método de pago; método de pago compartido entre cuentas).
+
+```ts
+export interface DepositoConfirmado {
+  readonly usuarioId: string;
+  readonly depositoId: string;
+  readonly monto: string;
+  readonly codigoCupon: string | null;
+  /** SHA-256 en hex del identificador del medio de pago que confirma Payphone (nunca el dato en claro). */
+  readonly metodoPagoHuella: string | null;
+}
+```
+
+Mientras no llegue, el Spec 4 omite las dos reglas de método de pago (la de dispositivo sigue activa).
+
+## 2. `ApuestaAceptada.cuotaTotal` (dueño: Spec 3, Daniel)
+
+**Motivo**: FR-012 (cuota mínima para el rollover) sin leer la tabla `apuesta` desde la API.
+
+```ts
+export interface ApuestaAceptada {
+  readonly usuarioId: string;
+  readonly apuestaId: string;
+  readonly monto: string;
+  readonly tipoSaldo: 'REAL' | 'BONO';
+  /** Cuota total congelada al aceptar, texto decimal con dos decimales. */
+  readonly cuotaTotal: string;
+}
+```
+
+Mientras no llegue, las apuestas no suman rollover (falla segura).
+
+## 3. Datos para reportes (contrato 7)
+
+### Spec 3 (Daniel)
+
+- `competicion.deporte text not null default 'futbol'`: el filtro por deporte del requisito 3.8.
+
+### Spec 2 (Ricardo)
+
+Nombres en singular como los del Spec 3. Montos `Decimal(14,2)`, fechas `timestamptz`:
+
+| Tabla | Columnas que lee reportes |
+|-------|---------------------------|
+| `usuario` | `id`, `email` |
+| `deposito` | `id`, `usuario_id`, `monto`, `estado` (valor `CONFIRMADO` al acreditarse), `confirmado_en` |
+| `retiro` | `id`, `usuario_id`, `monto`, `estado` (valor `PAGADO` al pagarse), `pagado_en` |
+
+Si los nombres finales difieren, se ajusta `apps/reports/src/reports/consultas.py` en el PR que los integre.
+
+## 4. Proveedores globales de los puertos del Spec 2
+
+El Spec 4 inyecta `BILLETERA_PORT` y `AUDITORIA_PORT` con `@Optional()` sin importar el módulo del Spec 2. Se pide
+que el Spec 2 los exporte desde un módulo `@Global()` (como hace el Spec 4 con `PROMOCIONES_APUESTA_PORT` y
+`RIESGO_PORT`).
