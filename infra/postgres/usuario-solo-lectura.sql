@@ -38,3 +38,19 @@ EXCEPTION WHEN insufficient_privilege THEN
   RAISE WARNING 'Sin superusuario: no se pudo revocar la creación de large objects a PUBLIC';
 END
 $$;
+
+-- Spec 2 (FR-064): las credenciales de los usuarios nunca son legibles por reportes. El GRANT ... ON ALL TABLES
+-- de arriba las incluiría al volver a ejecutar este script, así que se revocan al final. to_regclass evita fallar
+-- si las migraciones del Spec 2 todavía no corrieron (en ese caso la propia migración hace el REVOKE).
+DO $$
+DECLARE
+  tabla text;
+BEGIN
+  FOREACH tabla IN ARRAY ARRAY['credencial', 'segundo_factor', 'codigo_recuperacion', 'sesion', 'enlace_correo']
+  LOOP
+    IF to_regclass(format('public.%I', tabla)) IS NOT NULL THEN
+      EXECUTE format('REVOKE ALL ON TABLE public.%I FROM reportes_lectura', tabla);
+    END IF;
+  END LOOP;
+END
+$$;
