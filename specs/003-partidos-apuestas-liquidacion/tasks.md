@@ -40,8 +40,8 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 **⚠️ CRITICAL**: ninguna historia empieza hasta terminar esta fase
 
-- [ ] T006 Escribir `apps/api/prisma/schema/partidos.prisma` según data-model.md (enums, 9 modelos, `@@map`/`@map`, índices y únicos)
-- [ ] T007 Generar la migración con `pnpm --filter api exec prisma migrate dev --name spec3_partidos_apuestas` y agregar a su `migration.sql` los disparadores de inmutabilidad de research.md §11 (`apps/api/prisma/migrations/<fecha>_spec3_partidos_apuestas/migration.sql`)
+- [x] T006 Escribir `apps/api/prisma/schema/partidos.prisma` según data-model.md (enums, 9 modelos, `@@map`/`@map`, índices y únicos)
+- [x] T007 Generar la migración con `pnpm --filter api exec prisma migrate dev --name spec3_partidos_apuestas` y agregar a su `migration.sql` los disparadores de inmutabilidad de research.md §11 (`apps/api/prisma/migrations/<fecha>_spec3_partidos_apuestas/migration.sql`)
 - [ ] T008 [P] Crear `ErrorNegocio` (código, estado HTTP y datos) y su filtro con el formato de contracts/api-rest.md, con su prueba, en `apps/api/src/comun/error-negocio.ts`, `apps/api/src/comun/error-negocio.filter.ts` y `apps/api/src/comun/error-negocio.filter.spec.ts`; registrar el filtro en `apps/api/src/configurar-app.ts`
 - [ ] T009 [P] Crear las utilidades de dinero (parseo de texto decimal con 2 decimales, `ROUND_HALF_UP`, esquema zod `montoTexto` y `cuotaTexto`) con pruebas primero en `apps/api/src/comun/decimal.spec.ts` y `apps/api/src/comun/decimal.ts`
 - [ ] T010 [P] Crear el doble de billetera que participa en la transacción (esquema `pruebas`, `FOR UPDATE`, claves de idempotencia, `revertirPremio`) en `apps/api/test/dobles/billetera-sql.double.ts` y `apps/api/test/dobles/esquema-pruebas.sql` (research.md §12)
