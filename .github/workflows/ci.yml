@@ -22,6 +22,8 @@ env:
   WEB_ORIGIN: http://localhost:3000
   REPORTS_DATABASE_URL: postgresql://reportes_lectura:reportes_ci@localhost:5432/apuestas
   PRUEBAS_DATABASE_URL_PROPIETARIO: postgresql://apuestas:apuestas_ci@localhost:5432/apuestas
+  # Clave PÚBLICA Ed25519 desechable para que reportes arranque en el E2E; su privada no se guardó.
+  JWT_PUBLIC_KEY: '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEANN/QYlSt4SPAynwAyGKN+XoxmvR9EgVFoQ1fXXDUP4s=\n-----END PUBLIC KEY-----'
   TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:

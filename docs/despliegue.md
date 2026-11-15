@@ -34,7 +34,8 @@ A nivel de repositorio (Settings → Secrets and variables → Actions): `SONAR_
    servicio de reportes, PostgreSQL y Key Value.
 2. Completar las variables marcadas `sync: false`:
    - API: `WEB_ORIGIN` = URL de staging de Vercel.
-   - Reportes: `WEB_ORIGIN` y `REPORTS_DATABASE_URL` (ver paso 3).
+   - Reportes: `WEB_ORIGIN`, `REPORTS_DATABASE_URL` (ver paso 3) y `JWT_PUBLIC_KEY` (la clave **pública** con la
+     que firma la API; nunca la privada).
 3. Crear el usuario de solo lectura (una vez). `render.yaml` bloquea las conexiones externas a la BD
    (`ipAllowList: []`), así que primero agrega **temporalmente** tu IP en la base de datos → Access Control. Luego,
    con la **External Database URL**:
