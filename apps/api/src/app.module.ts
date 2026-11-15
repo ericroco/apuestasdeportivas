@@ -6,6 +6,7 @@ import { ColasModule } from './colas/colas.module.js';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
+import { Spec2PendienteModule } from './integracion/spec2-pendiente.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -23,6 +24,8 @@ import { RedisModule } from './redis/redis.module.js';
     // Eventos de dominio entre specs (contrato 5) dentro del proceso.
     EventEmitterModule.forRoot(),
     ColasModule,
+    // Temporal: billetera y auditoría de reemplazo hasta que el Spec 2 esté en develop.
+    Spec2PendienteModule,
     HealthModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global
