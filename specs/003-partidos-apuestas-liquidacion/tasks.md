@@ -205,11 +205,11 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T066 [US6] Prueba e2e de suspensiones con plazo de 0.001 h: reanudado en plazo se mantiene; vencido se anula y reembolsa una vez; cancelado se anula de inmediato; combinada con una anulada recalcula con 1.00; todas anuladas reembolsa completa; mercado ya decidido se liquida (FR-031); en `apps/api/test/suspensiones.e2e-spec.ts`
+- [x] T066 [US6] Prueba e2e de suspensiones con plazo de 0.001 h: reanudado en plazo se mantiene; vencido se anula y reembolsa una vez; cancelado se anula de inmediato; combinada con una anulada recalcula con 1.00; todas anuladas reembolsa completa; mercado ya decidido se liquida (FR-031); en `apps/api/test/suspensiones.e2e-spec.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T067 [US6] Programar el vencimiento con `jobId = vencer:<partidoId>:<n>` al suspender o aplazar, verificarlo al ejecutarse y anular por el camino de la liquidación con `apuesta:<id>:reembolso`, en `apps/api/src/sincronizacion/sincronizacion.processor.ts`, `apps/api/src/partidos/partidos.service.ts` y `apps/api/src/liquidacion/liquidacion.service.ts`
+- [x] T067 [US6] Programar el vencimiento con `jobId = vencer:<partidoId>:<n>` al suspender o aplazar, verificarlo al ejecutarse y anular por el camino de la liquidación con `apuesta:<id>:reembolso`, en `apps/api/src/sincronizacion/sincronizacion.processor.ts`, `apps/api/src/partidos/partidos.service.ts` y `apps/api/src/liquidacion/liquidacion.service.ts` — *Implementado en la cola `liquidacion` (no en `sincronizacion`): la anulación es parte de la liquidación y su procesador ya tiene la billetera y la auditoría; ids con guiones (`vencer-<partidoId>-<ms>`) porque BullMQ no admite `:`.*
 - [ ] T068 [US6] Agregar al panel del operador suspender, aplazar, reprogramar y cancelar con motivo, y mostrar el estado en la cartelera, en `apps/web/src/app/operador/partidos/` y `apps/web/src/app/partidos/`
 
 ---

@@ -1,7 +1,7 @@
 import type { ApuestaLiquidadaPayload, EstadoApuesta } from '@apuestas/shared';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { aTexto, Decimal } from '../comun/decimal.js';
+import { aTexto, Decimal, redondear } from '../comun/decimal.js';
 import {
   type ApuestaLiquidada,
   AUDITORIA_PORT,
@@ -15,7 +15,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificadorService } from '../tiempo-real/notificador.service.js';
 import { calcularLiquidacion, type Liquidacion } from './estado-apuesta.js';
-import { resolverAlFinal } from './reglas-mercado.js';
+import { resolverAlFinal, resolverDecidida } from './reglas-mercado.js';
 
 export interface ResumenLiquidacion {
   /** Apuestas que pasaron a GANADA, PERDIDA o ANULADA en este procesamiento. */
@@ -65,7 +65,89 @@ export class LiquidacionService {
   async liquidarPartido(partidoId: string, versionResultado: number): Promise<ResumenLiquidacion> {
     const vigente = await this.resolverSelecciones(partidoId, versionResultado);
     if (!vigente) return { liquidadas: 0, pendientes: 0 };
+    return this.liquidarAfectadas(partidoId, versionResultado);
+  }
 
+  /**
+   * Vence el plazo de un partido suspendido o aplazado (research.md §8, FR-033): si sigue igual que cuando se
+   * programó el vencimiento, se cancela y se anulan sus apuestas. Si se reanudó o reprogramó, no hace nada.
+   */
+  async vencerPlazo(partidoId: string, suspendidoEn: string): Promise<ResumenLiquidacion> {
+    const vencido = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM partido WHERE id = ${partidoId}::uuid FOR UPDATE`;
+      const partido = await tx.partido.findUnique({ where: { id: partidoId } });
+      const sigueIgual =
+        (partido?.estado === 'SUSPENDIDO' || partido?.estado === 'APLAZADO') &&
+        partido.suspendidoEn?.toISOString() === suspendidoEn;
+      if (!partido || !sigueIgual) return false;
+      await tx.mercado.updateMany({
+        where: { partidoId, estado: { not: 'CERRADO' } },
+        data: { estado: 'CERRADO' },
+      });
+      await tx.partido.update({
+        where: { id: partidoId },
+        data: { estado: 'CANCELADO', version: { increment: 1 } },
+      });
+      await this.auditoria.registrar(
+        {
+          actorId: null,
+          accion: 'partido.anulado_por_plazo',
+          entidad: 'partido',
+          entidadId: partidoId,
+          datos: { estadoAnterior: partido.estado, suspendidoEn },
+        },
+        tx,
+      );
+      return true;
+    }, OPCIONES_TRANSACCION);
+    return vencido ? this.anularPartido(partidoId) : { liquidadas: 0, pendientes: 0 };
+  }
+
+  /**
+   * Anula un partido cancelado (FR-034) por el mismo camino de la liquidación: las selecciones ya decididas con el
+   * marcador de la suspensión se liquidan (FR-031) y el resto se anula; simples reembolsadas, combinadas con 1.00.
+   * Idempotente: repetirlo no reembolsa dos veces.
+   */
+  async anularPartido(partidoId: string): Promise<ResumenLiquidacion> {
+    const version = await this.prisma.$transaction(async (tx) => {
+      const partido = await tx.partido.findUnique({
+        where: { id: partidoId },
+        include: { mercados: { include: { selecciones: true } } },
+      });
+      if (partido?.estado !== 'CANCELADO') return null;
+      const { golesLocalSuspension: local, golesVisitanteSuspension: visitante } = partido;
+      for (const mercado of partido.mercados) {
+        for (const seleccion of mercado.selecciones.filter((s) => s.resultado === 'PENDIENTE')) {
+          const decidida =
+            local !== null && visitante !== null
+              ? resolverDecidida(
+                  {
+                    tipo: mercado.tipo,
+                    codigo: seleccion.codigo,
+                    linea: mercado.linea?.toFixed(1) ?? null,
+                  },
+                  local,
+                  visitante,
+                )
+              : null;
+          await tx.seleccion.update({
+            where: { id: seleccion.id },
+            data: { resultado: decidida ?? 'ANULADA' },
+          });
+        }
+      }
+      await copiarResultados(tx, partidoId);
+      return partido.versionResultado;
+    }, OPCIONES_TRANSACCION);
+    if (version === null) return { liquidadas: 0, pendientes: 0 };
+    return this.liquidarAfectadas(partidoId, version);
+  }
+
+  /** Liquida, una por una y cada una en su transacción, las apuestas pendientes con selecciones del partido. */
+  private async liquidarAfectadas(
+    partidoId: string,
+    versionResultado: number,
+  ): Promise<ResumenLiquidacion> {
     const afectadas = await this.prisma.$queryRaw<Array<{ id: string }>>`
       SELECT DISTINCT sa.apuesta_id::text AS id
       FROM seleccion_apostada sa JOIN apuesta a ON a.id = sa.apuesta_id
@@ -106,11 +188,7 @@ export class LiquidacionService {
           await tx.seleccion.update({ where: { id: seleccion.id }, data: { resultado } });
         }
       }
-      await tx.$executeRaw`
-        UPDATE seleccion_apostada sa SET resultado = s.resultado
-        FROM seleccion s
-        WHERE sa.seleccion_id = s.id AND sa.partido_id = ${partidoId}::uuid
-          AND sa.resultado = 'PENDIENTE' AND s.resultado <> 'PENDIENTE'`;
+      await copiarResultados(tx, partidoId);
       return true;
     }, OPCIONES_TRANSACCION);
   }
@@ -140,7 +218,10 @@ export class LiquidacionService {
     if (apuesta?.estado !== 'PENDIENTE') return null;
 
     const liquidacion = calcularLiquidacion(apuesta.monto, apuesta.selecciones);
-    if (liquidacion.estado === 'PENDIENTE') return null;
+    if (liquidacion.estado === 'PENDIENTE') {
+      await this.recalcularSiHayAnuladas(tx, apuesta, liquidacion);
+      return null;
+    }
     const estado = liquidacion.estado;
     const clave = claveDe(apuestaId, estado);
     if (await tx.liquidacion.findUnique({ where: { claveIdempotencia: clave } })) return null;
@@ -194,6 +275,31 @@ export class LiquidacionService {
     };
   }
 
+  /**
+   * Combinada pendiente con alguna selección anulada: la cuota total pasa a contar 1.00 en ella y el resto sigue
+   * vigente (FR-035, HU6 escenario 5). El disparador de inmutabilidad permite cambiar solo esas dos columnas.
+   */
+  private async recalcularSiHayAnuladas(
+    tx: ClienteTransaccional,
+    apuesta: {
+      id: string;
+      monto: Decimal;
+      cuotaTotal: Decimal;
+      selecciones: Array<{ resultado: string }>;
+    },
+    liquidacion: Liquidacion,
+  ): Promise<void> {
+    const hayAnuladas = apuesta.selecciones.some((s) => s.resultado === 'ANULADA');
+    if (!hayAnuladas || apuesta.cuotaTotal.equals(liquidacion.cuotaEfectiva)) return;
+    await tx.apuesta.update({
+      where: { id: apuesta.id },
+      data: {
+        cuotaTotal: Decimal.max(liquidacion.cuotaEfectiva, 1),
+        gananciaPotencial: redondear(apuesta.monto.times(liquidacion.cuotaEfectiva)),
+      },
+    });
+  }
+
   private async moverDinero(
     tx: ClienteTransaccional,
     apuesta: { id: string; usuarioId: string; tipoSaldo: 'REAL' | 'BONO' },
@@ -236,4 +342,13 @@ export class LiquidacionService {
 function claveDe(apuestaId: string, estado: Exclude<EstadoApuesta, 'PENDIENTE'>): string {
   const operacion = { GANADA: 'premio', ANULADA: 'reembolso', PERDIDA: 'perdida' } as const;
   return `apuesta:${apuestaId}:${operacion[estado]}`;
+}
+
+/** Copia a las selecciones apostadas el resultado ya resuelto de las selecciones del partido. */
+async function copiarResultados(tx: ClienteTransaccional, partidoId: string): Promise<void> {
+  await tx.$executeRaw`
+    UPDATE seleccion_apostada sa SET resultado = s.resultado
+    FROM seleccion s
+    WHERE sa.seleccion_id = s.id AND sa.partido_id = ${partidoId}::uuid
+      AND sa.resultado = 'PENDIENTE' AND s.resultado <> 'PENDIENTE'`;
 }

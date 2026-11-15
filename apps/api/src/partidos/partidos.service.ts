@@ -22,7 +22,12 @@ import {
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificadorService } from '../tiempo-real/notificador.service.js';
-import { encolarLiquidacion } from '../liquidacion/liquidacion.processor.js';
+import {
+  encolarAnulacion,
+  encolarLiquidacion,
+  encolarVencimiento,
+} from '../liquidacion/liquidacion.processor.js';
+import { ENTORNO, type Entorno } from '../config/env.js';
 import { COLAS } from '../colas/nombres.js';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
@@ -82,6 +87,7 @@ export class PartidosService {
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
     private readonly notificador: NotificadorService,
     @InjectQueue(COLAS.liquidacion) private readonly colaLiquidacion: Queue,
+    @Inject(ENTORNO) private readonly entorno: Entorno,
   ) {}
 
   private readonly logger = new Logger('Partidos');
@@ -222,7 +228,7 @@ export class PartidosService {
       const cambiaEstado = cambio.estado !== undefined && cambio.estado !== partido.estado;
       const cambiaMarcador = this.cambiaMarcador(partido, cambio);
       if (!cambiaEstado && !cambiaMarcador)
-        return { detalle: await this.obtener(id, tx), cambio: false, liquidar: undefined };
+        return { detalle: await this.obtener(id, tx), cambio: false, despues: undefined };
 
       let datos: Prisma.PartidoUpdateInput = { version: { increment: 1 } };
       if (cambiaEstado && cambio.estado) {
@@ -243,18 +249,50 @@ export class PartidosService {
         });
       }
       const actualizado = await tx.partido.update({ where: { id }, data: datos });
-      const finalizo = cambiaEstado && cambio.estado === 'FINALIZADO';
       return {
         detalle: await this.obtener(id, tx),
         cambio: true,
-        liquidar: finalizo ? actualizado.versionResultado : undefined,
+        despues: cambiaEstado ? actualizado : undefined,
       };
     });
-    const { detalle, cambio: huboCambio, liquidar } = resultado;
-    // Solo después del commit: nunca se avisa ni se liquida un cambio que se revirtió.
+    const { detalle, cambio: huboCambio, despues } = resultado;
+    // Solo después del commit: nunca se avisa, liquida ni anula un cambio que se revirtió.
     if (huboCambio) this.notificador.partidoActualizado(detalle);
-    if (liquidar !== undefined) await this.encolarLiquidacion(id, liquidar);
+    if (despues) await this.encolarSegunEstado(despues);
     return detalle;
+  }
+
+  /**
+   * Trabajos que dispara un cambio de estado (research.md §7 y §8): finalizar liquida; suspender o aplazar programa
+   * el vencimiento del plazo; cancelar anula. La cola los persiste; si Redis falla, se registra y el arranque del
+   * procesador recupera los finalizados y cancelados con apuestas pendientes (FR-028).
+   */
+  private async encolarSegunEstado(partido: Partido): Promise<void> {
+    try {
+      if (partido.estado === 'FINALIZADO') {
+        await encolarLiquidacion(this.colaLiquidacion, {
+          partidoId: partido.id,
+          versionResultado: partido.versionResultado,
+        });
+      } else if (partido.estado === 'CANCELADO') {
+        await encolarAnulacion(this.colaLiquidacion, partido.id);
+      } else if (
+        (partido.estado === 'SUSPENDIDO' || partido.estado === 'APLAZADO') &&
+        partido.suspendidoEn
+      ) {
+        // Plazo desde la suspensión, o desde la hora de inicio original si se aplazó (FR-033).
+        const base =
+          partido.estado === 'APLAZADO' ? partido.inicioOriginalEn : partido.suspendidoEn;
+        const venceEn = base.getTime() + this.entorno.SUSPENSION_PLAZO_HORAS * 60 * 60 * 1000;
+        await encolarVencimiento(
+          this.colaLiquidacion,
+          { partidoId: partido.id, suspendidoEn: partido.suspendidoEn.toISOString() },
+          venceEn - Date.now(),
+        );
+      }
+    } catch (error) {
+      this.logger.error(`No se pudo encolar el trabajo de ${partido.id}: ${String(error)}`);
+    }
   }
 
   /**
@@ -288,15 +326,6 @@ export class PartidosService {
       );
     }
     return detalle;
-  }
-
-  /** La cola persiste el trabajo; si Redis falla, el arranque del procesador lo vuelve a encolar (FR-028). */
-  private async encolarLiquidacion(partidoId: string, versionResultado: number): Promise<void> {
-    try {
-      await encolarLiquidacion(this.colaLiquidacion, { partidoId, versionResultado });
-    } catch (error) {
-      this.logger.error(`No se pudo encolar la liquidación de ${partidoId}: ${String(error)}`);
-    }
   }
 
   private cambiaMarcador(partido: Partido, cambio: ActualizacionPartido): boolean {
