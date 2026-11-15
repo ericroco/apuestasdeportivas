@@ -26,6 +26,14 @@ Spec 2 (`JWT_*`, `PAYPHONE_*`), Spec 3 (`API_FOOTBALL_*`), Spec 4 (las de cupone
 | `PORT` | no | `8000` | Puerto HTTP (lo usa el comando de arranque) |
 | `REPORTS_DATABASE_URL` | **sí** | — | URL de PostgreSQL del usuario **`reportes_lectura`** |
 | `WEB_ORIGIN` | **sí** | — | Origen permitido por CORS |
+| `JWT_PUBLIC_KEY` | **sí** | — | Spec 4. Clave **pública** PEM con la que la API firma el token de acceso (contrato 6); los `\n` escapados se aceptan. Debe corresponder a `JWT_ALGORITHM` (Ed25519 o RSA de 2048 bits o más) |
+| `JWT_ALGORITHM` | no | `EdDSA` | Spec 4. `EdDSA` o `RS256`, el mismo con el que firma el Spec 2; nunca `none` ni HMAC |
+| `JWT_ISSUER` | no | `apuestas-api` | Spec 4. Claim `iss` esperado |
+| `JWT_AUDIENCE` | no | `apuestas` | Spec 4. Claim `aud` esperado |
+
+Reportes nunca recibe la clave privada. En local, mientras el Spec 2 no emita tokens,
+`uv run python -m reports.herramientas.clave_dev` (desde `apps/reports`) genera un par de prueba en memoria e imprime
+la clave pública para `.env` y un token de administrador de 15 minutos.
 
 ## apps/web
 
