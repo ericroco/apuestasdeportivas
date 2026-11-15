@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module.js';
 import { Spec2PendienteModule } from './integracion/spec2-pendiente.module.js';
 import { PartidosModule } from './partidos/partidos.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { SincronizacionModule } from './sincronizacion/sincronizacion.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
 @Module({
@@ -29,6 +30,7 @@ import { RedisModule } from './redis/redis.module.js';
     Spec2PendienteModule,
     HealthModule,
     PartidosModule,
+    SincronizacionModule,
   ],
   // Rate limiting global (constitución, principio I). El guard de autenticación global
   // (denegación por defecto) lo registra el Spec 2 aquí mismo con APP_GUARD.
