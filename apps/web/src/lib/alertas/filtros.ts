@@ -7,6 +7,7 @@ import {
   type SeveridadAlerta,
 } from '@apuestas/shared';
 import {
+  construirConsulta,
   fechaCalendario,
   leerPagina,
   primerValor,
@@ -40,4 +41,24 @@ export function leerFiltrosAlertas(parametros: ParametrosBusqueda): FiltrosAlert
     hasta: fechaCalendario(parametros, 'hasta'),
     pagina: leerPagina(parametros),
   };
+}
+
+export function hayFiltrosAlertas(filtros: FiltrosAlertas): boolean {
+  const { estado, severidad, regla, usuarioId, desde, hasta } = filtros;
+  return Boolean(estado || severidad || regla || usuarioId || desde || hasta);
+}
+
+/** URL de la lista con los filtros, para compartirla, paginar o reintentar. */
+export function hrefAlertas(filtros: FiltrosAlertas, pagina = 1): string {
+  const { estado, severidad, regla, usuarioId, desde, hasta } = filtros;
+  const consulta = construirConsulta({
+    estado,
+    severidad,
+    regla,
+    usuarioId,
+    desde,
+    hasta,
+    pagina: pagina === 1 ? undefined : pagina,
+  });
+  return `/admin/alertas${consulta}`;
 }

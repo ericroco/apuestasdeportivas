@@ -1,5 +1,11 @@
 import { ESTADOS_CUPON, TIPOS_CUPON, type EstadoCupon, type TipoCupon } from '@apuestas/shared';
-import { leerPagina, primerValor, valorPermitido, type ParametrosBusqueda } from '@/lib/parametros';
+import {
+  construirConsulta,
+  leerPagina,
+  primerValor,
+  valorPermitido,
+  type ParametrosBusqueda,
+} from '@/lib/parametros';
 
 /** Filtros de la lista de cupones, tal como viajan en la URL de `/operador/cupones`. */
 export interface FiltrosCupones {
@@ -22,4 +28,19 @@ export function leerFiltrosCupones(parametros: ParametrosBusqueda): FiltrosCupon
     busqueda: busqueda || undefined,
     pagina: leerPagina(parametros),
   };
+}
+
+export function hayFiltrosCupones({ estado, tipo, busqueda }: FiltrosCupones): boolean {
+  return Boolean(estado || tipo || busqueda);
+}
+
+/** URL de la lista con los filtros, para compartirla, paginar o reintentar. */
+export function hrefCupones({ estado, tipo, busqueda }: FiltrosCupones, pagina = 1): string {
+  const consulta = construirConsulta({
+    estado,
+    tipo,
+    busqueda,
+    pagina: pagina === 1 ? undefined : pagina,
+  });
+  return `/operador/cupones${consulta}`;
 }

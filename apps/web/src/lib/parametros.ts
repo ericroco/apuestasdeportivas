@@ -51,3 +51,8 @@ export function fechaCalendario(parametros: ParametrosBusqueda, clave: string): 
   const valor = primerValor(parametros, clave);
   return valor && esFechaCalendario(valor) ? valor : undefined;
 }
+
+/** Identificador de una ruta dinámica (uuid u otro id opaco) antes de pedirlo a la API. */
+export function esIdentificador(valor: string): boolean {
+  return /^[\w-]{1,64}$/.test(valor);
+}
