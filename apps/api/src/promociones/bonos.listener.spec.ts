@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { ActividadService } from '../fraude/actividad.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { BonosListener } from './bonos.listener.js';
@@ -68,6 +69,53 @@ describe('BonosListener', () => {
       expect.objectContaining({ tipo: 'APUESTA_LIQUIDADA', referenciaId: 'ap-1' }),
     );
     expect(rollover.recalcular).toHaveBeenCalledWith('u-1');
+  });
+
+  describe('ante fallas de la base', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const transitorio = () => Object.assign(new Error('timeout de transacción'), { code: 'P2028' });
+
+    it('reintenta una falla transitoria y el depósito termina con un solo bono', async () => {
+      const { listener, bonos } = preparar();
+      bonos.otorgarPorDeposito
+        .mockRejectedValueOnce(transitorio())
+        .mockRejectedValueOnce(transitorio())
+        .mockResolvedValue('OTORGADO');
+
+      const pendiente = listener.alConfirmarDeposito(deposito);
+      await vi.runAllTimersAsync();
+      await pendiente;
+
+      expect(bonos.otorgarPorDeposito).toHaveBeenCalledTimes(3);
+    });
+
+    it('no reintenta un error que no es transitorio', async () => {
+      const { listener, bonos } = preparar();
+      bonos.otorgarPorDeposito.mockRejectedValue(new Error('billetera caída'));
+
+      await listener.alConfirmarDeposito(deposito);
+
+      expect(bonos.otorgarPorDeposito).toHaveBeenCalledOnce();
+    });
+
+    it('al agotar los reintentos registra el error con el depósito y el usuario', async () => {
+      const { listener, bonos } = preparar();
+      const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      bonos.otorgarPorDeposito.mockRejectedValue(transitorio());
+
+      const pendiente = listener.alConfirmarDeposito(deposito);
+      await vi.runAllTimersAsync();
+      await pendiente;
+
+      expect(bonos.otorgarPorDeposito).toHaveBeenCalledTimes(4);
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining('depositoId=dep-1 usuarioId=u-1'),
+        expect.any(String),
+      );
+      error.mockRestore();
+    });
   });
 
   it('un error no llega al emisor del evento', async () => {

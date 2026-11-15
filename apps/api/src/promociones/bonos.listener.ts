@@ -25,27 +25,41 @@ export class BonosListener {
 
   @OnEvent(EVENTOS.depositoConfirmado, OPCIONES_LISTENER)
   async alConfirmarDeposito(evento: DepositoConfirmadoExtendido): Promise<void> {
-    await ejecutarSinPropagar(this.logger, EVENTOS.depositoConfirmado, async () => {
-      const entrada = desdeDepositoConfirmado(evento);
-      await this.actividad.registrar(entrada);
-      if (typeof evento.codigoCupon !== 'string' || !entrada.monto) return;
-      const resultado = await this.bonos.otorgarPorDeposito({
-        usuarioId: entrada.usuarioId,
-        depositoId: entrada.referenciaId,
-        monto: entrada.monto,
-        codigoCupon: evento.codigoCupon,
-        metodoPagoHuella: entrada.metodoPagoHuella ?? null,
-      });
-      this.logger.log(`Cupón del depósito ${entrada.referenciaId}: ${resultado}`);
+    const contexto = `depositoId=${evento.depositoId} usuarioId=${evento.usuarioId}`;
+    await ejecutarSinPropagar(
+      this.logger,
+      EVENTOS.depositoConfirmado,
+      () => this.otorgarBonoDelDeposito(evento),
+      { contexto },
+    );
+  }
+
+  /** Idempotente (único `(origen, referencia_id)`): `ejecutarSinPropagar` lo reintenta ante fallas transitorias. */
+  private async otorgarBonoDelDeposito(evento: DepositoConfirmadoExtendido): Promise<void> {
+    const entrada = desdeDepositoConfirmado(evento);
+    await this.actividad.registrar(entrada);
+    if (typeof evento.codigoCupon !== 'string' || !entrada.monto) return;
+    const resultado = await this.bonos.otorgarPorDeposito({
+      usuarioId: entrada.usuarioId,
+      depositoId: entrada.referenciaId,
+      monto: entrada.monto,
+      codigoCupon: evento.codigoCupon,
+      metodoPagoHuella: entrada.metodoPagoHuella ?? null,
     });
+    this.logger.log(`Cupón del depósito ${entrada.referenciaId}: ${resultado}`);
   }
 
   @OnEvent(EVENTOS.apuestaLiquidada, OPCIONES_LISTENER)
   async alLiquidarApuesta(evento: MapaEventos['apuesta.liquidada']): Promise<void> {
-    await ejecutarSinPropagar(this.logger, EVENTOS.apuestaLiquidada, async () => {
-      const entrada = desdeApuestaLiquidada(evento);
-      await this.actividad.registrar(entrada);
-      await this.rollover.recalcular(entrada.usuarioId);
-    });
+    await ejecutarSinPropagar(
+      this.logger,
+      EVENTOS.apuestaLiquidada,
+      async () => {
+        const entrada = desdeApuestaLiquidada(evento);
+        await this.actividad.registrar(entrada);
+        await this.rollover.recalcular(entrada.usuarioId);
+      },
+      { contexto: `apuestaId=${evento.apuestaId} usuarioId=${evento.usuarioId}` },
+    );
   }
 }
