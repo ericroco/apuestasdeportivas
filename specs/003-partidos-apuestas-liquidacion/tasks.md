@@ -145,12 +145,12 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T050 [US4] Agregar casos de combinada (producto y redondeo, mínimo 2, máximo configurable, mismo partido) a `apps/api/src/apuestas/calculo.spec.ts`
-- [ ] T051 [US4] Prueba e2e de combinadas: acepta 3 selecciones, rechaza mismo partido (`COMBINADA_INVALIDA`) y pide reconfirmar si cambió una cuota, en `apps/api/test/apuestas-combinadas.e2e-spec.ts`
+- [x] T050 [US4] Agregar casos de combinada (producto y redondeo, mínimo 2, máximo configurable, mismo partido) a `apps/api/src/apuestas/calculo.spec.ts`
+- [x] T051 [US4] Prueba e2e de combinadas: acepta 3 selecciones, rechaza mismo partido (`COMBINADA_INVALIDA`) y pide reconfirmar si cambió una cuota, en `apps/api/test/apuestas-combinadas.e2e-spec.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T052 [US4] Extender `apps/api/src/apuestas/calculo.ts` y `apps/api/src/apuestas/aceptacion.service.ts` para combinadas
+- [x] T052 [US4] Extender `apps/api/src/apuestas/calculo.ts` y `apps/api/src/apuestas/aceptacion.service.ts` para combinadas
 - [ ] T053 [US4] Permitir varias selecciones en el boleto, con el aviso de "mismo partido", en `apps/web/src/components/boleto/`
 
 ---
@@ -220,7 +220,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 **Independent Test**: tras una corrección, las nuevas ganadoras cobran una vez y las que dejan de ganar revierten aunque el saldo quede negativo
 
-- [ ] T069 [US8] Acordar con el Spec 2 la operación `revertirPremio` y la convención `:r<n>` (contracts/cambios-contratos.md); sin acuerdo no se integra esta fase
+- [x] T069 [US8] Acordar con el Spec 2 la operación `revertirPremio` y la convención `:r<n>` (contracts/cambios-contratos.md); sin acuerdo no se integra esta fase
 - [ ] T070 [US8] Prueba e2e de re-liquidación: perdida → ganada paga una vez; ganada → perdida revierte aunque el saldo quede negativo; con saldo negativo se rechazan apuestas (`SALDO_NEGATIVO`); la misma corrección dos veces no tiene efecto; la auditoría guarda resultado anterior, nuevo y motivo; en `apps/api/test/reliquidacion.e2e-spec.ts`
 - [ ] T071 [US8] Implementar la re-liquidación con las claves `:r<n>`, la corrección por `POST /operador/partidos/:id/resultado` sobre un partido finalizado y la corrección que llega del proveedor, en `apps/api/src/liquidacion/liquidacion.service.ts` y `apps/api/src/partidos/partidos.service.ts`
 - [ ] T072 [US8] Agregar al panel del operador la corrección de resultado con motivo obligatorio y confirmación, en `apps/web/src/app/operador/partidos/`
@@ -232,7 +232,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ## Phase 11: Polish & Cross-Cutting Concerns
 
 - [ ] T073 [P] Comprobar en Playwright el proyecto `movil-360` y la navegación por teclado de las pantallas nuevas en `apps/web/e2e/`
-- [ ] T074 [P] Actualizar la convención de claves en `docs/equipo/contratos.md` §2 cuando el Spec 2 acepte la propuesta
+- [x] T074 [P] Actualizar la convención de claves en `docs/equipo/contratos.md` §2 cuando el Spec 2 acepte la propuesta
 - [ ] T075 [P] Actualizar el estado del Spec 3 en `specs/README.md` al abrir y cerrar cada PR
 - [ ] T076 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y la demostración de quickstart.md §2
 - [ ] T077 Verificar cobertura ≥ 80 % en los módulos del Spec 3 (`apps/api/coverage/`) y el quality gate de SonarQube (`sonar-project.properties`)

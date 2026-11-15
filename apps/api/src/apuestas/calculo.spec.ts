@@ -105,6 +105,22 @@ describe('validarCombinada', () => {
     expect(error.codigo).toBe('COMBINADA_INVALIDA');
   });
 
+  it('acepta exactamente el máximo configurado', () => {
+    expect(() => validarCombinada(['p1', 'p2'], 2)).not.toThrow();
+  });
+
+  it('informa el máximo en el error', () => {
+    const error = capturar(() => validarCombinada(['p1', 'p2', 'p3', 'p4'], 3));
+    expect(error.datos).toEqual({ maximo: 3 });
+    expect(error.message).toMatch(/3 selecciones/);
+  });
+
+  it('el producto de muchas cuotas se redondea una sola vez, no paso a paso', () => {
+    // 1.15^5 = 2.0113571875 → 2.01; redondeando en cada paso daría 2.02.
+    const cuotas = Array.from({ length: 5 }, () => d('1.15'));
+    expect(calcularCuotaTotal(cuotas).toFixed(2)).toBe('2.01');
+  });
+
   it('una sola selección es una simple: no aplica la regla de combinadas', () => {
     expect(() => validarCombinada(['p1'], 10)).not.toThrow();
   });
