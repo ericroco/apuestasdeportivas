@@ -74,10 +74,10 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 - [x] T018 [P] Escribir primero `apps/api/src/identidad/captcha.service.spec.ts` (aprueba, rechaza, Turnstile caído = rechazo, `hostname` en producción) y luego `apps/api/src/identidad/captcha.service.ts`
 - [x] T019 [P] Crear `apps/api/src/identidad/correo/correo.port.ts` (`CORREO_PORT`), `smtp.adaptador.ts` (nodemailer), `resend.adaptador.ts` (fetch) y `plantillas.ts` (verificación, aviso de cuenta existente, recuperación), con la selección por `CORREO_TRANSPORTE` en `apps/api/src/identidad/correo/correo.module.ts` y la prueba contra Mailpit en `apps/api/test/correo.e2e-spec.ts` con `apps/api/test/ayudas/mailpit.ts`
 - [x] T020 Registrar `EventEmitterModule.forRoot()` y `ScheduleModule.forRoot()` en `apps/api/src/app.module.ts` y crear `apps/api/src/identidad/identidad.module.ts`
-- [ ] T021 Escribir primero `apps/web/src/app/api/[...ruta]/route.test.ts` (reenvía método, cuerpo, cookies y `Set-Cookie`; agrega `x-cliente-ip`, `x-cliente-dispositivo` y `x-proxy-secreto`; rechaza no-`GET` con otro `Origin`; nunca reenvía cabeceras `x-proxy-*` del navegador) y luego `apps/web/src/app/api/[...ruta]/route.ts` (research §1)
-- [ ] T022 [P] Crear `apps/web/src/lib/api-servidor.ts` (`llamarApi()` para componentes de servidor, con la cookie y la IP del cliente) con su prueba en `apps/web/src/lib/api-servidor.test.ts`
-- [ ] T023 [P] Crear `apps/web/src/proxy.ts` con la CSP con nonce por petición (permite `challenges.cloudflare.com`) y su prueba en `apps/web/src/proxy.test.ts`; quitar el comentario pendiente de `apps/web/next.config.ts`
-- [ ] T024 [P] Crear `apps/web/src/components/turnstile.tsx` (carga el script con el nonce, expone el token al formulario, accesible por teclado) con su prueba en `apps/web/src/components/turnstile.test.tsx`
+- [x] T021 Escribir primero `apps/web/src/app/api/[...ruta]/route.test.ts` (reenvía método, cuerpo, cookies y `Set-Cookie`; agrega `x-cliente-ip`, `x-cliente-dispositivo` y `x-proxy-secreto`; rechaza no-`GET` con otro `Origin`; nunca reenvía cabeceras `x-proxy-*` del navegador) y luego `apps/web/src/app/api/[...ruta]/route.ts` (research §1)
+- [ ] ~~T022~~ (reemplazada: las pantallas con sesión son componentes de cliente que usan `apps/web/src/lib/api-cliente.ts` por el proxy, más simple con `cacheComponents`) Crear `apps/web/src/lib/api-servidor.ts` (`llamarApi()` para componentes de servidor, con la cookie y la IP del cliente) con su prueba en `apps/web/src/lib/api-servidor.test.ts`
+- [x] T023 (cambiada: CSP fija en `apps/web/next.config.ts`; una CSP con nonce obliga a renderizar cada página por petición, incompatible con el prerender de `cacheComponents`) Crear `apps/web/src/proxy.ts` con la CSP con nonce por petición (permite `challenges.cloudflare.com`) y su prueba en `apps/web/src/proxy.test.ts`; quitar el comentario pendiente de `apps/web/next.config.ts`
+- [x] T024 [P] Crear `apps/web/src/components/turnstile.tsx` (carga el script con el nonce, expone el token al formulario, accesible por teclado) con su prueba en `apps/web/src/components/turnstile.test.tsx`
 
 **Checkpoint**: la API arranca con el guard global y la auditoría; la web reenvía `/api/*` con la sesión
 
@@ -97,7 +97,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 ### Implementation for User Story 3
 
 - [x] T027 [US3] Agregar al final de `infra/postgres/usuario-solo-lectura.sql` el `REVOKE` de las tablas sensibles protegido con `to_regclass` (cambios-contratos §6, revisor Erick)
-- [ ] T028 [US3] Documentar en `docs/equipo/contratos.md` §1 y §6 el proxy `/api/*`, `llamarApi()` y las claims `sid` y `alc` (cambios-contratos §3 y §4)
+- [x] T028 [US3] Documentar en `docs/equipo/contratos.md` §1 y §6 el proxy `/api/*`, `llamarApi()` y las claims `sid` y `alc` (cambios-contratos §3 y §4)
 
 **Checkpoint**: la cobertura de rutas protege a los specs 3 y 4 desde su primer controlador
 
@@ -119,7 +119,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 - [x] T031 [P] [US1] Crear `apps/api/src/identidad/politicas.ts` y `apps/api/src/identidad/contrasenas-comunes.txt` (10 000 contraseñas comunes)
 - [x] T032 [US1] Crear `apps/api/src/identidad/enlaces.service.ts` (token aleatorio, hash SHA-256, caducidad, un solo uso con `UPDATE … WHERE usado_en IS NULL`)
 - [x] T033 [US1] Crear `apps/api/src/identidad/registro.service.ts` (registro en una transacción con usuario, credencial y, cuando exista el libro contable, billetera; correo y evento tras el commit) y las rutas `POST /identidad/registro`, `POST /identidad/correo/verificar` y `POST /identidad/correo/reenviar` en `apps/api/src/identidad/identidad.controller.ts` con esquemas zod `.strict()`
-- [ ] T034 [P] [US1] Crear las pantallas `apps/web/src/app/(cuenta)/registro/page.tsx` y `apps/web/src/app/(cuenta)/verificar-correo/page.tsx` con el skill `frontend-design` y sus pruebas en `apps/web/src/app/(cuenta)/registro/registro.test.tsx`
+- [x] T034 [P] [US1] Crear las pantallas `apps/web/src/app/(cuenta)/registro/page.tsx` y `apps/web/src/app/(cuenta)/verificar-correo/page.tsx` con el skill `frontend-design` y sus pruebas en `apps/web/src/app/(cuenta)/registro/registro.test.tsx`
 
 **Checkpoint**: se pueden crear cuentas verificadas
 
@@ -140,8 +140,8 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 - [x] T037 [US2] Crear `apps/api/src/identidad/sesiones.service.ts` (inicio con bloqueo, emisión de cookies, renovación rotativa con `FOR UPDATE` y ventana de 10 s, cierre, revocación de todas) y `apps/api/src/identidad/cookies.ts`
 - [x] T038 [US2] Agregar las rutas `POST /identidad/sesion`, `/sesion/renovar`, `/sesion/cerrar`, `GET /identidad/yo`, `POST /identidad/contrasena/olvido` y `/contrasena/restablecer` con límites de frecuencia de 5 por minuto en `apps/api/src/identidad/identidad.controller.ts`
-- [ ] T039 [P] [US2] Crear `apps/web/src/lib/sesion-cliente.ts` (renueva una vez ante 401 y reintenta; ante 409 espera y reintenta) con su prueba en `apps/web/src/lib/sesion-cliente.test.ts`
-- [ ] T040 [P] [US2] Crear las pantallas `apps/web/src/app/(cuenta)/iniciar-sesion/page.tsx`, `apps/web/src/app/(cuenta)/recuperar/page.tsx` y `apps/web/src/app/(cuenta)/restablecer/page.tsx` con sus pruebas
+- [x] T039 [P] [US2] Crear `apps/web/src/lib/sesion-cliente.ts` (renueva una vez ante 401 y reintenta; ante 409 espera y reintenta) con su prueba en `apps/web/src/lib/sesion-cliente.test.ts`
+- [x] T040 [P] [US2] Crear las pantallas `apps/web/src/app/(cuenta)/iniciar-sesion/page.tsx`, `apps/web/src/app/(cuenta)/recuperar/page.tsx` y `apps/web/src/app/(cuenta)/restablecer/page.tsx` con sus pruebas
 
 **Checkpoint**: criterio de cierre de la F1 (fuerza bruta bloqueada)
 
@@ -162,7 +162,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 - [x] T043 [US6] Crear `apps/api/src/identidad/segundo-factor.service.ts` (`otpauth`, AES-256-GCM con `TOTP_CLAVE_CIFRADO`, QR con `qrcode`, códigos con SHA-256)
 - [x] T044 [US6] Agregar el desafío 2FA a `apps/api/src/identidad/sesiones.service.ts` y las rutas `POST /identidad/sesion/2fa`, `/2fa/activacion`, `/2fa/activacion/confirmar` y `/2fa/desactivar` en `apps/api/src/identidad/identidad.controller.ts`
-- [ ] T045 [P] [US6] Crear el paso de código en `apps/web/src/app/(cuenta)/iniciar-sesion/codigo/page.tsx` y la pantalla `apps/web/src/app/(cuenta)/seguridad/page.tsx` (QR, confirmación, códigos con opción de copiar) con sus pruebas; redirigir a `seguridad` cuando `alcance` es `activar-2fa`
+- [x] T045 [P] [US6] Crear el paso de código en `apps/web/src/app/(cuenta)/iniciar-sesion/codigo/page.tsx` y la pantalla `apps/web/src/app/(cuenta)/seguridad/page.tsx` (QR, confirmación, códigos con opción de copiar) con sus pruebas; redirigir a `seguridad` cuando `alcance` es `activar-2fa`
 
 **Checkpoint**: las cuentas con privilegios no entran sin 2FA
 
@@ -183,9 +183,9 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 - [x] T047 [US9] Crear `apps/api/src/identidad/usuarios-admin.service.ts` y `apps/api/src/identidad/usuarios-admin.controller.ts` (`/admin/usuarios`, roles, suspensión)
 - [x] T048 [US9] Crear `apps/api/src/auditoria/auditoria.controller.ts` (`GET /admin/auditoria` con paginación por cursor)
 - [x] T049 [P] [US9] Crear `apps/api/scripts/crear-administrador.ts` (pide correo y contraseña por la terminal, crea un administrador verificado)
-- [ ] T050 [P] [US9] Crear las pantallas `apps/web/src/app/admin/usuarios/page.tsx`, `apps/web/src/app/admin/usuarios/[id]/page.tsx` y `apps/web/src/app/admin/usuarios/auditoria/page.tsx` con sus pruebas
-- [ ] T051 [US9] Escribir el E2E `apps/web/e2e/identidad.spec.ts` (registro → verificación con la API de Mailpit → inicio de sesión → activación de 2FA → administrador asigna operador) y ajustar `apps/web/playwright.config.ts` para levantar Mailpit
-- [ ] T052 [US9] Marcar las tareas del PR 1 en este archivo y actualizar `specs/README.md`
+- [x] T050 [P] [US9] Crear las pantallas `apps/web/src/app/admin/usuarios/page.tsx`, `apps/web/src/app/admin/usuarios/[id]/page.tsx` y `apps/web/src/app/admin/usuarios/auditoria/page.tsx` con sus pruebas
+- [x] T051 [US9] Escribir el E2E `apps/web/e2e/identidad.spec.ts` (registro → verificación con la API de Mailpit → inicio de sesión → activación de 2FA → administrador asigna operador) y ajustar `apps/web/playwright.config.ts` para levantar Mailpit
+- [x] T052 [US9] Marcar las tareas del PR 1 en este archivo y actualizar `specs/README.md`
 
 **Checkpoint**: PR 1 listo; desbloquea a los specs 3 y 4
 

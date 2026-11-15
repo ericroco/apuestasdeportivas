@@ -25,8 +25,17 @@ integrante como revisor.
 - `@Roles('OPERADOR', 'ADMINISTRADOR')` exige al menos uno de esos roles; sin `@Roles` basta estar autenticado.
 - El guard deja en `request.user` un `UsuarioAutenticado` (`id`, `email`, `roles`); los controladores lo reciben
   con `@UsuarioActual()`.
-- Mientras el guard no esté en `develop`, los specs 3 y 4 ya pueden decorar sus controladores; las pruebas e2e
-  sobrescriben el guard con uno de prueba que fija `request.user`.
+- **Implementado (Spec 2, PR 1).** En las pruebas e2e no hace falta sobrescribir el guard: `crearAppDePrueba()`
+  (`apps/api/test/ayudas/app-prueba.ts`) levanta la app real y `sesionDePrueba(app, { roles })`
+  (`apps/api/test/ayudas/sesion-de-prueba.ts`) entrega una cookie con un token real de cualquier rol.
+- Operador y administrador sin 2FA reciben un acceso con alcance `activar-2fa` y el guard les responde 403 en todo
+  salvo activar el 2FA. Las pruebas usan `alcance: 'completo'` por defecto.
+- El guard solo protege HTTP. Los gateways de WebSocket autentican con su propio ticket (Spec 3).
+- `apps/api/test/cobertura-rutas.e2e-spec.ts` recorre todas las rutas de la app y falla si alguna responde sin
+  sesión fuera de su lista blanca: una ruta pública nueva se agrega ahí, en el PR y con revisión.
+- La IP y el dispositivo del cliente se leen con `@ClienteActual()` (`apps/api/src/identidad/http/cliente-http.ts`),
+  que ya resuelve el proxy de la web. Úsalo en la auditoría en lugar de `request.ip`.
+- Validación de entrada: hay un `StandardSchemaValidationPipe` global; basta con `@Body({ schema })`.
 
 ## 2. Billetera y ledger
 
@@ -94,7 +103,12 @@ Para que el servicio de reportes (Python) valide el mismo token que la API sin p
 - Algoritmo asimétrico **EdDSA (Ed25519)** o **RS256**: la API firma con la clave privada (`JWT_PRIVATE_KEY`, solo
   en `apps/api`) y reportes verifica con la pública (`JWT_PUBLIC_KEY`).
 - Claims: `sub` (id del usuario), `email`, `roles` (arreglo de `Rol`), `iat`, `exp` (15 min como máximo),
-  `iss: "apuestas-api"`, `aud: "apuestas"`.
+  `iss: "apuestas-api"`, `aud: "apuestas"`. Además `sid` (id de la sesión) y `alc` (`completo` o `activar-2fa`):
+  **reportes debe rechazar los tokens con `alc` distinto de `completo`**. El algoritmo implementado es EdDSA.
+- **El navegador nunca llama a la API directamente**: llama a `/api/*` de la propia web, un proxy de Next.js
+  (`apps/web/src/app/api/[...ruta]/route.ts`) que reenvía cookies e IP. Así las cookies son del dominio de la web.
+  En el código de la web, usa `api()` de `apps/web/src/lib/api-cliente.ts` (renueva la sesión sola). El ticket del
+  WebSocket del Spec 3 también se pide por el proxy; solo la conexión de Socket.IO va directa a la API.
 - Transporte: cookie `httpOnly`, `Secure`, `SameSite=Lax` llamada `acceso`; el refresh rotativo va en otra cookie
   con `Path` restringido a la ruta de refresh. Para llamadas servidor a servidor (Next.js → reportes) se acepta
   también `Authorization: Bearer`.
