@@ -93,9 +93,12 @@ def _de_la_competicion(criterios: Criterios) -> sql.Composable:
     return _y(partes)
 
 
-def _apuestas_filtradas(criterios: Criterios) -> sql.Composable:
-    """Apuestas no anuladas del rango; con deporte o competición, las con alguna selección allí."""
-    partes = [sql.SQL("a.estado::text <> 'ANULADA'"), *_rango("a", "aceptada_en", criterios)]
+def _apuestas_filtradas(criterios: Criterios, *, incluir_anuladas: bool = False) -> sql.Composable:
+    """Apuestas del rango (sin las anuladas, salvo `incluir_anuladas`); con deporte o competición,
+    las con alguna selección allí."""
+    partes = [*_rango("a", "aceptada_en", criterios)]
+    if not incluir_anuladas:
+        partes.insert(0, sql.SQL("a.estado::text <> 'ANULADA'"))
     if criterios.competicion_id is not None or criterios.deporte is not None:
         partes.append(
             sql.SQL(
@@ -137,8 +140,9 @@ def apuestas_por_dia(conexion: Conexion, criterios: Criterios) -> pd.DataFrame:
 
 
 def usuarios_activos(conexion: Conexion, criterios: Criterios) -> int:
+    """Usuarios distintos con apuestas en el rango; las anuladas solo se excluyen del volumen."""
     consulta = sql.SQL("SELECT count(DISTINCT a.usuario_id) FROM apuesta a WHERE {}").format(
-        _apuestas_filtradas(criterios)
+        _apuestas_filtradas(criterios, incluir_anuladas=True)
     )
     fila = conexion.execute(consulta, criterios.parametros()).fetchone()
     return 0 if fila is None else int(fila[0])

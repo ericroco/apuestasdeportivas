@@ -155,7 +155,8 @@ def test_resumen_coincide_al_centavo_con_el_calculo_a_mano(cliente: TestClient) 
         "volumen": "55.00",
         "premiosPagados": "41.00",
         "ggr": "8.75",
-        "usuariosActivos": 3,
+        # Dani solo tiene una apuesta anulada: cuenta como activo aunque no sume al volumen.
+        "usuariosActivos": 4,
     }
     for seccion, esperado in TOTALES_SIN_FILTRO_DE_APUESTAS.items():
         assert cuerpo[seccion] == esperado, seccion
@@ -166,9 +167,9 @@ def test_resumen_coincide_al_centavo_con_el_calculo_a_mano(cliente: TestClient) 
 @pytest.mark.parametrize(
     ("filtros", "apuestas"),
     [
-        ({"competicionId": C1}, (2, "30.00", "25.50", "4.50", 1)),
-        ({"deporte": "futbol"}, (3, "42.00", "25.50", "16.50", 2)),
-        ({"deporte": "FUTBOL"}, (3, "42.00", "25.50", "16.50", 2)),
+        ({"competicionId": C1}, (2, "30.00", "25.50", "4.50", 2)),
+        ({"deporte": "futbol"}, (3, "42.00", "25.50", "16.50", 3)),
+        ({"deporte": "FUTBOL"}, (3, "42.00", "25.50", "16.50", 3)),
         ({"deporte": "baloncesto"}, (2, "13.00", "15.50", "-7.75", 2)),
         ({"deporte": "futbol", "competicionId": C3}, (0, "0.00", "0.00", "0.00", 0)),
     ],
