@@ -25,6 +25,31 @@ enum PropositoEnlace {
   @@map("proposito_enlace")
 }
 
+enum TipoCuenta {
+  USUARIO_REAL
+  USUARIO_BONO
+  CASA
+  PASARELA
+  RETIROS_TRANSITO
+
+  @@map("tipo_cuenta")
+}
+
+enum TipoAsiento {
+  DEPOSITO
+  APUESTA
+  PREMIO
+  REEMBOLSO
+  BONO
+  CONVERSION_BONO
+  REVERSION_PREMIO
+  RETIRO_RESERVA
+  RETIRO_PAGO
+  RETIRO_DEVOLUCION
+
+  @@map("tipo_asiento")
+}
+
 model Usuario {
   id                 String        @id @default(uuid()) @db.Uuid
   /// En minúsculas y sin espacios alrededor (check en la migración).
@@ -44,6 +69,8 @@ model Usuario {
   codigosRecuperacion CodigoRecuperacion[]
   sesiones            Sesion[]
   enlacesCorreo       EnlaceCorreo[]
+  billetera           Billetera?
+  cuentas             CuentaContable[]
 
   @@map("usuario")
 }
@@ -142,4 +169,64 @@ model EnlaceCorreo {
   /// Límite de reenvíos por hora (FR-004).
   @@index([usuarioId, proposito, creadoEn])
   @@map("enlace_correo")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Libro contable de doble entrada (FR-034 a FR-044, research §8). Asientos y líneas son de solo inserción.
+// ---------------------------------------------------------------------------------------------------------------
+
+/// Fila que se bloquea con FOR UPDATE para serializar el dinero de un usuario (FR-039).
+model Billetera {
+  usuarioId String   @id @map("usuario_id") @db.Uuid
+  creadaEn  DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("billetera")
+}
+
+/// `casa`, `pasarela`, `retiros_transito` (del sistema) y `usuario:<id>:real|bono`.
+model CuentaContable {
+  id        String     @id @default(uuid()) @db.Uuid
+  codigo    String     @unique
+  tipo      TipoCuenta
+  usuarioId String?    @map("usuario_id") @db.Uuid
+
+  usuario Usuario?       @relation(fields: [usuarioId], references: [id])
+  lineas  LineaAsiento[]
+
+  @@index([usuarioId])
+  @@map("cuenta_contable")
+}
+
+model Asiento {
+  id                String      @id @default(uuid()) @db.Uuid
+  tipo              TipoAsiento
+  /// `<entidad>:<id>:<operación>[:r<n>]` (contrato 2). Repetirla no crea otro asiento.
+  claveIdempotencia String      @unique @map("clave_idempotencia")
+  usuarioId         String?     @map("usuario_id") @db.Uuid
+  origenTipo        String      @map("origen_tipo")
+  origenId          String      @map("origen_id")
+  creadoEn          DateTime    @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  lineas LineaAsiento[]
+
+  @@index([usuarioId, creadoEn])
+  @@map("asiento")
+}
+
+/// Monto con signo: las cuentas de usuario suben con líneas positivas. Las líneas de un asiento suman cero.
+model LineaAsiento {
+  id        String   @id @default(uuid()) @db.Uuid
+  asientoId String   @map("asiento_id") @db.Uuid
+  cuentaId  String   @map("cuenta_id") @db.Uuid
+  monto     Decimal  @db.Decimal(14, 2)
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  asiento Asiento        @relation(fields: [asientoId], references: [id])
+  cuenta  CuentaContable @relation(fields: [cuentaId], references: [id])
+
+  @@index([cuentaId, creadoEn])
+  @@index([asientoId])
+  @@map("linea_asiento")
 }

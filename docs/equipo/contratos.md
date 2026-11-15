@@ -56,8 +56,16 @@ integrante como revisor.
 - La implementación bloquea la fila de la billetera con `SELECT … FOR UPDATE` dentro de `tx`
   (`tx.$queryRaw`) y lanza `SaldoInsuficienteError` si no alcanza.
 - Convención de claves de idempotencia: `<entidad>:<id>:<operación>`, p. ej. `apuesta:<id>:premio`,
-  `apuesta:<id>:reembolso`, `cupon:<id>:<usuarioId>:bono`.
+  `apuesta:<id>:reembolso`, `cupon:<id>:<usuarioId>:bono`. Las re-liquidaciones agregan el número de corrección:
+  `apuesta:<id>:premio:r<n>` y `apuesta:<id>:reversion:r<n>`.
 - Montos: `Prisma.Decimal`, positivos, con 2 decimales. Nunca `number`.
+- **Implementado (Spec 2, PR 2).** `BILLETERA_PORT` es global. Además del contrato original:
+  - `revertirPremio` (pedido por el Spec 3) es la única operación que puede dejar el saldo negativo.
+  - `ConflictoIdempotenciaError`: la clave ya existe con otro usuario, tipo o monto.
+  - `UsuarioNoHabilitadoError`: `acreditarBono` a un usuario sin correo verificado o suspendido. El Spec 4 no debe
+    consumir el cupón en ese caso.
+  - La billetera y las cuentas del usuario se crean solas en su primera operación.
+  - Asientos y líneas son de solo inserción (disparadores) y cada asiento debe sumar cero al confirmar.
 
 ## 3. Auditoría
 

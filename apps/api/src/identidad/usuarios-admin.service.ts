@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { LibroContableService } from '../billetera/libro-contable.service.js';
 import { AUDITORIA_PORT, type AuditoriaPort } from '../contracts/auditoria.port.js';
 import type { Rol } from '../contracts/autenticacion.js';
 import type { EstadoUsuario, Prisma } from '../generated/prisma/client.js';
@@ -58,6 +59,7 @@ export class UsuariosAdminService {
     private readonly segundoFactor: SegundoFactorService,
     private readonly sesiones: SesionesService,
     private readonly tokens: TokensService,
+    private readonly libro: LibroContableService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
   ) {}
 
@@ -124,8 +126,16 @@ export class UsuariosAdminService {
     if (usuario.roles.includes('ADMINISTRADOR') && !nuevos.includes('ADMINISTRADOR')) {
       await this.exigirOtroAdministrador(usuarioId);
     }
-    // FR-026: no se promueve a quien tiene dinero en la plataforma. La comprobación de saldo llega con la
-    // billetera (PR 2, T061).
+    // FR-026 y FR-068: operador y administrador no tienen dinero en la plataforma.
+    const promueve = nuevos.some((rol) => rol !== 'APOSTADOR' && !usuario.roles.includes(rol));
+    if (promueve) {
+      const { real, bono } = await this.libro.obtenerSaldos(usuarioId);
+      if (!real.isZero() || !bono.isZero()) {
+        throw new ConflictException(
+          'Ese usuario tiene saldo en su billetera. Debe quedar en cero antes de darle un rol de operador o administrador.',
+        );
+      }
+    }
 
     const actualizado = await this.prisma.$transaction(async (tx) => {
       const fila = await tx.usuario.update({ where: { id: usuarioId }, data: { roles: nuevos } });

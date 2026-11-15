@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuditoriaModule } from './auditoria/auditoria.module.js';
+import { BilleteraModule } from './billetera/billetera.module.js';
 import { ConfiguracionModule } from './config/configuracion.module.js';
 import { ENTORNO, type Entorno } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
@@ -28,6 +29,7 @@ import { RedisModule } from './redis/redis.module.js';
     PrismaModule,
     RedisModule,
     AuditoriaModule,
+    BilleteraModule,
     IdentidadModule,
     HealthModule,
   ],
