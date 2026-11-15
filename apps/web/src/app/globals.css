@@ -20,6 +20,8 @@
   --color-falla: #b42a23;
   --color-aviso: #8a4b00;
   --color-serie: #3b5b92;
+  /* Pista de la barra de avance: un paso claro de la tinta (tinta/pista 11.5:1). */
+  --color-pista: #d5dbe6;
   --color-perforado: #c9d1cc;
 
   --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
