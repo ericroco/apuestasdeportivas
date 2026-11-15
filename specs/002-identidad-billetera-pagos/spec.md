@@ -22,6 +22,22 @@ Actores: **visitante** (sin cuenta), **apostador** (usuario autenticado), **oper
 
 No se opera con dinero real: todos los pagos se hacen en el entorno de pruebas de la pasarela.
 
+## Clarifications
+
+### Session 2026-11-15
+
+- Q: ¿Quién aprueba un retiro bajo el umbral y sin alertas de riesgo? → A: Se aprueba automáticamente y se marca
+  pagado al instante con referencia simulada; sobre el umbral o con alertas, lo revisa el administrador.
+- Q: ¿Se acepta la operación `revertirPremio` que propone el Spec 3, aunque deje saldo negativo? → A: Sí, tal
+  cual: se agrega al contrato 2 con las claves `apuesta:<id>:reversion:r<n>` (y `apuesta:<id>:premio:r<n>` para
+  re-liquidar), es la única operación que puede dejar saldo negativo y mientras lo sea el usuario no retira.
+- Q: ¿El 2FA es obligatorio para iniciar sesión con los roles operador y administrador? → A: Sí, para ambos; quien
+  tiene uno de esos roles sin 2FA activo solo puede activarlo hasta completarlo.
+- Q: ¿Se incluye la recuperación de contraseña olvidada? → A: Sí, con un enlace al correo de un solo uso que caduca
+  en 1 hora; al cambiarla se cierran todas las sesiones.
+- Q: ¿Operador y administrador pueden depositar y retirar? → A: No; solo quien tiene el rol apostador y ninguno de
+  los otros dos, coherente con la regla del Spec 3 de que no pueden apostar.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro con verificación de correo y mayoría de edad (Priority: P1)
@@ -83,6 +99,11 @@ el bloqueo aun con la contraseña correcta.
 6. **Given** un usuario que cierra sesión, **When** se reutiliza su sesión anterior, **Then** se rechaza.
 7. **Given** una cuenta suspendida por el administrador, **When** intenta iniciar sesión o usar una sesión abierta,
    **Then** se rechaza.
+8. **Given** un usuario que olvidó su contraseña, **When** pide recuperarla con su correo y CAPTCHA, **Then** recibe
+   un enlace de un solo uso que caduca en 1 hora, y la respuesta visible es la misma exista o no el correo.
+9. **Given** un enlace de recuperación válido, **When** el usuario fija una contraseña nueva, **Then** se cierran
+   todas sus sesiones, el enlace deja de servir, el cambio queda auditado y, si tiene 2FA activo, se le sigue
+   pidiendo al iniciar sesión.
 
 ---
 
@@ -185,8 +206,8 @@ El usuario activa un segundo factor con una aplicación de códigos temporales: 
 código y recibe códigos de recuperación de un solo uso. Desde entonces se le pide el código al iniciar sesión y en
 cada retiro.
 
-**Why this priority**: es obligatorio para retirar y para las cuentas con más privilegios, pero no bloquea el
-registro ni los depósitos.
+**Why this priority**: es obligatorio para retirar y para iniciar sesión como operador o administrador, pero no
+bloquea el registro ni los depósitos de los apostadores.
 
 **Independent Test**: activar el segundo factor, cerrar sesión y comprobar que el inicio de sesión pide el código;
 usar un código de recuperación una vez y comprobar que no sirve una segunda vez.
@@ -204,7 +225,9 @@ usar un código de recuperación una vez y comprobar que no sirve una segunda ve
 5. **Given** un usuario que perdió su dispositivo, **When** usa un código de recuperación, **Then** entra y ese
    código deja de servir.
 6. **Given** un usuario que quiere desactivar el segundo factor, **When** lo pide, **Then** debe confirmar con un
-   código válido.
+   código válido; si tiene rol de operador o administrador, no puede desactivarlo.
+7. **Given** un operador o administrador sin segundo factor activo (por ejemplo, recién promovido), **When** inicia
+   sesión, **Then** solo puede activar el segundo factor; cualquier otra acción se rechaza hasta completarlo.
 
 ---
 
@@ -225,8 +248,9 @@ comprobar que queda pendiente de revisión.
 **Acceptance Scenarios**:
 
 1. **Given** un apostador con 2FA activo, saldo real suficiente y un depósito confirmado, **When** solicita un
-   retiro bajo el umbral con un código válido, **Then** el monto sale de su saldo disponible, se emite el evento
-   "retiro solicitado" y el retiro sigue el flujo de aprobación definido.
+   retiro bajo el umbral con un código válido y sin alertas de riesgo, **Then** el monto sale de su saldo
+   disponible, el retiro queda "pagado" al instante con una referencia simulada y se emite el evento "retiro
+   solicitado".
 2. **Given** un retiro sin código 2FA válido o de un usuario sin 2FA activo, **When** se solicita, **Then** se
    rechaza.
 3. **Given** un destino que no corresponde a un método y titular de un depósito confirmado del mismo usuario,
@@ -288,6 +312,9 @@ ese usuario y ver ambos cambios.
 3. **Given** una cuenta suspendida, **When** su dueño usa una sesión abierta, **Then** se rechaza de inmediato.
 4. **Given** el registro de auditoría, **When** el administrador filtra por usuario, acción o rango de fechas,
    **Then** ve los eventos que coinciden, del más reciente al más antiguo.
+5. **Given** un apostador con saldo o con un retiro pendiente, **When** el administrador intenta darle el rol de
+   operador o administrador, **Then** se rechaza indicando que primero debe quedar sin saldo.
+6. **Given** un operador o administrador, **When** intenta depositar o retirar, **Then** se rechaza por su rol.
 
 ---
 
@@ -349,6 +376,9 @@ ese usuario y ver ambos cambios.
   distintos, sin exponer la credencial a los scripts de la página.
 - **FR-016**: La credencial de acceso DEBE poder verificarla el servicio de reportes sin poder emitirla, con las
   claims y el algoritmo del contrato 6.
+- **FR-067**: El usuario DEBE poder recuperar una contraseña olvidada con un enlace al correo de un solo uso que
+  caduca en 1 hora, pedido con CAPTCHA y sin revelar si el correo existe; fijar la contraseña nueva DEBE cerrar
+  todas sus sesiones, quedar auditado y no omitir el segundo factor.
 
 #### Segundo factor
 
@@ -359,18 +389,21 @@ ese usuario y ver ambos cambios.
 - **FR-019**: Un código TOTP DEBE aceptarse una sola vez y con una tolerancia de ±30 segundos.
 - **FR-020**: Desactivar el segundo factor DEBE exigir un código válido y quedar auditado.
 - **FR-021**: El segundo factor DEBE ser obligatorio para solicitar retiros, para aprobar o rechazar retiros y para
-  cambiar roles.
+  cambiar roles, y para iniciar sesión con los roles operador o administrador. Un usuario con alguno de esos roles
+  y sin segundo factor activo DEBE quedar limitado a activarlo: ninguna otra acción le está permitida hasta
+  completarlo.
 - **FR-022**: El secreto del segundo factor NO DEBE guardarse en claro.
 
 #### Roles y autorización
 
 - **FR-023**: Los roles DEBEN ser apostador, operador y administrador; un usuario puede tener varios.
 - **FR-024**: Toda acción DEBE exigir un usuario autenticado salvo las marcadas como públicas (salud, registro,
-  inicio de sesión, renovación, verificación de correo y confirmación de la pasarela).
+  inicio de sesión, renovación, verificación de correo, recuperación de contraseña y confirmación de la pasarela).
 - **FR-025**: Una acción marcada con roles DEBE exigir al menos uno de ellos; los rechazos por permisos DEBEN
   quedar auditados.
 - **FR-026**: El administrador DEBE poder asignar y quitar los roles operador y administrador y suspender o
-  reactivar cuentas; NO DEBE poder quitarse el rol ni suspenderse si es el único administrador activo.
+  reactivar cuentas; NO DEBE poder quitarse el rol ni suspenderse si es el único administrador activo, ni asignar
+  operador o administrador a un usuario con saldo distinto de cero o con retiros pendientes.
 - **FR-027**: Suspender una cuenta DEBE invalidar de inmediato todas sus sesiones.
 - **FR-028**: El primer administrador DEBE crearse con un procedimiento de preparación del entorno, no desde la
   interfaz pública.
@@ -404,8 +437,10 @@ ese usuario y ver ambos cambios.
   nunca dejen un saldo inexacto ni negativo, y rechazar el descuento si el saldo del tipo indicado no alcanza.
 - **FR-040**: La billetera DEBE ofrecer a los demás specs: débito de apuesta, premio, reembolso, bono, conversión de
   bono a real, reversión de premio y consulta de saldos, con las firmas del contrato 2.
-- **FR-041**: La reversión de premio DEBE ser la única operación que puede dejar un saldo negativo; mientras un
-  saldo real sea negativo, el usuario NO DEBE poder retirar.
+- **FR-041**: La reversión de premio DEBE ser la única operación que puede dejar un saldo negativo, con la clave de
+  idempotencia `apuesta:<id>:reversion:r<n>` (`n` = número de corrección); las re-liquidaciones de premio usan
+  `apuesta:<id>:premio:r<n>`. Mientras un saldo real sea negativo, el usuario NO DEBE poder retirar, y la consulta
+  de saldos DEBE devolverlo tal cual para que el Spec 3 rechace apuestas nuevas.
 - **FR-042**: Los montos DEBEN ser positivos, en dólares (USD), con 2 decimales exactos y sin errores de redondeo.
 - **FR-043**: El apostador DEBE poder ver sus saldos real y de bono y sus movimientos paginados con fecha, tipo,
   monto y saldo resultante.
@@ -414,6 +449,8 @@ ese usuario y ver ambos cambios.
 
 #### Depósitos
 
+- **FR-068**: Depositar y retirar DEBE estar permitido solo a usuarios con el rol apostador que no tengan además el
+  rol operador ni administrador.
 - **FR-045**: El apostador verificado DEBE poder iniciar un depósito con un monto entre los límites configurados
   (por defecto, entre 1.00 y 1 000.00 USD) y, opcionalmente, un código de cupón.
 - **FR-046**: Antes de ir a la pasarela, el sistema DEBE registrar la intención de pago con el usuario, el monto, la
@@ -442,7 +479,8 @@ ese usuario y ver ambos cambios.
   tránsito) en la misma operación que registra la solicitud.
 - **FR-057**: Un retiro sobre el umbral configurado (por defecto, 100.00 USD), o marcado por la evaluación de riesgo
   del Spec 4, DEBE quedar pendiente de revisión manual; si la evaluación de riesgo no está disponible, todo retiro
-  sobre el umbral queda pendiente.
+  sobre el umbral queda pendiente. Un retiro en o bajo el umbral y sin alertas DEBE aprobarse automáticamente y
+  marcarse pagado con una referencia simulada en la misma operación.
 - **FR-058**: El administrador DEBE poder aprobar (con referencia de pago simulada) o rechazar (con motivo) un retiro
   pendiente; aprobar mueve el dinero de tránsito a la pasarela y rechazar lo devuelve al saldo real.
 - **FR-059**: Aprobar o rechazar un retiro DEBE ser idempotente y quedar auditado; un administrador NO DEBE resolver
@@ -453,7 +491,7 @@ ese usuario y ver ambos cambios.
 #### Interfaz
 
 - **FR-061**: La aplicación web DEBE ofrecer pantallas de registro, verificación de correo, inicio de sesión,
-  segundo factor, billetera (saldos y movimientos), depósito, retiro, administración de usuarios y auditoría, y
+  recuperación de contraseña, segundo factor, billetera (saldos y movimientos), depósito, retiro, administración de usuarios y auditoría, y
   revisión de retiros.
 - **FR-062**: Las pantallas DEBEN ser usables desde 360 px de ancho, cumplir WCAG 2.1 AA y nombrar las acciones por
   lo que hacen ("Crear cuenta", "Depositar", "Solicitar retiro").
@@ -480,10 +518,12 @@ ese usuario y ver ambos cambios.
 | Retiro sin 2FA o a otro titular | 2FA obligatorio y destino restringido (FR-053, FR-054) | Ambos se rechazan |
 | Retiro de bono o de saldo negativo | Solo saldo real disponible (FR-041, FR-055) | Se rechaza |
 | Fuerza bruta y relleno de credenciales | Bloqueo, límite de frecuencia y CAPTCHA (FR-008, FR-010, FR-011) | Tras 5 fallos la cuenta se bloquea |
-| Enumeración de cuentas | Respuestas genéricas (FR-005, FR-009) | Mismo mensaje con correo existente o no |
+| Enumeración de cuentas | Respuestas genéricas (FR-005, FR-009, FR-067) | Mismo mensaje con correo existente o no, en registro, inicio de sesión y recuperación |
+| Secuestro por recuperación de contraseña | Enlace de un solo uso y corta duración, cierre de sesiones y 2FA intacto (FR-067) | Un enlace usado o caducado no sirve; tras recuperar, el 2FA se sigue pidiendo |
 | Robo de sesión | Credencial no legible por scripts, rotación y detección de reutilización (FR-012, FR-013) | Reusar la credencial de renovación cierra todas las sesiones |
 | Escalada de rol | Denegación por defecto y roles por acción (FR-024, FR-025) | Un apostador no llama rutas de operador ni de administrador, endpoint por endpoint |
-| Autoaprobación de retiros | Separación de funciones (FR-059) | Un administrador no aprueba su propio retiro |
+| Autoaprobación de retiros | Separación de funciones (FR-059, FR-068) | Un administrador no aprueba su propio retiro ni deposita o retira |
+| Personal con privilegios que mueve dinero | Solo apostadores depositan y retiran; no se promueve a quien tiene saldo (FR-026, FR-068) | Operador y administrador no depositan ni retiran |
 | Edición del libro contable o de la auditoría | Solo inserción (FR-030, FR-036, FR-044) | No existe ruta ni operación que actualice o borre |
 | Fuga de credenciales por reportes | Credenciales fuera del alcance de reportes (FR-064) | El usuario de reportes no puede leerlas |
 | Cuentas falsas y menores | Verificación de correo, mayoría de edad y CAPTCHA (FR-001, FR-002, FR-006) | Sin verificar no se deposita |
@@ -494,7 +534,8 @@ ese usuario y ver ambos cambios.
   verificación, activo, suspendido), roles, intentos fallidos y bloqueo temporal.
 - **Sesión**: credencial de renovación de un dispositivo; familia de rotación, caducidad, revocación, IP y
   dispositivo.
-- **Verificación de correo**: enlace de un solo uso con caducidad.
+- **Enlace de correo**: verificación de correo o recuperación de contraseña; un solo uso, con caducidad y guardado
+  solo como hash.
 - **Segundo factor**: secreto protegido, fecha de activación, último código usado y códigos de recuperación (hash).
 - **Evento de auditoría**: actor, acción, entidad, identificador, datos no sensibles, IP, dispositivo y fecha; solo
   inserción.
@@ -536,14 +577,10 @@ ese usuario y ver ambos cambios.
 - El CAPTCHA usa claves de prueba en desarrollo y en las pruebas automáticas.
 - El sandbox de la pasarela no permite pagos salientes: todos los retiros se pagan con una referencia simulada,
   registrados igual en el libro contable.
-- Por defecto, un retiro bajo el umbral y sin alertas de riesgo se marca como pagado de inmediato con referencia
-  simulada; sobre el umbral o con alertas, espera revisión manual.
-- La recuperación de contraseña olvidada queda fuera de este spec; el administrador puede reactivar cuentas y se
-  puede agregar después reutilizando el envío de correos.
 - Los límites (depósito, retiro, umbral, intentos, caducidades) son configurables por variables de entorno con los
   valores por defecto indicados.
-- La reversión de premio con saldo negativo responde a la aclaración del Spec 3 (2026-11-14) y se agrega al contrato
-  2 en el PR de este spec, con Daniel como revisor.
+- La reversión de premio con saldo negativo responde a la aclaración del Spec 3 (2026-11-14), aceptada en la sesión
+  de aclaraciones de este spec, y se agrega al contrato 2 en el PR 2, con Daniel como revisor.
 - Mientras el Spec 4 no esté integrado, la evaluación de riesgo de retiros no está disponible y se aplica FR-057.
 - Plan de entregas: PR 1 (historias 1, 2, 3, 6 y 9: identidad, roles, auditoría, 2FA y usuarios), PR 2 (historias 4 y
   5: libro contable, billetera y depósitos) y PR 3 (historias 7 y 8: retiros).

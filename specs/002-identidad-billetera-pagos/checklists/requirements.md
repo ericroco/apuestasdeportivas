@@ -33,6 +33,8 @@
 
 - Se nombran TOTP, CAPTCHA y los contratos del equipo porque son requisitos explícitos del proyecto
   (`promtp.md`, `docs/equipo/contratos.md`), no decisiones de implementación de este spec.
-- Sin marcas de aclaración: las decisiones abiertas se llevaron a valores por defecto documentados en
-  "Assumptions" y se confirman en `/speckit-clarify` (flujo de retiros bajo el umbral, reversión con saldo negativo,
-  sesión entre dominios, acceso de reportes a credenciales, recuperación de contraseña).
+- Sin marcas de aclaración: las decisiones abiertas se resolvieron en `/speckit-clarify` (sesión 2026-11-15):
+  retiros bajo el umbral, reversión con saldo negativo, 2FA para roles con privilegios, recuperación de contraseña
+  y billetera solo para apostadores.
+- Quedan para `/speckit-plan` (son de implementación, el requisito ya está fijado): cómo funciona la sesión entre
+  dominios (FR-015) y cómo se ocultan las credenciales al usuario de reportes (FR-064).
