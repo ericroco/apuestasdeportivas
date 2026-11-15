@@ -169,8 +169,8 @@ describe('PromocionesApuestaPort (e2e)', () => {
     await crearCupon({ ...gratis, codigo: 'GRATISB', montoFijo: d('5') });
 
     const resultados = await Promise.allSettled([
-      aplicar('usuario-1', 'GRATISA'),
-      aplicar('usuario-1', 'GRATISB'),
+      aplicar('usuario-simultaneo', 'GRATISA'),
+      aplicar('usuario-simultaneo', 'GRATISB'),
     ]);
 
     expect(resultados.filter((r) => r.status === 'fulfilled')).toHaveLength(1);

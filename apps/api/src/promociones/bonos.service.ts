@@ -1,6 +1,7 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { requerir } from '../comun/dependencias.js';
 import { CERO, aTexto, type Decimal } from '../comun/montos.js';
+import { OPCIONES_TRANSACCION } from '../comun/transacciones.js';
 import { esViolacionDeUnicidad } from '../comun/prisma-errores.js';
 import { RELOJ, relojDelSistema, type Reloj } from '../comun/reloj.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
@@ -132,8 +133,9 @@ export class BonosService {
       metodoPagoHuella: deposito.metodoPagoHuella,
     };
     try {
-      return await this.prisma.$transaction((tx) =>
-        this.procesarDeposito(tx, codigo, deposito.monto, solicitud, dependencias),
+      return await this.prisma.$transaction(
+        (tx) => this.procesarDeposito(tx, codigo, deposito.monto, solicitud, dependencias),
+        OPCIONES_TRANSACCION,
       );
     } catch (error) {
       // Dos procesos del mismo depósito a la vez: el segundo choca con la unicidad del canje.

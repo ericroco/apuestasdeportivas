@@ -23,13 +23,14 @@ const ENTORNO = validarEntorno({
 function preparar(
   bono: Bono | null,
   sumaQueCuenta: string,
-  opciones: { saldoBono?: string; conBilletera?: boolean } = {},
+  opciones: { saldoBono?: string; conBilletera?: boolean; pendientes?: boolean } = {},
 ) {
   const { falso, tx } = crearTxFalso({ bonoActivo: bono });
   falso.$queryRaw
     .mockReset()
     .mockResolvedValueOnce(bono ? [{ id: bono.id }] : [])
-    .mockResolvedValueOnce([{ total: sumaQueCuenta }]);
+    .mockResolvedValueOnce([{ total: sumaQueCuenta }])
+    .mockResolvedValueOnce([{ pendiente: opciones.pendientes ?? false }]);
   const prisma = { $transaction: vi.fn(async (trabajo: (t: unknown) => unknown) => trabajo(tx)) };
   const billetera = (opciones.conBilletera ?? true) ? new BilleteraEnMemoria() : undefined;
   billetera?.fijarSaldos('apostador-1', { real: '3.00', bono: opciones.saldoBono ?? '10.00' });
@@ -59,13 +60,23 @@ describe('RolloverService.recalcular', () => {
 
     await servicio.recalcular('apostador-1');
 
-    expect(falso.bono.updateMany).toHaveBeenCalledWith({
-      where: { usuarioId: 'apostador-1', estado: 'ACTIVO', venceEn: { lte: AHORA } },
-      data: { estado: 'VENCIDO' },
-    });
-    expect(falso.bono.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
+    const [consulta, ...valores] = falso.$executeRaw.mock.calls[0] as [TemplateStringsArray];
+    const sql = consulta.join('?');
+    expect(sql).toMatch(/SET estado = 'VENCIDO'/);
+    expect(sql).toMatch(/vence_en <= \?/);
+    expect(valores).toEqual(['apostador-1', AHORA]);
+    expect(falso.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
       falso.$queryRaw.mock.invocationCallOrder[0] ?? 0,
     );
+  });
+
+  it('un bono que ya alcanzó el requisito no vence mientras espera liquidaciones', async () => {
+    const { servicio, falso } = preparar(null, '0');
+
+    await servicio.recalcular('apostador-1');
+
+    const [consulta] = falso.$executeRaw.mock.calls[0] as [TemplateStringsArray];
+    expect(consulta.join('?')).toMatch(/avance < requisito/);
   });
 
   it('suma solo apuestas ganadas o perdidas, aceptadas tras el bono y con cuota mínima', async () => {
@@ -138,6 +149,36 @@ describe('RolloverService.recalcular', () => {
         data: expect.objectContaining({ estado: 'CUMPLIDO', montoConvertido: d('0') }),
       }),
     );
+  });
+
+  it('con apuestas pagadas con saldo de bono sin liquidar no convierte y el bono sigue activo', async () => {
+    const { servicio, falso, billetera, auditoria } = preparar(bonoDePrueba(), '50.00', {
+      pendientes: true,
+      saldoBono: '100.00',
+    });
+
+    expect(await servicio.recalcular('apostador-1')).toBe('EN_CURSO');
+    expect(billetera?.asientos).toHaveLength(0);
+    expect(auditoria.eventos).toHaveLength(0);
+    expect(falso.bono.update).toHaveBeenCalledTimes(1);
+    expect(falso.bono.update).toHaveBeenCalledWith({
+      where: { id: bonoDePrueba().id },
+      data: { avance: d('50') },
+    });
+    const [consulta, ...valores] = falso.$queryRaw.mock.calls[2] as [TemplateStringsArray];
+    const sql = consulta.join('?');
+    expect(sql).toMatch(/a\.tipo = 'APUESTA_ACEPTADA' AND a\.tipo_saldo = 'BONO'/);
+    expect(sql).toMatch(/NOT EXISTS/);
+    expect(valores).toEqual(['apostador-1']);
+  });
+
+  it('con el avance ya guardado y pendientes no repite la escritura', async () => {
+    const { servicio, falso } = preparar(bonoDePrueba({ avance: d('50') }), '50.00', {
+      pendientes: true,
+    });
+
+    expect(await servicio.recalcular('apostador-1')).toBe('EN_CURSO');
+    expect(falso.bono.update).not.toHaveBeenCalled();
   });
 
   it('sin la billetera del Spec 2 no se cumple el bono (503) y la transacción se revierte', async () => {

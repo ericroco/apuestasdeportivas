@@ -18,8 +18,8 @@ describe('MisBonosService.obtener', () => {
   it('separa el bono activo del historial y lista los canjes rechazados con su motivo', async () => {
     const cupon = { codigo: 'BIENVENIDA10' };
     const prisma = {
+      $executeRaw: vi.fn().mockResolvedValue(0),
       bono: {
-        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         findMany: vi.fn().mockResolvedValue([
           { ...bonoDePrueba({ avance: new Prisma.Decimal('25') }), cupon },
           {
@@ -46,10 +46,11 @@ describe('MisBonosService.obtener', () => {
       reloj,
     ).obtener('apostador-1');
 
-    expect(prisma.bono.updateMany).toHaveBeenCalledWith({
-      where: { usuarioId: 'apostador-1', estado: 'ACTIVO', venceEn: { lte: AHORA } },
-      data: { estado: 'VENCIDO' },
-    });
+    expect(prisma.$executeRaw).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.stringContaining("SET estado = 'VENCIDO'")]),
+      'apostador-1',
+      AHORA,
+    );
     expect(mios.activo).toMatchObject({ avance: '25.00', porcentajeAvance: 50 });
     expect(mios.historial).toEqual([
       expect.objectContaining({ id: 'bono-viejo', estado: 'CUMPLIDO', montoConvertido: '8.00' }),

@@ -44,6 +44,7 @@ function preparar(
   const canje = new CanjeService(
     actividad as unknown as ActividadService,
     alertas as unknown as RegistroAlertasService,
+    undefined,
     reloj,
   );
   const billetera = (opciones.conBilletera ?? true) ? new BilleteraEnMemoria() : undefined;

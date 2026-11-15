@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { aTexto, type Decimal } from '../comun/montos.js';
+import { OPCIONES_TRANSACCION } from '../comun/transacciones.js';
 import { RELOJ, relojDelSistema, type Reloj } from '../comun/reloj.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
 import type { ClienteTransaccional } from '../contracts/billetera.port.js';
@@ -15,7 +16,8 @@ export type EstadoRollover = 'SIN_BONO' | 'EN_CURSO' | 'CUMPLIDO';
  * Rollover (FR-012, FR-013). El avance se RECALCULA desde `actividad_usuario` en lugar de sumarse por evento: cada
  * apuesta tiene una sola fila de liquidación (unicidad `(tipo, referencia_id)`), así que eventos repetidos,
  * re-liquidaciones o el orden en que lleguen no cuentan dos veces. La conversión ocurre una sola vez: el bono se
- * bloquea (`FOR UPDATE`), pasa a CUMPLIDO y la billetera usa la clave `bono:<id>:conversion`.
+ * bloquea (`FOR UPDATE`), pasa a CUMPLIDO y la billetera usa la clave `bono:<id>:conversion`. Aun con el requisito
+ * alcanzado, la conversión espera a que se liquiden las apuestas pagadas con saldo de bono (hallazgo de revisión).
  */
 @Injectable()
 export class RolloverService {
@@ -37,7 +39,9 @@ export class RolloverService {
       const bono = await this.bloquearBonoActivo(tx, usuarioId);
       if (!bono) return 'SIN_BONO';
       const avance = Prisma.Decimal.max(bono.avance, await this.apostadoQueCuenta(tx, bono));
-      if (avance.lt(bono.requisito)) {
+      const cumplido =
+        avance.gte(bono.requisito) && !(await this.hayApuestasBonoPendientes(tx, bono));
+      if (!cumplido) {
         if (avance.gt(bono.avance)) {
           await tx.bono.update({ where: { id: bono.id }, data: { avance } });
         }
@@ -45,7 +49,7 @@ export class RolloverService {
       }
       await this.convertir(tx, bono, avance, ahora, this.bonos.dependencias());
       return 'CUMPLIDO';
-    });
+    }, OPCIONES_TRANSACCION);
   }
 
   private async bloquearBonoActivo(
@@ -75,6 +79,24 @@ export class RolloverService {
         AND l.ocurrido_en < ${bono.venceEn}
         AND a.cuota IS NOT NULL AND a.cuota >= ${this.entorno.CUPON_ROLLOVER_CUOTA_MINIMA}::numeric`;
     return new Prisma.Decimal(fila?.total ?? 0);
+  }
+
+  /**
+   * Apuestas pagadas con saldo de bono (`APUESTA_ACEPTADA` con `tipo_saldo = 'BONO'`) sin su `APUESTA_LIQUIDADA`.
+   * Mientras existan, su premio todavía puede llegar al saldo de bono: convertir antes lo dejaría sin dueño.
+   */
+  private async hayApuestasBonoPendientes(tx: ClienteTransaccional, bono: Bono): Promise<boolean> {
+    const [fila] = await tx.$queryRaw<Array<{ pendiente: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1 FROM actividad_usuario a
+        WHERE a.usuario_id = ${bono.usuarioId}
+          AND a.tipo = 'APUESTA_ACEPTADA' AND a.tipo_saldo = 'BONO'
+          AND NOT EXISTS (
+            SELECT 1 FROM actividad_usuario l
+            WHERE l.tipo = 'APUESTA_LIQUIDADA' AND l.referencia_id = a.referencia_id
+          )
+      ) AS pendiente`;
+    return fila?.pendiente === true;
   }
 
   /** Convierte TODO el saldo de bono del usuario en real (puede ser cero) y marca el bono como cumplido. */

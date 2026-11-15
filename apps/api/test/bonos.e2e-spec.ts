@@ -205,7 +205,13 @@ describe('Bono de depósito y rollover (e2e)', () => {
     });
 
     const mios = await http().get('/api/bonos/mios').set(MIOS).expect(200);
+    // El bono vencido deja 10.00 en saldo de bono: mientras no se usen, no se otorga otro.
     await depositar('dep-3', '20.00', 'RECARGA');
+    expect(
+      await contexto.prisma.canjeCupon.findFirst({ where: { referenciaId: 'dep-3' } }),
+    ).toMatchObject({ estado: 'RECHAZADO', motivo: 'SALDO_BONO_PENDIENTE' });
+    contexto.billetera?.fijarSaldos(USUARIO, { bono: '0' });
+    await depositar('dep-4', '20.00', 'RECARGA');
 
     expect(mios.body.activo).toBeNull();
     expect(mios.body.historial[0]).toMatchObject({ estado: 'VENCIDO', montoConvertido: null });

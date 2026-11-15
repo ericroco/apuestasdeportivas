@@ -12,6 +12,8 @@ export const MOTIVOS = {
   MONTO_SUPERA_CUPON: 'El monto supera el permitido por el cupón.',
   DEPOSITO_INSUFICIENTE: 'El depósito no alcanza el mínimo del cupón.',
   BONO_ACTIVO: 'Ya tienes un bono activo; termina su rollover antes de usar otro.',
+  SALDO_BONO_PENDIENTE:
+    'Tienes saldo de una promoción anterior; úsalo en apuestas antes de recibir otro bono.',
   CUENTA_MULTIPLE: 'Este cupón ya se usó desde tu dispositivo o método de pago.',
   USUARIO_EN_REVISION: 'Tu cuenta está en revisión y no puede usar cupones de bono.',
 } as const;

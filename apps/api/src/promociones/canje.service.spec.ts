@@ -1,3 +1,4 @@
+import { BilleteraEnMemoria } from '../../test/dobles/billetera-en-memoria.js';
 import { crearTxFalso, type OpcionesTxFalso } from '../../test/dobles/tx-falso.js';
 import {
   apuestaGratisDePrueba,
@@ -24,6 +25,8 @@ function preparar(
   opciones: OpcionesTxFalso & {
     relacionadas?: CuentasRelacionadas;
     alertaAlta?: boolean;
+    /** Saldo de bono del usuario; `undefined`: sin billetera conectada. */
+    saldoBono?: string;
   } = {},
 ) {
   const { falso, tx } = crearTxFalso(opciones);
@@ -34,9 +37,12 @@ function preparar(
     tieneAlertaAltaVigente: vi.fn().mockResolvedValue(opciones.alertaAlta ?? false),
     registrar: vi.fn().mockResolvedValue(true),
   };
+  const billetera = new BilleteraEnMemoria();
+  billetera.fijarSaldos('u-1', { bono: opciones.saldoBono ?? '0' });
   const servicio = new CanjeService(
     actividad as unknown as ActividadService,
     alertas as unknown as RegistroAlertasService,
+    opciones.saldoBono === undefined ? undefined : billetera,
     reloj,
   );
   return { falso, tx, actividad, alertas, servicio };
@@ -74,16 +80,47 @@ describe('CanjeService.motivoDelUsuario', () => {
     });
 
     expect(motivo).toBe('BONO_ACTIVO');
-    expect(falso.bono.updateMany).toHaveBeenCalledWith({
-      where: { usuarioId: 'u-1', estado: 'ACTIVO', venceEn: { lte: AHORA } },
-      data: { estado: 'VENCIDO' },
+    expect(falso.$executeRaw).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.stringContaining("SET estado = 'VENCIDO'")]),
+      'u-1',
+      AHORA,
+    );
+  });
+
+  it('rechaza otorgar un bono con saldo de bono de una promoción anterior (SALDO_BONO_PENDIENTE)', async () => {
+    const { motivo } = await evaluar(apuestaGratisDePrueba(), { saldoBono: '100.00' });
+
+    expect(motivo).toBe('SALDO_BONO_PENDIENTE');
+  });
+
+  it('con un bono activo el motivo sigue siendo BONO_ACTIVO aunque haya saldo de bono', async () => {
+    const { motivo } = await evaluar(bonoDepositoDePrueba(), {
+      saldoBono: '5.00',
+      bonoActivo: bonoDePrueba(),
     });
+
+    expect(motivo).toBe('BONO_ACTIVO');
+  });
+
+  it('sin saldo de bono pendiente el canje de bono procede', async () => {
+    const { motivo } = await evaluar(bonoDepositoDePrueba(), { saldoBono: '0' });
+
+    expect(motivo).toBeNull();
+  });
+
+  it('el aumento de cuota no mira el saldo de bono', async () => {
+    const { motivo } = await evaluar(cuponDePrueba(), { saldoBono: '100.00' });
+
+    expect(motivo).toBeNull();
   });
 
   it('serializa los canjes que otorgan bono de un mismo usuario con un bloqueo de la transacción', async () => {
     const { falso } = await evaluar(apuestaGratisDePrueba());
 
-    expect(falso.$executeRaw).toHaveBeenCalledTimes(1);
+    const bloqueos = falso.$executeRaw.mock.calls.filter(([consulta]) =>
+      (consulta as TemplateStringsArray).join('?').includes('pg_advisory_xact_lock'),
+    );
+    expect(bloqueos).toHaveLength(1);
   });
 
   it('el aumento de cuota se puede usar con un bono activo (no otorga bono)', async () => {

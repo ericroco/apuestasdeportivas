@@ -1,6 +1,10 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { RELOJ, relojDelSistema, type Reloj } from '../comun/reloj.js';
-import type { ClienteTransaccional } from '../contracts/billetera.port.js';
+import {
+  BILLETERA_PORT,
+  type BilleteraPort,
+  type ClienteTransaccional,
+} from '../contracts/billetera.port.js';
 import { ActividadService } from '../fraude/actividad.service.js';
 import { RegistroAlertasService } from '../fraude/registro-alertas.service.js';
 import type { CanjeCupon, Cupon, OrigenCanje } from '../generated/prisma/client.js';
@@ -45,12 +49,13 @@ export class CanjeService {
   constructor(
     private readonly actividad: ActividadService,
     private readonly alertas: RegistroAlertasService,
+    @Optional() @Inject(BILLETERA_PORT) private readonly billetera?: BilleteraPort,
     @Optional() @Inject(RELOJ) reloj?: Reloj,
   ) {
     this.reloj = reloj ?? relojDelSistema;
   }
 
-  /** Límite por usuario, bono activo, usuario en revisión y cuenta múltiple (FR-004, FR-006, FR-007). */
+  /** Límite por usuario, bono activo, saldo de bono pendiente, usuario en revisión y cuenta múltiple (FR-004, FR-006, FR-007). */
   async motivoDelUsuario(
     tx: ClienteTransaccional,
     cupon: Cupon,
@@ -64,12 +69,27 @@ export class CanjeService {
     if (otorgaBono(cupon.tipo)) {
       if (opciones.alertar) await this.bloquearBonosDelUsuario(tx, usuarioId);
       if (await buscarBonoActivo(tx, usuarioId, this.reloj.ahora())) return 'BONO_ACTIVO';
+      if (await this.tieneSaldoBonoHuerfano(tx, usuarioId)) return 'SALDO_BONO_PENDIENTE';
       if (await this.alertas.tieneAlertaAltaVigente(usuarioId, tx)) return 'USUARIO_EN_REVISION';
     }
     const multiple = await this.buscarCuentaMultiple(tx, cupon, solicitud);
     if (!multiple) return null;
     if (opciones.alertar) this.alertarCuentaMultiple(cupon, usuarioId, multiple);
     return 'CUENTA_MULTIPLE';
+  }
+
+  /**
+   * Sin bono activo, el saldo de bono que quede es de una promoción anterior (por ejemplo, de un bono vencido): otro
+   * bono lo haría pasar por suyo al convertir. Sin billetera conectada no se puede saber y no se bloquea (otorgar
+   * un bono ya exige la billetera).
+   */
+  private async tieneSaldoBonoHuerfano(
+    tx: ClienteTransaccional,
+    usuarioId: string,
+  ): Promise<boolean> {
+    if (!this.billetera) return false;
+    const { bono } = await this.billetera.obtenerSaldos(usuarioId, tx);
+    return bono.gt(0);
   }
 
   /** Guarda el n-ésimo canje aceptado del usuario y suma uno a los canjes del cupón. */
