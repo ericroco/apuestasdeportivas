@@ -11,6 +11,7 @@ import {
   type EntradaActividad,
 } from './actividad.mapeo.js';
 import { ActividadService } from './actividad.service.js';
+import { EvaluadorFraudeService } from './evaluador-fraude.service.js';
 import type {
   ApuestaAceptadaExtendida,
   DepositoConfirmadoExtendido,
@@ -24,7 +25,10 @@ import type {
 export class ActividadListener {
   private readonly logger = new Logger(ActividadListener.name);
 
-  constructor(private readonly actividad: ActividadService) {}
+  constructor(
+    private readonly actividad: ActividadService,
+    private readonly evaluador: EvaluadorFraudeService,
+  ) {}
 
   @OnEvent(EVENTOS.usuarioRegistrado, OPCIONES_LISTENER)
   async alRegistrarUsuario(evento: MapaEventos['usuario.registrado']): Promise<void> {
@@ -51,7 +55,12 @@ export class ActividadListener {
     await this.registrar(EVENTOS.apuestaLiquidada, () => desdeApuestaLiquidada(evento));
   }
 
+  /** Registra la actividad y, solo si la fila es nueva, evalúa las reglas (un evento repetido no re-alerta). */
   private registrar(evento: string, mapear: () => EntradaActividad): Promise<void> {
-    return ejecutarSinPropagar(this.logger, evento, () => this.actividad.registrar(mapear()));
+    return ejecutarSinPropagar(this.logger, evento, async () => {
+      const entrada = mapear();
+      const esNueva = await this.actividad.registrar(entrada);
+      if (esNueva) await this.evaluador.evaluar(entrada);
+    });
   }
 }

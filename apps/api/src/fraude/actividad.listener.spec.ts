@@ -1,9 +1,15 @@
 import { ActividadListener } from './actividad.listener.js';
 import type { ActividadService } from './actividad.service.js';
+import type { EvaluadorFraudeService } from './evaluador-fraude.service.js';
 
 function preparar() {
   const actividad = { registrar: vi.fn().mockResolvedValue(true) };
-  return { actividad, listener: new ActividadListener(actividad as unknown as ActividadService) };
+  const evaluador = { evaluar: vi.fn().mockResolvedValue(undefined) };
+  const listener = new ActividadListener(
+    actividad as unknown as ActividadService,
+    evaluador as unknown as EvaluadorFraudeService,
+  );
+  return { actividad, evaluador, listener };
 }
 
 describe('ActividadListener', () => {
@@ -56,6 +62,32 @@ describe('ActividadListener', () => {
 
     await expect(
       listener.alRegistrarUsuario({ usuarioId: 'u-1', ip: '203.0.113.1', dispositivo: 'd-1' }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('evalúa las reglas solo cuando la fila de actividad es nueva', async () => {
+    const { listener, actividad, evaluador } = preparar();
+    const evento = { usuarioId: 'u-1', ip: '203.0.113.1', dispositivo: 'd-1' };
+
+    await listener.alRegistrarUsuario(evento);
+    actividad.registrar.mockResolvedValue(false);
+    await listener.alRegistrarUsuario(evento);
+
+    expect(evaluador.evaluar).toHaveBeenCalledOnce();
+    expect(evaluador.evaluar.mock.calls[0]?.[0]).toMatchObject({ tipo: 'REGISTRO' });
+  });
+
+  it('un error de las reglas no llega al emisor', async () => {
+    const { listener, evaluador } = preparar();
+    evaluador.evaluar.mockRejectedValue(new Error('regla caída'));
+
+    await expect(
+      listener.alAceptarApuesta({
+        usuarioId: 'u-1',
+        apuestaId: 'ap-1',
+        monto: '5',
+        tipoSaldo: 'REAL',
+      }),
     ).resolves.toBeUndefined();
   });
 });

@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ActividadListener } from './actividad.listener.js';
 import { ActividadService } from './actividad.service.js';
+import { EvaluadorFraudeService } from './evaluador-fraude.service.js';
 import { RegistroAlertasService } from './registro-alertas.service.js';
 
 /**
@@ -9,7 +10,7 @@ import { RegistroAlertasService } from './registro-alertas.service.js';
  */
 @Global()
 @Module({
-  providers: [ActividadService, ActividadListener, RegistroAlertasService],
+  providers: [ActividadService, ActividadListener, EvaluadorFraudeService, RegistroAlertasService],
   exports: [ActividadService, RegistroAlertasService],
 })
 export class FraudeModule {}
