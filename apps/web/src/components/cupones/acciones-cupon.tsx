@@ -33,6 +33,7 @@ function Bloque({ titulo, descripcion, accion, children }: BloqueProps) {
   return (
     <form
       action={despachar}
+      noValidate
       aria-labelledby={id}
       aria-busy={pendiente}
       className="border-perforado flex flex-col gap-3 border-t-2 border-dashed pt-3"

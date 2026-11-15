@@ -17,7 +17,7 @@ export function BotonesExportar({ filtros, generadoEn }: BotonesExportarProps) {
     <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <p className="text-tinta-suave text-sm">
         Calculado por el servicio de reportes el{' '}
-        <time dateTime={generadoEn}>{formatearFechaHora(generadoEn)}</time>.
+        <time dateTime={generadoEn}>{formatearFechaHora(generadoEn)}</time>
       </p>
       <div className="flex flex-wrap gap-3">
         <a href={hrefExportacion(filtros, 'csv')} className={BOTON_SECUNDARIO}>

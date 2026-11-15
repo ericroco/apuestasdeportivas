@@ -49,7 +49,7 @@ function mensajeDeExito(cambio: CambioCupon, cupon: VistaCupon): string {
   }
   if (cambio.estado === 'ACTIVO') return 'Cupón reactivado. Vuelve a aceptar canjes.';
   if (cambio.terminaEn)
-    return `Vigencia extendida hasta el ${formatearFechaHora(cupon.terminaEn)}.`;
+    return `Vigencia extendida hasta el ${formatearFechaHora(cupon.terminaEn)} (hora de Ecuador).`;
   return `Cupo ampliado a ${formatearEntero(cupon.cupoTotal)} canjes.`;
 }
 

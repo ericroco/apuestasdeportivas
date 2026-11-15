@@ -69,7 +69,7 @@ export default function PaginaCupones({ searchParams }: PageProps<'/operador/cup
     <Hoja
       seccion="Operador"
       titulo="Cupones"
-      descripcion="Los canjes los cuenta la API en cada canje aceptado. Del más reciente al más antiguo."
+      descripcion="Del más reciente al más antiguo. Un cupón pausado, agotado o fuera de vigencia no acepta canjes nuevos."
       accion={
         <Link href="/operador/cupones/nuevo" className={BOTON_EN_FRANJA}>
           Crear cupón

@@ -22,6 +22,7 @@ function FormularioResolucion({ despachar, pendiente }: FormularioProps) {
   return (
     <form
       action={despachar}
+      noValidate
       aria-labelledby="titulo-resolver"
       aria-busy={pendiente}
       className="bg-papel-hondo -mx-4 mt-8 flex flex-col gap-4 px-4 py-5 sm:-mx-8 sm:px-8"

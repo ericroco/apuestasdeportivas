@@ -38,7 +38,7 @@ function Cifra({ termino, valor }: { readonly termino: string; readonly valor: s
 function Principal({ resumen }: MetricasProps) {
   const { apuestas } = resumen;
   return (
-    <div className="grid gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+    <div className="grid gap-x-10 gap-y-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
       <div>
         <p className="text-tinta-suave font-semibold">Volumen apostado</p>
         <p className="text-5xl leading-none font-semibold break-all sm:text-6xl">

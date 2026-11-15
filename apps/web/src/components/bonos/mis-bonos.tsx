@@ -42,7 +42,7 @@ function BonoActivo({
           pide el rollover.
         </p>
         <p className="mt-2">
-          Vence el {formatearFechaHora(bono.venceEn)}. Si no cumples el rollover antes, el bono
+          Vence el {formatearFechaHora(bono.venceEn)}: si no cumples el rollover antes, el bono
           vence y su saldo no pasa a tu saldo real.
         </p>
         <p className="text-tinta-suave mt-2 text-sm">
