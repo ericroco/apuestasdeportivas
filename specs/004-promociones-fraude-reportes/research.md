@@ -26,7 +26,14 @@ Decisiones técnicas del Spec 4. Formato: decisión, motivo y alternativas desca
 
 - **Decisión**: como máximo un `bono` en estado `ACTIVO` por usuario (índice único parcial). Al cumplir el rollover se
   convierte todo el saldo de bono que devuelva `obtenerSaldos(usuarioId, tx).bono`. El vencimiento se evalúa de forma
-  perezosa al consultar o canjear (sin cron).
+  perezosa al consultar o canjear (sin cron) y solo si `avance < requisito`.
+- **Saldo sin dueño**: ese saldo único puede incluir dinero que no es del bono (el que dejó un bono vencido, o el
+  premio de una apuesta pagada con saldo de bono que se liquida después de cumplido). Mitigación: (1) con
+  `avance >= requisito` se convierte y se marca `CUMPLIDO` solo si no hay apuestas `APUESTA_ACEPTADA` con
+  `tipo_saldo = 'BONO'` sin su `APUESTA_LIQUIDADA`; si las hay, el bono sigue `ACTIVO` y se reintenta en cada
+  `apuesta.liquidada` del usuario; (2) un canje que otorga bono se rechaza (`SALDO_BONO_PENDIENTE`) si no hay bono
+  activo y el saldo de bono es mayor que cero. La solución de fondo es `BilleteraPort.anularSaldoBono`
+  (`contracts/cambios-contratos.md` §5).
 - **Motivo**: la billetera tiene un solo saldo de bono por usuario; con varios bonos no se puede atribuir el saldo a
   cada uno. Evita apilar bonos (vector de la spec).
 - **Alternativas**: varios bonos con FIFO (atribución ambigua); tarea programada para vencer bonos (proceso extra sin
@@ -57,6 +64,10 @@ Decisiones técnicas del Spec 4. Formato: decisión, motivo y alternativas desca
 - **Decisión**: `@nestjs/event-emitter` con `@OnEvent(EVENTOS.x, { async: true, promisify: true })`. Cada listener es
   idempotente con una restricción única `(tipo, referencia_id)` en `actividad_usuario` e `insert … on conflict do
   nothing`. Un error en un listener se registra con el `Logger` y no afecta al emisor.
+- **Reintentos**: `ejecutarSinPropagar` reintenta hasta 3 veces (200 ms, 1 s, 3 s) los errores transitorios de la
+  base (P2024/P2028/P2034, 40001, 40P01, conexión); es seguro porque los efectos son idempotentes. Al agotarlos se
+  registra el error con el depósito y el usuario. Una cola persistente (BullMQ, que monta el Spec 3) es la mejora
+  futura. Las transacciones de bono y rollover usan `maxWait` y `timeout` de 10 s.
 - **Motivo**: el contrato 5 fija EventEmitter dentro de la API; la unicidad en BD hace la idempotencia verificable.
 - **Alternativas**: cola BullMQ propia (más infraestructura sin necesidad: los eventos se emiten tras confirmar la
   transacción del emisor).

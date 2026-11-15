@@ -140,7 +140,12 @@ comprobar que el saldo de bono pasa a real una sola vez.
 7. **Given** un bono activo que llega a su fecha de vencimiento sin cumplir el rollover, **When** se consulta,
    **Then** aparece vencido, deja de sumar avance, su saldo de bono no pasa a real y el apostador puede recibir un
    bono nuevo.
-8. **Given** un apostador con saldo de bono, **When** intenta retirar, **Then** solo puede retirar su saldo real
+8. **Given** un bono activo cuyo requisito se cumple con apuestas reales mientras una apuesta gratis (pagada con
+   saldo de bono) sigue pendiente, **When** se liquida esa apuesta, **Then** el saldo de bono (incluido su premio) se
+   convierte una sola vez y el bono queda cumplido; antes de esa liquidación no se convierte nada.
+9. **Given** un bono vencido que dejó saldo de bono sin usar, **When** el apostador canjea otro cupón que otorga
+   bono, **Then** se rechaza con el motivo "tienes saldo de una promoción anterior" y no se convierte ese saldo.
+10. **Given** un apostador con saldo de bono, **When** intenta retirar, **Then** solo puede retirar su saldo real
    (el saldo de bono no es retirable; lo garantiza la billetera del Spec 2).
 
 ---
@@ -296,6 +301,10 @@ errores y con el quality gate de SonarQube aprobado y sin vulnerabilidades crít
 - Evento de liquidación de una apuesta que el servicio de promociones no vio aceptar (se perdió el evento de
   aceptación): no suma rollover, porque no se puede comprobar que se aceptó después del bono.
 - Re-liquidación (corrección de resultado del Spec 3) de una apuesta ya contada: no se cuenta dos veces.
+- Bono vencido con saldo de bono sin usar: el saldo queda en la cuenta (la billetera no tiene cómo anularlo, ver
+  `contracts/cambios-contratos.md` §5) y no se otorgan bonos nuevos hasta que se use.
+- Requisito cumplido con una apuesta gratis aún sin liquidar: el bono sigue activo, no vence y se cumple al
+  liquidarse esa apuesta.
 - Saldo de bono en cero antes de cumplir el rollover: el bono sigue activo hasta cumplirse o vencer; al cumplirse
   se convierte el saldo que haya (puede ser cero).
 - Billetera o auditoría no disponibles (Spec 2 aún no integrado): las operaciones que las necesitan fallan con un
@@ -348,9 +357,12 @@ errores y con el quality gate de SonarQube aprobado y sin vulnerabilidades crít
   después de otorgado el bono y con cuota total mayor o igual a la mínima configurable (1.50 por defecto). Las
   anuladas y las re-liquidaciones de apuestas ya contadas no suman.
 - **FR-013**: Al alcanzar el requisito, el sistema MUST convertir todo el saldo de bono del usuario en saldo real
-  mediante la billetera, exactamente una vez, y marcar el bono como cumplido.
+  mediante la billetera, exactamente una vez, y marcar el bono como cumplido. La conversión espera a que no haya
+  apuestas pagadas con saldo de bono pendientes de liquidar (su premio todavía puede llegar al saldo de bono); se
+  reintenta en cada liquidación posterior del usuario y, mientras espera, el bono sigue activo y no vence.
 - **FR-014**: Un bono no cumplido a su fecha de vencimiento MUST quedar vencido: deja de sumar avance y su saldo
-  no se convierte.
+  no se convierte. Mientras quede saldo de bono de una promoción anterior (sin bono activo), el sistema MUST NOT
+  otorgar un bono nuevo (motivo `SALDO_BONO_PENDIENTE`): ese saldo no puede atribuirse al bono nuevo.
 - **FR-015**: El apostador MUST poder ver sus bonos: monto, requisito, avance, estado, vencimiento y los canjes
   rechazados con su motivo.
 - **FR-016**: La acreditación de bonos y la conversión MUST ser idempotentes: procesar el mismo evento varias

@@ -83,6 +83,7 @@ Motivos de rechazo (`CuponInvalidoError.message` y `canje_cupon.motivo`):
 | `MONTO_SUPERA_CUPON` | El monto supera el permitido por el cupón. |
 | `DEPOSITO_INSUFICIENTE` | El depósito no alcanza el mínimo del cupón. |
 | `BONO_ACTIVO` | Ya tienes un bono activo; termina su rollover antes de usar otro. |
+| `SALDO_BONO_PENDIENTE` | Tienes saldo de una promoción anterior; úsalo en apuestas antes de recibir otro bono. |
 | `CUENTA_MULTIPLE` | Este cupón ya se usó desde tu dispositivo o método de pago. |
 | `USUARIO_EN_REVISION` | Tu cuenta está en revisión y no puede usar cupones de bono. |
 
@@ -105,8 +106,9 @@ Motivos de rechazo (`CuponInvalidoError.message` y `canje_cupon.motivo`):
 
 Índice único parcial: `(usuario_id) WHERE estado = 'ACTIVO'` (un bono activo por usuario).
 
-Transiciones: `ACTIVO → CUMPLIDO` (avance ≥ requisito; convierte el saldo) y `ACTIVO → VENCIDO` (al consultarlo o
-al canjear con `now() ≥ venceEn`). Ambos estados son finales.
+Transiciones: `ACTIVO → CUMPLIDO` (avance ≥ requisito y sin apuestas pagadas con saldo de bono pendientes de
+liquidar; convierte el saldo) y `ACTIVO → VENCIDO` (al consultarlo o al canjear con `now() ≥ venceEn` y
+`avance < requisito`). Ambos estados son finales.
 
 ### ActividadUsuario (`actividad_usuario`, append-only)
 
@@ -163,9 +165,13 @@ al canjear con `now() ≥ venceEn`). Ambos estados son finales.
 3. Si el resultado es `GANADA` o `PERDIDA`, el usuario tiene un bono `ACTIVO` no vencido, existe la aceptación con
    `ocurridoEn ≥ otorgadoEn` y `cuota ≥ CUPON_ROLLOVER_CUOTA_MINIMA`: `avance += monto` (en una transacción con
    `SELECT … FOR UPDATE` sobre el bono).
-4. Si `avance ≥ requisito`: `saldo = obtenerSaldos(usuarioId, tx).bono`; si `saldo > 0`,
+4. Si `avance ≥ requisito` (se guarda el avance) y no hay apuestas pagadas con saldo de bono pendientes (una
+   `APUESTA_ACEPTADA` con `tipo_saldo = 'BONO'` sin `APUESTA_LIQUIDADA` de la misma `referencia_id`): `saldo = obtenerSaldos(usuarioId, tx).bono`; si `saldo > 0`,
    `convertirBonoEnReal(tx, { monto: saldo, claveIdempotencia: 'bono:<id>:conversion', referencia: cuponId })`;
-   bono a `CUMPLIDO` con `montoConvertido`; auditoría `bono.convertido`.
+   bono a `CUMPLIDO` con `montoConvertido`; auditoría `bono.convertido`. Con pendientes el bono sigue `ACTIVO`
+   (no vence) y el paso 4 se reintenta en cada `apuesta.liquidada` del usuario, sume o no avance.
+5. Un canje que otorga bono se rechaza con `SALDO_BONO_PENDIENTE` si el usuario no tiene bono `ACTIVO` y
+   `obtenerSaldos(usuarioId, tx).bono > 0` (con bono activo aplica `BONO_ACTIVO`).
 
 ## Datos que lee reportes (specs 2 y 3)
 

@@ -61,3 +61,36 @@ Si los nombres finales difieren, se ajusta `apps/reports/src/reports/consultas.p
 El Spec 4 inyecta `BILLETERA_PORT` y `AUDITORIA_PORT` con `@Optional()` sin importar el módulo del Spec 2. Se pide
 que el Spec 2 los exporte desde un módulo `@Global()` (como hace el Spec 4 con `PROMOCIONES_APUESTA_PORT` y
 `RIESGO_PORT`).
+
+## 5. `BilleteraPort.anularSaldoBono` (dueño: Spec 2, Ricardo)
+
+**Motivo**: la billetera tiene un solo saldo de bono por usuario y no ofrece cómo retirar el que queda de un bono
+vencido. Ese saldo "sin dueño" podría convertirse en real por error al cumplir un bono posterior (revisión del
+Spec 4, hallazgo 1). Mientras la operación no exista, el Spec 4 lo mitiga así: no otorga un bono nuevo mientras
+quede saldo de bono sin bono activo (`SALDO_BONO_PENDIENTE`) y no convierte hasta que se liquiden las apuestas
+pagadas con saldo de bono.
+
+```ts
+export interface OperacionAnulacionBono {
+  readonly usuarioId: string;
+  /** `bono:<bonoId>:anulacion`: reintentar la misma anulación no debita dos veces. */
+  readonly claveIdempotencia: string;
+  /** Bono vencido que origina la anulación (trazabilidad del asiento). */
+  readonly referencia: string;
+}
+
+export interface BilleteraPort {
+  /**
+   * Debita todo el saldo de bono que le quede al usuario con un asiento compensatorio (el ledger es inmutable).
+   * Devuelve el monto anulado (puede ser cero: entonces no crea asiento).
+   */
+  anularSaldoBono(
+    tx: ClienteTransaccional,
+    operacion: OperacionAnulacionBono,
+  ): Promise<ResultadoAsiento & { readonly montoAnulado: Monto }>;
+}
+```
+
+Cuando exista, el Spec 4 la llamará al marcar un bono como `VENCIDO` (misma transacción, clave
+`bono:<bonoId>:anulacion`) y la regla `SALDO_BONO_PENDIENTE` dejará de bloquear en la práctica. Hasta entonces la
+nueva operación no es obligatoria: el Spec 4 funciona sin ella.
