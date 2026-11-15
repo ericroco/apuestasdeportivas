@@ -15,6 +15,11 @@ export class AuditoriaEnMemoria implements AuditoriaPort {
     return [...this.registro];
   }
 
+  /** Vacía los eventos (entre pruebas que comparten la app). */
+  reiniciar(): void {
+    this.registro.length = 0;
+  }
+
   acciones(): string[] {
     return this.registro.map(({ evento }) => evento.accion);
   }

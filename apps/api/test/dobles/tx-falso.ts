@@ -10,14 +10,27 @@ export interface OpcionesTxFalso {
   readonly bonoActivo?: Bono | null;
   /** Canje aceptado del mismo cupón por una cuenta relacionada. */
   readonly canjeDeOtraCuenta?: { usuarioId: string } | null;
+  /** Canje ya guardado para el mismo depósito (evento repetido). */
+  readonly canjeDelDeposito?: Partial<CanjeCupon> | null;
 }
 
 export interface TxFalso {
   readonly $queryRaw: Mock;
   readonly $executeRaw: Mock;
   readonly cupon: { readonly findUnique: Mock; readonly update: Mock };
-  readonly canjeCupon: { readonly count: Mock; readonly findFirst: Mock; readonly create: Mock };
-  readonly bono: { readonly updateMany: Mock; readonly findFirst: Mock; readonly create: Mock };
+  readonly canjeCupon: {
+    readonly count: Mock;
+    readonly findFirst: Mock;
+    readonly findUnique: Mock;
+    readonly create: Mock;
+  };
+  readonly bono: {
+    readonly updateMany: Mock;
+    readonly findFirst: Mock;
+    readonly findUnique: Mock;
+    readonly create: Mock;
+    readonly update: Mock;
+  };
 }
 
 /** Cliente transaccional falso para las pruebas unitarias de canje y bonos: registra las llamadas. */
@@ -36,6 +49,7 @@ export function crearTxFalso(opciones: OpcionesTxFalso = {}): {
     canjeCupon: {
       count: vi.fn().mockResolvedValue(opciones.aceptadosDelUsuario ?? 0),
       findFirst: vi.fn().mockResolvedValue(opciones.canjeDeOtraCuenta ?? null),
+      findUnique: vi.fn().mockResolvedValue(opciones.canjeDelDeposito ?? null),
       create: vi.fn(
         async ({ data }: { data: Partial<CanjeCupon> }): Promise<Partial<CanjeCupon>> => ({
           id: 'canje-1',
@@ -47,8 +61,13 @@ export function crearTxFalso(opciones: OpcionesTxFalso = {}): {
     bono: {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       findFirst: vi.fn().mockResolvedValue(opciones.bonoActivo ?? null),
+      findUnique: vi.fn().mockResolvedValue(opciones.bonoActivo ?? null),
       create: vi.fn(async ({ data }: { data: Partial<Bono> }): Promise<Partial<Bono>> => ({
         id: 'bono-1',
+        ...data,
+      })),
+      update: vi.fn(async ({ data }: { data: Partial<Bono> }) => ({
+        ...opciones.bonoActivo,
         ...data,
       })),
     },

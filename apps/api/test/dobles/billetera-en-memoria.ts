@@ -53,6 +53,13 @@ export class BilleteraEnMemoria implements BilleteraPort {
     return [...this.registro];
   }
 
+  /** Vacía saldos, asientos y claves (entre pruebas que comparten la app). */
+  reiniciar(): void {
+    this.saldos.clear();
+    this.resultados.clear();
+    this.registro.length = 0;
+  }
+
   fijarSaldos(usuarioId: string, saldos: { real?: string; bono?: string }): void {
     this.saldos.set(usuarioId, {
       real: new Prisma.Decimal(saldos.real ?? 0),

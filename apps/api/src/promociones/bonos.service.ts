@@ -1,6 +1,6 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { requerir } from '../comun/dependencias.js';
-import { aTexto, type Decimal } from '../comun/montos.js';
+import { CERO, aTexto, type Decimal } from '../comun/montos.js';
 import { esViolacionDeUnicidad } from '../comun/prisma-errores.js';
 import { RELOJ, relojDelSistema, type Reloj } from '../comun/reloj.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
@@ -12,16 +12,39 @@ import {
 } from '../contracts/billetera.port.js';
 import type { Bono, CanjeCupon, Cupon } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CanjeService } from './canje.service.js';
+import { CanjeService, type SolicitudCanje } from './canje.service.js';
 import { claveDeBono } from './claves-idempotencia.js';
-import { CuponRechazadoError } from './motivos.js';
-import { calcularRequisito, calcularVencimiento } from './reglas-canje.js';
+import { bloquearCuponPorCodigo } from './cupon.bloqueo.js';
+import { FORMATO_CODIGO, normalizarCodigo } from './cupones.esquemas.js';
+import { CuponRechazadoError, type CodigoMotivo } from './motivos.js';
+import {
+  calcularBonoDeposito,
+  calcularRequisito,
+  calcularVencimiento,
+  motivoDeDeposito as motivoDeDepositoDelCupon,
+  motivoDeDisponibilidad,
+} from './reglas-canje.js';
+
+/** `canje_cupon.codigo` es varchar(40): un código más largo se guarda recortado (y no existe). */
+const LARGO_MAXIMO_CODIGO = 40;
 
 /** Puertos del Spec 2 que mueven dinero y auditan; sin ellos ningún bono se otorga (research.md §7). */
 export interface DependenciasBono {
   readonly billetera: BilleteraPort;
   readonly auditoria: AuditoriaPort;
 }
+
+/** Depósito confirmado ya validado (bonos.listener.ts). */
+export interface DepositoParaBono {
+  readonly usuarioId: string;
+  readonly depositoId: string;
+  readonly monto: Decimal;
+  readonly codigoCupon: string | null;
+  readonly metodoPagoHuella: string | null;
+}
+
+/** Qué pasó con el cupón de un depósito: otorgado, ya procesado, sin cupón o el motivo del rechazo. */
+export type ResultadoBonoDeposito = 'OTORGADO' | 'YA_PROCESADO' | 'SIN_CUPON' | CodigoMotivo;
 
 export interface DatosOtorgamiento {
   readonly cupon: Cupon;
@@ -91,6 +114,75 @@ export class BonosService {
       tx,
     );
     return bono;
+  }
+
+  /**
+   * Bono de depósito (FR-010): con el cupón bloqueado, `min(depósito × porcentaje, tope)` si se cumplen las reglas;
+   * si no, guarda el canje rechazado con su motivo. El depósito nunca se ve afectado. Idempotente por depósito:
+   * la unicidad `(origen, referencia_id)` del canje impide un segundo bono aunque el evento llegue repetido.
+   */
+  async otorgarPorDeposito(deposito: DepositoParaBono): Promise<ResultadoBonoDeposito> {
+    if (!deposito.codigoCupon) return 'SIN_CUPON';
+    const codigo = normalizarCodigo(deposito.codigoCupon).slice(0, LARGO_MAXIMO_CODIGO);
+    const dependencias = this.dependencias();
+    const solicitud: SolicitudCanje = {
+      usuarioId: deposito.usuarioId,
+      origen: 'DEPOSITO',
+      referenciaId: deposito.depositoId,
+      metodoPagoHuella: deposito.metodoPagoHuella,
+    };
+    try {
+      return await this.prisma.$transaction((tx) =>
+        this.procesarDeposito(tx, codigo, deposito.monto, solicitud, dependencias),
+      );
+    } catch (error) {
+      // Dos procesos del mismo depósito a la vez: el segundo choca con la unicidad del canje.
+      if (esViolacionDeUnicidad(error)) return 'YA_PROCESADO';
+      throw error;
+    }
+  }
+
+  private async procesarDeposito(
+    tx: ClienteTransaccional,
+    codigo: string,
+    monto: Decimal,
+    solicitud: SolicitudCanje,
+    dependencias: DependenciasBono,
+  ): Promise<ResultadoBonoDeposito> {
+    const cupon = FORMATO_CODIGO.test(codigo) ? await bloquearCuponPorCodigo(tx, codigo) : null;
+    if (await this.depositoProcesado(tx, solicitud.referenciaId ?? '')) return 'YA_PROCESADO';
+    const motivo = cupon
+      ? await this.motivoDeDeposito(tx, cupon, monto, solicitud)
+      : 'CUPON_INEXISTENTE';
+    if (motivo !== null || cupon === null) {
+      const rechazo = motivo ?? 'CUPON_INEXISTENTE';
+      await this.canje.registrarRechazado(tx, { codigo, cupon }, solicitud, rechazo);
+      return rechazo;
+    }
+    const canje = await this.canje.registrarAceptado(tx, cupon, solicitud);
+    const bono = calcularBonoDeposito(monto, cupon.porcentaje ?? CERO, cupon.topeBono ?? CERO);
+    await this.otorgar(tx, { cupon, canje, monto: bono, actorId: null }, dependencias);
+    return 'OTORGADO';
+  }
+
+  private async depositoProcesado(tx: ClienteTransaccional, depositoId: string): Promise<boolean> {
+    const previo = await tx.canjeCupon.findUnique({
+      where: { origen_referenciaId: { origen: 'DEPOSITO', referenciaId: depositoId } },
+    });
+    return previo !== null;
+  }
+
+  private async motivoDeDeposito(
+    tx: ClienteTransaccional,
+    cupon: Cupon,
+    monto: Decimal,
+    solicitud: SolicitudCanje,
+  ): Promise<CodigoMotivo | null> {
+    return (
+      motivoDeDisponibilidad(cupon, this.reloj.ahora()) ??
+      motivoDeDepositoDelCupon(cupon, monto) ??
+      (await this.canje.motivoDelUsuario(tx, cupon, solicitud, { alertar: true }))
+    );
   }
 
   private async crearBono(tx: ClienteTransaccional, datos: DatosOtorgamiento): Promise<Bono> {
