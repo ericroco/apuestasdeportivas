@@ -130,9 +130,12 @@ export class UsuariosAdminService {
     const promueve = nuevos.some((rol) => rol !== 'APOSTADOR' && !usuario.roles.includes(rol));
     if (promueve) {
       const { real, bono } = await this.libro.obtenerSaldos(usuarioId);
-      if (!real.isZero() || !bono.isZero()) {
+      const retirosPendientes = await this.prisma.retiro.count({
+        where: { usuarioId, estado: 'PENDIENTE_REVISION' },
+      });
+      if (!real.isZero() || !bono.isZero() || retirosPendientes > 0) {
         throw new ConflictException(
-          'Ese usuario tiene saldo en su billetera. Debe quedar en cero antes de darle un rol de operador o administrador.',
+          'Ese usuario tiene saldo o retiros pendientes. Deben quedar en cero antes de darle un rol de operador o administrador.',
         );
       }
     }

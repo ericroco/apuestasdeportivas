@@ -14,11 +14,13 @@ export async function crearAppDePrueba(
   opciones: {
     controladores?: Type[];
     proveedores?: Type[];
+    /** Módulos extra (p. ej. uno global que provea RIESGO_PORT, que en producción trae el Spec 4). */
+    modulos?: Type[];
     sustituir?: { token: symbol | Type; valor: unknown }[];
   } = {},
 ): Promise<NestExpressApplication> {
   let constructor = Test.createTestingModule({
-    imports: [AppModule],
+    imports: [AppModule, ...(opciones.modulos ?? [])],
     controllers: opciones.controladores ?? [],
     providers: opciones.proveedores ?? [],
   });

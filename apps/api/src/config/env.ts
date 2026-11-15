@@ -83,6 +83,10 @@ const esquemaEntorno = z.object({
     .transform((url) => url.replace(/\/+$/, '')),
   DEPOSITO_MIN: montoTexto('1.00'),
   DEPOSITO_MAX: montoTexto('1000.00'),
+  // Spec 2: retiros (FR-055, FR-057). Sobre el umbral, revisión manual del administrador.
+  RETIRO_MIN: montoTexto('5.00'),
+  RETIRO_MAX: montoTexto('1000.00'),
+  RETIRO_UMBRAL_REVISION: montoTexto('100.00'),
 });
 
 /** Reglas que cruzan variables. Los mensajes nombran la variable, nunca su valor. */

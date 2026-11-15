@@ -32,14 +32,22 @@ export async function crearUsuario(
 
 /** Activa el 2FA de un usuario sin pasar por HTTP y devuelve su generador TOTP (para retiros y panel de admin). */
 export async function activar2fa(app: INestApplication, usuario: Usuario): Promise<OTPAuth.TOTP> {
+  return (await activar2faConCodigos(app, usuario)).totp;
+}
+
+/** Igual que activar2fa, con los 10 códigos de recuperación: sirven para pedir varios códigos seguidos. */
+export async function activar2faConCodigos(
+  app: INestApplication,
+  usuario: Usuario,
+): Promise<{ totp: OTPAuth.TOTP; codigos: string[] }> {
   const servicio = app.get(SegundoFactorService);
   const { otpauthUrl } = await servicio.iniciarActivacion(usuario.id, usuario.email);
   const totp = OTPAuth.URI.parse(otpauthUrl) as OTPAuth.TOTP;
-  await servicio.confirmarActivacion(usuario.id, usuario.email, totp.generate(), {
+  const codigos = await servicio.confirmarActivacion(usuario.id, usuario.email, totp.generate(), {
     ip: '127.0.0.1',
     dispositivo: 'prueba',
   });
-  return totp;
+  return { totp, codigos };
 }
 
 /** Código TOTP de un periodo futuro (la ventana acepta ±1): cada periodo sirve una sola vez. */

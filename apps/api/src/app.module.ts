@@ -14,6 +14,7 @@ import { IdentidadModule } from './identidad/identidad.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { RetirosModule } from './retiros/retiros.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RedisModule } from './redis/redis.module.js';
     BilleteraModule,
     IdentidadModule,
     PagosModule,
+    RetirosModule,
     HealthModule,
   ],
   // Los guards globales corren en este orden (constitución, principio I):

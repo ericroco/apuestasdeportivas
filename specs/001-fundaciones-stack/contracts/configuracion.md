@@ -33,6 +33,8 @@ mensaje nombra la variable (FR-007). Los valores reales nunca se versionan: cada
 | `PAYPHONE_STORE_ID` | en producción | `''` | Spec 2. `storeId` de la app de Payphone |
 | `PAYPHONE_BASE_URL` | no | `https://pay.payphonetodoesposible.com` | Spec 2. API de Payphone |
 | `DEPOSITO_MIN` / `DEPOSITO_MAX` | no | `1.00` / `1000.00` | Spec 2. Límites de un depósito en USD |
+| `RETIRO_MIN` / `RETIRO_MAX` | no | `5.00` / `1000.00` | Spec 2. Límites de un retiro en USD |
+| `RETIRO_UMBRAL_REVISION` | no | `100.00` | Spec 2. Sobre este monto, el retiro espera la revisión del administrador |
 
 Los secretos del Spec 2 para desarrollo y CI se generan con
 `pnpm --filter api exec tsx scripts/generar-secretos.ts` (nunca se versionan ni se reutilizan en staging).
