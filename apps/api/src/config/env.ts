@@ -30,6 +30,14 @@ function leerClave(pem: string, tipo: 'privada' | 'publica'): KeyObject | null {
   }
 }
 
+/** Monto en texto decimal (`"100.00"`): se convierte a Decimal donde se usa, nunca a `number`. */
+function montoTexto(porDefecto: string) {
+  return z
+    .string()
+    .regex(/^\d{1,10}(\.\d{1,2})?$/, 'debe ser un monto como 100.00')
+    .default(porDefecto);
+}
+
 const esquemaEntorno = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
@@ -64,6 +72,17 @@ const esquemaEntorno = z.object({
   CORREO_REMITENTE: z.string().min(3).default('Apuestas <no-responder@localhost>'),
   BLOQUEO_INTENTOS: z.coerce.number().int().positive().default(5),
   BLOQUEO_MINUTOS: z.coerce.number().int().positive().default(15),
+
+  // Spec 2: Payphone (sandbox). Obligatorias solo en producción: en local y CI los depósitos usan una pasarela de
+  // prueba y sin token la API responde que los pagos no están configurados.
+  PAYPHONE_TOKEN: z.string().default(''),
+  PAYPHONE_STORE_ID: z.string().default(''),
+  PAYPHONE_BASE_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('https://pay.payphonetodoesposible.com')
+    .transform((url) => url.replace(/\/+$/, '')),
+  DEPOSITO_MIN: montoTexto('1.00'),
+  DEPOSITO_MAX: montoTexto('1000.00'),
 });
 
 /** Reglas que cruzan variables. Los mensajes nombran la variable, nunca su valor. */
@@ -96,6 +115,15 @@ const esquemaValidado = esquemaEntorno.superRefine((entorno, contexto) => {
         path: ['TURNSTILE_SECRET'],
         message: 'no puede ser un secreto de prueba de Cloudflare en producción',
       });
+    }
+    for (const variable of ['PAYPHONE_TOKEN', 'PAYPHONE_STORE_ID'] as const) {
+      if (!entorno[variable]) {
+        contexto.addIssue({
+          code: 'custom',
+          path: [variable],
+          message: 'es obligatoria en producción',
+        });
+      }
     }
     if (!entorno.COOKIE_SECURE) {
       contexto.addIssue({

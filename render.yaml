@@ -51,6 +51,11 @@ services:
         sync: false
       - key: CORREO_REMITENTE
         sync: false
+      # Spec 2: Payphone sandbox (Payphone Developer).
+      - key: PAYPHONE_TOKEN
+        sync: false
+      - key: PAYPHONE_STORE_ID
+        sync: false
 
   - type: web
     name: apuestas-reports-staging

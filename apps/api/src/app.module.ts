@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module.js';
 import { AutenticacionGuard } from './identidad/autenticacion.guard.js';
 import { ThrottlerPorCliente } from './identidad/http/throttler-por-cliente.guard.js';
 import { IdentidadModule } from './identidad/identidad.module.js';
+import { PagosModule } from './pagos/pagos.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -31,6 +32,7 @@ import { RedisModule } from './redis/redis.module.js';
     AuditoriaModule,
     BilleteraModule,
     IdentidadModule,
+    PagosModule,
     HealthModule,
   ],
   // Los guards globales corren en este orden (constitución, principio I):

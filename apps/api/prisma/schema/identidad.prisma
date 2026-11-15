@@ -71,6 +71,8 @@ model Usuario {
   enlacesCorreo       EnlaceCorreo[]
   billetera           Billetera?
   cuentas             CuentaContable[]
+  intencionesPago     IntencionPago[]
+  metodosPago         MetodoPago[]
 
   @@map("usuario")
 }
@@ -229,4 +231,72 @@ model LineaAsiento {
   @@index([cuentaId, creadoEn])
   @@index([asientoId])
   @@map("linea_asiento")
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Depósitos con Payphone (FR-045 a FR-052, research §9 y §10).
+// ---------------------------------------------------------------------------------------------------------------
+
+enum EstadoIntencionPago {
+  PENDIENTE
+  CONFIRMADA
+  FALLIDA
+  CADUCADA
+  RECHAZADA_DISCREPANCIA
+
+  @@map("estado_intencion_pago")
+}
+
+enum TipoMetodoPago {
+  TARJETA
+  APP_PAYPHONE
+
+  @@map("tipo_metodo_pago")
+}
+
+/// Su `id` es el `clientTransactionId` de Payphone. Monto, moneda, usuario y cupón no cambian (disparador).
+model IntencionPago {
+  id                    String              @id @default(uuid()) @db.Uuid
+  usuarioId             String              @map("usuario_id") @db.Uuid
+  monto                 Decimal             @db.Decimal(14, 2)
+  moneda                String              @default("USD") @db.Char(3)
+  codigoCupon           String?             @map("codigo_cupon")
+  estado                EstadoIntencionPago @default(PENDIENTE)
+  payphonePaymentId     String?             @map("payphone_payment_id")
+  /// Una transacción de Payphone se acredita como máximo una vez (FR-048).
+  payphoneTransaccionId BigInt?             @unique @map("payphone_transaccion_id")
+  metodoPagoId          String?             @map("metodo_pago_id") @db.Uuid
+  motivoFallo           String?             @map("motivo_fallo")
+  ip                    String?
+  dispositivo           String?
+  creadaEn              DateTime            @default(now()) @map("creada_en") @db.Timestamptz(3)
+  expiraEn              DateTime            @map("expira_en") @db.Timestamptz(3)
+  resueltaEn            DateTime?           @map("resuelta_en") @db.Timestamptz(3)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id])
+  metodoPago MetodoPago? @relation(fields: [metodoPagoId], references: [id])
+
+  @@index([usuarioId, creadaEn])
+  @@index([estado, expiraEn])
+  @@map("intencion_pago")
+}
+
+/// Método y titular informados por Payphone en un depósito confirmado: los únicos destinos de retiro (FR-054).
+model MetodoPago {
+  id               String         @id @default(uuid()) @db.Uuid
+  usuarioId        String         @map("usuario_id") @db.Uuid
+  tipo             TipoMetodoPago
+  marca            String?
+  ultimosDigitos   String?        @map("ultimos_digitos")
+  titularNombre    String?        @map("titular_nombre")
+  titularDocumento String?        @map("titular_documento")
+  telefono         String?
+  huella           String
+  creadoEn         DateTime       @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  usuario     Usuario         @relation(fields: [usuarioId], references: [id])
+  intenciones IntencionPago[]
+
+  @@unique([usuarioId, huella])
+  @@map("metodo_pago")
 }

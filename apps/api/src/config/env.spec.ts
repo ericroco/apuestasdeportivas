@@ -198,10 +198,25 @@ describe('validarEntorno: autenticación, correo y proxy (Spec 2)', () => {
   });
 
   describe('en producción', () => {
-    const PRODUCCION = { ...ENTORNO_MINIMO, NODE_ENV: 'production' };
+    const PRODUCCION = {
+      ...ENTORNO_MINIMO,
+      NODE_ENV: 'production',
+      PAYPHONE_TOKEN: 'token-real',
+      PAYPHONE_STORE_ID: 'tienda-real',
+    };
 
     it('rechaza los secretos de prueba de Turnstile, que aprueban o rechazan siempre', () => {
       expect(() => validarEntorno(PRODUCCION)).toThrow(/TURNSTILE_SECRET/);
+    });
+
+    it('exige las credenciales de Payphone', () => {
+      expect(() =>
+        validarEntorno({
+          ...PRODUCCION,
+          TURNSTILE_SECRET: '0x4AAAAAAAsecretoReal',
+          PAYPHONE_TOKEN: '',
+        }),
+      ).toThrow(/PAYPHONE_TOKEN/);
     });
 
     it('exige COOKIE_SECURE', () => {

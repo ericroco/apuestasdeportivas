@@ -29,6 +29,10 @@ mensaje nombra la variable (FR-007). Los valores reales nunca se versionan: cada
 | `CORREO_REMITENTE` | no | `Apuestas <no-responder@localhost>` | Spec 2. Remitente de los correos |
 | `BLOQUEO_INTENTOS` | no | `5` | Spec 2. Intentos fallidos antes del bloqueo |
 | `BLOQUEO_MINUTOS` | no | `15` | Spec 2. Duración del bloqueo |
+| `PAYPHONE_TOKEN` | en producción | `''` | Spec 2. Token de la app de Payphone Developer (sandbox); sin él, los depósitos no están disponibles |
+| `PAYPHONE_STORE_ID` | en producción | `''` | Spec 2. `storeId` de la app de Payphone |
+| `PAYPHONE_BASE_URL` | no | `https://pay.payphonetodoesposible.com` | Spec 2. API de Payphone |
+| `DEPOSITO_MIN` / `DEPOSITO_MAX` | no | `1.00` / `1000.00` | Spec 2. Límites de un depósito en USD |
 
 Los secretos del Spec 2 para desarrollo y CI se generan con
 `pnpm --filter api exec tsx scripts/generar-secretos.ts` (nunca se versionan ni se reutilizan en staging).
