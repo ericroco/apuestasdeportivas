@@ -48,6 +48,28 @@ model Usuario {
   @@map("usuario")
 }
 
+/// Registro de auditoría de solo inserción (contrato 3, FR-029 a FR-033). Disparadores impiden UPDATE, DELETE y
+/// TRUNCATE. `actorId` sin FK: `null` es el sistema y un evento nunca debe bloquear ni depender de otra tabla.
+model EventoAuditoria {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  /// `entidad.verbo_en_pasado`, p. ej. `apuesta.aceptada` (check en la migración).
+  accion      String
+  entidad     String
+  entidadId   String?  @map("entidad_id")
+  /// Sin contraseñas, tokens, secretos 2FA ni datos completos de pago (los quita el sanitizador).
+  datos       Json?
+  ip          String?
+  dispositivo String?
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  @@index([creadoEn])
+  @@index([actorId, creadoEn])
+  @@index([accion, creadoEn])
+  @@index([entidad, entidadId])
+  @@map("evento_auditoria")
+}
+
 /// 🔒 Hash Argon2id de la contraseña, separado de `usuario` para que reportes no lo vea.
 model Credencial {
   usuarioId      String   @id @map("usuario_id") @db.Uuid
