@@ -1,5 +1,6 @@
 import { aTextoONulo } from '../comun/montos.js';
 import type { Cupon, EstadoCupon, TipoCupon } from '../generated/prisma/client.js';
+import { motivoDeDisponibilidad } from './reglas-canje.js';
 
 /** Vista de un cupón en todas las rutas de gestión (contracts/api-rest.md). Montos como texto decimal. */
 export interface VistaCupon {
@@ -32,16 +33,6 @@ export interface DetalleCupon extends VistaCupon {
   readonly resumenCanjes: ResumenCanjes;
 }
 
-/** Canjeable según data-model.md: ACTIVO, `iniciaEn ≤ ahora < terminaEn` y `canjes < cupoTotal`. */
-export function esCanjeable(cupon: Cupon, ahora: Date): boolean {
-  return (
-    cupon.estado === 'ACTIVO' &&
-    cupon.iniciaEn <= ahora &&
-    ahora < cupon.terminaEn &&
-    cupon.canjes < cupon.cupoTotal
-  );
-}
-
 export function aVistaCupon(cupon: Cupon, ahora: Date): VistaCupon {
   return {
     id: cupon.id,
@@ -58,7 +49,7 @@ export function aVistaCupon(cupon: Cupon, ahora: Date): VistaCupon {
     limitePorUsuario: cupon.limitePorUsuario,
     canjes: cupon.canjes,
     estado: cupon.estado,
-    vigente: esCanjeable(cupon, ahora),
+    vigente: motivoDeDisponibilidad(cupon, ahora) === null,
     creadoEn: cupon.creadoEn.toISOString(),
   };
 }
