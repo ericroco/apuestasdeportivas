@@ -70,6 +70,7 @@ export default function PaginaCuenta() {
         {perfil.roles.includes('ADMINISTRADOR') && (
           <>
             <Enlace href="/admin/usuarios">Administrar usuarios</Enlace>
+            <Enlace href="/admin/retiros">Retiros en revisión</Enlace>
             <Enlace href="/admin/usuarios/auditoria">Registro de auditoría</Enlace>
           </>
         )}

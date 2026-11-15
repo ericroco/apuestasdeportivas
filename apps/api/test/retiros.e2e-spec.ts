@@ -206,7 +206,7 @@ describe('Retiros (e2e)', () => {
       retirar(cookie, { monto: '40.00', metodoPagoId: metodo.id, codigo2fa: codigos[0]! }),
       retirar(cookie, { monto: '40.00', metodoPagoId: metodo.id, codigo2fa: codigos[1]! }),
     ]);
-    expect([a.status, b.status].sort()).toEqual([201, 400]);
+    expect([a.status, b.status].sort((x, y) => x - y)).toEqual([201, 400]);
     expect(await saldoReal(usuario.id)).toBe('20.00');
 
     const claveSolicitud = randomUUID();

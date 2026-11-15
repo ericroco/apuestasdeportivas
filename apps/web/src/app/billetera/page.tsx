@@ -99,6 +99,7 @@ export default function PaginaBilletera() {
           </p>
           <div className="mb-6 flex flex-wrap gap-4">
             <Enlace href="/billetera/depositar">Depositar</Enlace>
+            <Enlace href="/billetera/retirar">Retirar</Enlace>
             <Enlace href="/cuenta">Volver a mi cuenta</Enlace>
           </div>
 
