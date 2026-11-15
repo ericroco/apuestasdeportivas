@@ -257,7 +257,7 @@ describe('Fraude: reglas, alertas y riesgo (e2e)', () => {
         ),
       );
 
-      expect(respuestas.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(respuestas.map((r) => r.status).sort((a, b) => a - b)).toEqual([200, 409]);
       expect(contexto.auditoria?.acciones()).toEqual(['alerta.resuelta']);
       const final = await contexto.prisma.alertaFraude.findUniqueOrThrow({
         where: { id: alerta.id },
