@@ -1,0 +1,63 @@
+{
+  "_nota": "Respuesta SINTÉTICA con la forma documentada de GET /odds?league=&season=&date=. Reemplazar por una respuesta real sin la clave en T029.",
+  "get": "odds",
+  "errors": [],
+  "results": 1,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "fixture": { "id": 1001 },
+      "bookmakers": [
+        {
+          "id": 8,
+          "name": "Bet365",
+          "bets": [
+            {
+              "id": 1,
+              "name": "Match Winner",
+              "values": [
+                { "value": "Home", "odd": "2.10" },
+                { "value": "Draw", "odd": "3.40" },
+                { "value": "Away", "odd": "3.255" }
+              ]
+            },
+            {
+              "id": 12,
+              "name": "Double Chance",
+              "values": [
+                { "value": "Home/Draw", "odd": "1.30" },
+                { "value": "Draw/Away", "odd": "1.65" },
+                { "value": "Home/Away", "odd": "1.28" }
+              ]
+            },
+            {
+              "id": 5,
+              "name": "Goals Over/Under",
+              "values": [
+                { "value": "Over 2.5", "odd": "1.90" },
+                { "value": "Under 2.5", "odd": "1.90" },
+                { "value": "Over 1.5", "odd": "1.30" },
+                { "value": "Under 1.5", "odd": "3.40" },
+                { "value": "Over 3", "odd": "2.60" },
+                { "value": "Under 3", "odd": "1.45" }
+              ]
+            },
+            {
+              "id": 8,
+              "name": "Both Teams Score",
+              "values": [
+                { "value": "Yes", "odd": "1.75" },
+                { "value": "No", "odd": "1.00" }
+              ]
+            },
+            {
+              "id": 10,
+              "name": "Exact Score",
+              "values": [{ "value": "1:0", "odd": "7.50" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

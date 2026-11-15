@@ -38,3 +38,35 @@ export function esEstadoFinal(estado: EstadoPartido): boolean {
 export function admiteApuestas(estado: EstadoPartido): boolean {
   return estado === 'PROGRAMADO' || estado === 'EN_VIVO';
 }
+
+/**
+ * Camino más corto de `desde` a `hacia` por transiciones permitidas, sin incluir `desde`.
+ * El proveedor solo se consulta cada cierto tiempo y puede saltarse estados (p. ej. de programado a
+ * finalizado): así cada paso pasa igual por la máquina de estados. `null` si no hay camino.
+ */
+export function rutaDeEstados(desde: EstadoPartido, hacia: EstadoPartido): EstadoPartido[] | null {
+  if (desde === hacia) return [];
+  const previo = new Map<EstadoPartido, EstadoPartido>([[desde, desde]]);
+  const cola: EstadoPartido[] = [desde];
+  while (cola.length) {
+    const actual = cola.shift() as EstadoPartido;
+    for (const siguiente of TRANSICIONES[actual]) {
+      if (previo.has(siguiente)) continue;
+      previo.set(siguiente, actual);
+      if (siguiente === hacia) return reconstruir(previo, desde, hacia);
+      cola.push(siguiente);
+    }
+  }
+  return null;
+}
+
+function reconstruir(
+  previo: ReadonlyMap<EstadoPartido, EstadoPartido>,
+  desde: EstadoPartido,
+  hacia: EstadoPartido,
+): EstadoPartido[] {
+  const ruta: EstadoPartido[] = [];
+  for (let paso = hacia; paso !== desde; paso = previo.get(paso) as EstadoPartido)
+    ruta.unshift(paso);
+  return ruta;
+}

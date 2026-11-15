@@ -1,0 +1,60 @@
+{
+  "_nota": "Respuesta SINTÉTICA con la forma documentada de GET /fixtures?date=. Reemplazar por una respuesta real sin la clave en T029.",
+  "get": "fixtures",
+  "parameters": { "date": "2026-11-15" },
+  "errors": [],
+  "results": 4,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "fixture": {
+        "id": 1001,
+        "date": "2026-11-15T20:00:00+00:00",
+        "status": { "long": "Not Started", "short": "NS", "elapsed": null }
+      },
+      "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2026 },
+      "teams": { "home": { "id": 1, "name": "Arsenal" }, "away": { "id": 2, "name": "Chelsea" } },
+      "goals": { "home": null, "away": null },
+      "score": {
+        "halftime": { "home": null, "away": null },
+        "fulltime": { "home": null, "away": null }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1002,
+        "date": "2026-11-15T15:00:00+00:00",
+        "status": { "long": "Second Half", "short": "2H", "elapsed": 67 }
+      },
+      "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2026 },
+      "teams": { "home": { "id": 3, "name": "Liverpool" }, "away": { "id": 4, "name": "Everton" } },
+      "goals": { "home": 2, "away": 1 },
+      "score": { "halftime": { "home": 1, "away": 1 }, "fulltime": { "home": null, "away": null } }
+    },
+    {
+      "fixture": {
+        "id": 1003,
+        "date": "2026-11-15T12:00:00+00:00",
+        "status": { "long": "Match Finished After Extra Time", "short": "AET", "elapsed": 120 }
+      },
+      "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2026 },
+      "teams": { "home": { "id": 5, "name": "Leeds" }, "away": { "id": 6, "name": "Fulham" } },
+      "goals": { "home": 2, "away": 1 },
+      "score": { "halftime": { "home": 0, "away": 0 }, "fulltime": { "home": 1, "away": 1 } }
+    },
+    {
+      "fixture": {
+        "id": 2001,
+        "date": "2026-11-15T19:00:00+00:00",
+        "status": { "long": "Not Started", "short": "NS", "elapsed": null }
+      },
+      "league": { "id": 140, "name": "La Liga", "country": "Spain", "season": 2026 },
+      "teams": { "home": { "id": 7, "name": "Sevilla" }, "away": { "id": 8, "name": "Betis" } },
+      "goals": { "home": null, "away": null },
+      "score": {
+        "halftime": { "home": null, "away": null },
+        "fulltime": { "home": null, "away": null }
+      }
+    }
+  ]
+}

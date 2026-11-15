@@ -3,6 +3,7 @@ import { ErrorNegocio } from '../comun/error-negocio.js';
 import {
   admiteApuestas,
   esEstadoFinal,
+  rutaDeEstados,
   transicionesPermitidas,
   validarTransicion,
 } from './maquina-estados.js';
@@ -61,5 +62,24 @@ describe('máquina de estados del partido', () => {
 
   it('solo programado y en vivo admiten apuestas', () => {
     expect(ESTADOS_PARTIDO.filter(admiteApuestas)).toEqual(['PROGRAMADO', 'EN_VIVO']);
+  });
+});
+
+describe('rutaDeEstados (el proveedor puede saltarse estados entre dos consultas)', () => {
+  it('devuelve el paso directo si la transición está permitida', () => {
+    expect(rutaDeEstados('EN_VIVO', 'FINALIZADO')).toEqual(['FINALIZADO']);
+  });
+
+  it('pasa por en vivo si el partido terminó sin que se viera en vivo', () => {
+    expect(rutaDeEstados('PROGRAMADO', 'FINALIZADO')).toEqual(['EN_VIVO', 'FINALIZADO']);
+    expect(rutaDeEstados('PROGRAMADO', 'SUSPENDIDO')).toEqual(['EN_VIVO', 'SUSPENDIDO']);
+  });
+
+  it('devuelve una ruta vacía si ya está en ese estado', () => {
+    expect(rutaDeEstados('EN_VIVO', 'EN_VIVO')).toEqual([]);
+  });
+
+  it('devuelve null si no hay camino (desde un estado final)', () => {
+    expect(rutaDeEstados('FINALIZADO', 'EN_VIVO')).toBeNull();
   });
 });
