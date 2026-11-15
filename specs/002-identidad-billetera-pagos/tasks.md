@@ -34,7 +34,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
   la web (T024, T034, T040, T045, T050, T062, T070, T076, T079) se reducen a una por formulario con su validación
   principal.
 - **Se simplifican**: la lista de contraseñas comunes de T031 son unas 120 de 12 caracteres o más (las más cortas ya las rechaza la longitud mínima), en `contrasenas-comunes.ts` en lugar de un `.txt` (`nest build` no copia archivos de texto a `dist`).
-- **Se quitan**: T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
+- **Se quitan**: T071 (E2E de depósito; los vectores de pagos están en `depositos.e2e-spec.ts`) y T081 (accesibilidad automática con axe). La accesibilidad se cumple por diseño (skill
   `frontend-design`) y se revisa a mano en T083.
 - **Verificación**: por commit, lint, tipos y las pruebas afectadas; la suite completa y el E2E al cerrar cada
   bloque.
@@ -199,19 +199,19 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T053 [P] [US4] Escribir `apps/api/src/billetera/asientos.spec.ts`: líneas de cada operación de la tabla de data-model.md, suma cero, montos positivos con 2 decimales, monto cero o negativo rechazado
-- [ ] T054 [P] [US4] Escribir `apps/api/test/libro-contable.e2e-spec.ts`: `UPDATE`/`DELETE`/`TRUNCATE` de `asiento` y `linea_asiento` fallan; un asiento que no suma cero falla al confirmar; idempotencia con la misma clave devuelve `creado: false`; misma clave con otro monto lanza `ConflictoIdempotenciaError`; `acreditarBono` a un usuario sin verificar o suspendido lanza `UsuarioNoHabilitadoError`; débito revertido junto con el `tx` de quien llama; saldo real y bono separados
-- [ ] T055 [P] [US4] Escribir `apps/api/test/billetera-concurrencia.e2e-spec.ts`: 100.00 de saldo y 20 débitos simultáneos de 10.00 → 10 aceptados y saldo 0.00; 50 débitos simultáneos dejan el saldo exacto al centavo (SC-002); `revertirPremio` deja saldo negativo y es la única que puede
-- [ ] T056 [P] [US4] Escribir `apps/api/test/billetera-rutas.e2e-spec.ts`: saldos y movimientos paginados con saldo resultante; no existe ruta ni método que fije o edite un saldo (FR-044)
+- [x] T053 [P] [US4] Escribir `apps/api/src/billetera/asientos.spec.ts`: líneas de cada operación de la tabla de data-model.md, suma cero, montos positivos con 2 decimales, monto cero o negativo rechazado
+- [x] T054 [P] [US4] Escribir `apps/api/test/libro-contable.e2e-spec.ts`: `UPDATE`/`DELETE`/`TRUNCATE` de `asiento` y `linea_asiento` fallan; un asiento que no suma cero falla al confirmar; idempotencia con la misma clave devuelve `creado: false`; misma clave con otro monto lanza `ConflictoIdempotenciaError`; `acreditarBono` a un usuario sin verificar o suspendido lanza `UsuarioNoHabilitadoError`; débito revertido junto con el `tx` de quien llama; saldo real y bono separados
+- [x] T055 [P] [US4] Escribir `apps/api/test/billetera-concurrencia.e2e-spec.ts`: 100.00 de saldo y 20 débitos simultáneos de 10.00 → 10 aceptados y saldo 0.00; 50 débitos simultáneos dejan el saldo exacto al centavo (SC-002); `revertirPremio` deja saldo negativo y es la única que puede
+- [x] T056 [P] [US4] Escribir `apps/api/test/billetera-rutas.e2e-spec.ts`: saldos y movimientos paginados con saldo resultante; no existe ruta ni método que fije o edite un saldo (FR-044)
 
 ### Implementation for User Story 4
 
-- [ ] T057 [US4] Agregar `revertirPremio`, `ConflictoIdempotenciaError` y `UsuarioNoHabilitadoError` a `apps/api/src/contracts/billetera.port.ts` y las claves nuevas a `docs/equipo/contratos.md` §2 (cambios-contratos §1 y §2, revisor Daniel)
-- [ ] T058 [US4] Agregar los enums `TipoCuenta` y `TipoAsiento` y los modelos `Billetera`, `CuentaContable`, `Asiento` y `LineaAsiento` a `identidad.prisma` y generar la migración `spec2_libro_contable` con los disparadores de inmutabilidad, la restricción diferida de suma cero, los checks y las tres cuentas del sistema (`apps/api/prisma/migrations/<fecha>_spec2_libro_contable/migration.sql`)
-- [ ] T059 [US4] Crear `apps/api/src/billetera/asientos.ts` y `apps/api/src/billetera/libro-contable.service.ts` (bloqueo `FOR UPDATE` de `billetera`, idempotencia, comprobación de saldo, inserción de cabecera y líneas)
-- [ ] T060 [US4] Crear `apps/api/src/billetera/billetera.service.ts` (`BILLETERA_PORT` con las siete operaciones) y `apps/api/src/billetera/billetera.module.ts` (global); crear la billetera y sus cuentas en el registro (`apps/api/src/identidad/registro.service.ts`) y una migración de datos para los usuarios ya existentes
-- [ ] T061 [US4] Crear `apps/api/src/billetera/billetera.controller.ts` (`GET /billetera`, `/billetera/movimientos`) y activar en `usuarios-admin.service.ts` la regla de no promover con saldo
-- [ ] T062 [P] [US4] Crear la pantalla `apps/web/src/app/billetera/page.tsx` (saldos real y de bono, movimientos con paginación) con su prueba
+- [x] T057 [US4] Agregar `revertirPremio`, `ConflictoIdempotenciaError` y `UsuarioNoHabilitadoError` a `apps/api/src/contracts/billetera.port.ts` y las claves nuevas a `docs/equipo/contratos.md` §2 (cambios-contratos §1 y §2, revisor Daniel)
+- [x] T058 [US4] Agregar los enums `TipoCuenta` y `TipoAsiento` y los modelos `Billetera`, `CuentaContable`, `Asiento` y `LineaAsiento` a `identidad.prisma` y generar la migración `spec2_libro_contable` con los disparadores de inmutabilidad, la restricción diferida de suma cero, los checks y las tres cuentas del sistema (`apps/api/prisma/migrations/<fecha>_spec2_libro_contable/migration.sql`)
+- [x] T059 [US4] Crear `apps/api/src/billetera/asientos.ts` y `apps/api/src/billetera/libro-contable.service.ts` (bloqueo `FOR UPDATE` de `billetera`, idempotencia, comprobación de saldo, inserción de cabecera y líneas)
+- [x] T060 [US4] Crear `apps/api/src/billetera/billetera.service.ts` (`BILLETERA_PORT` con las siete operaciones) y `apps/api/src/billetera/billetera.module.ts` (global); crear la billetera y sus cuentas en el registro (`apps/api/src/identidad/registro.service.ts`) (en la práctica, la billetera y sus cuentas se crean solas en la primera operación del usuario, sin migración de datos)
+- [x] T061 [US4] Crear `apps/api/src/billetera/billetera.controller.ts` (`GET /billetera`, `/billetera/movimientos`) y activar en `usuarios-admin.service.ts` la regla de no promover con saldo
+- [x] T062 [P] [US4] Crear la pantalla `apps/web/src/app/billetera/page.tsx` (saldos real y de bono, movimientos con paginación) con su prueba
 
 **Checkpoint**: el Spec 3 puede cambiar su doble de billetera por la real
 
@@ -225,19 +225,19 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T063 [P] [US5] Escribir `apps/api/src/pagos/centavos.spec.ts` y `apps/api/src/pagos/verificar-confirmacion.spec.ts`: conversión exacta a centavos; aprobada solo con `statusCode` 3, `Approved`, monto, moneda y referencia iguales; cada discrepancia con su motivo
-- [ ] T064 [P] [US5] Escribir `apps/api/src/pagos/payphone.cliente.spec.ts`: cuerpo de Prepare en centavos con `responseUrl` y `cancellationUrl`; Confirm con `id` y `clientTxId`; Reverse; errores HTTP y de red (con `fetch` simulado)
-- [ ] T065 [P] [US5] Escribir `apps/api/test/depositos.e2e-spec.ts` con `apps/api/test/ayudas/pasarela-doble.ts`: sin verificar o con rol operador rechazado; intención con referencia única; confirmación acredita una vez aunque se repita 10 veces (SC-003); confirmaciones simultáneas acreditan una vez; monto, moneda o referencia distintos se rechazan, se auditan y piden reverso; cancelada queda fallida; regreso sin confirmación no cambia el saldo; `transactionId` de otra intención rechazado; `/depositos/confirmar` responde 429 tras 10 peticiones por minuto desde la misma IP; evento `deposito.confirmado` con el cupón; método de pago guardado sin duplicar; caducidad a los 15 minutos
+- [x] T063 [P] [US5] Escribir `apps/api/src/pagos/centavos.spec.ts` y `apps/api/src/pagos/verificar-confirmacion.spec.ts`: conversión exacta a centavos; aprobada solo con `statusCode` 3, `Approved`, monto, moneda y referencia iguales; cada discrepancia con su motivo
+- [x] T064 [P] [US5] Escribir `apps/api/src/pagos/payphone.cliente.spec.ts`: cuerpo de Prepare en centavos con `responseUrl` y `cancellationUrl`; Confirm con `id` y `clientTxId`; Reverse; errores HTTP y de red (con `fetch` simulado)
+- [x] T065 [P] [US5] Escribir `apps/api/test/depositos.e2e-spec.ts` con `apps/api/test/ayudas/pasarela-doble.ts`: sin verificar o con rol operador rechazado; intención con referencia única; confirmación acredita una vez aunque se repita 10 veces (SC-003); confirmaciones simultáneas acreditan una vez; monto, moneda o referencia distintos se rechazan, se auditan y piden reverso; cancelada queda fallida; regreso sin confirmación no cambia el saldo; `transactionId` de otra intención rechazado; `/depositos/confirmar` responde 429 tras 10 peticiones por minuto desde la misma IP; evento `deposito.confirmado` con el cupón; método de pago guardado sin duplicar; caducidad a los 15 minutos
 
 ### Implementation for User Story 5
 
-- [ ] T066 [US5] Agregar `PAYPHONE_TOKEN`, `PAYPHONE_STORE_ID`, `PAYPHONE_BASE_URL`, `DEPOSITO_MIN` y `DEPOSITO_MAX` con pruebas primero en `apps/api/src/config/env.spec.ts` y `apps/api/src/config/env.ts`, en `apps/api/.env.example`, en `specs/001-fundaciones-stack/contracts/configuracion.md` y con valores de prueba en `.github/workflows/ci.yml` (entran en el PR 2, no antes, para no exigir en staging variables que el PR 1 no usa); luego agregar los enums `EstadoIntencionPago` y `TipoMetodoPago` y los modelos `IntencionPago` y `MetodoPago` a `identidad.prisma` y generar la migración `spec2_pagos` con el disparador de columnas congeladas (`apps/api/prisma/migrations/<fecha>_spec2_pagos/migration.sql`)
-- [ ] T067 [US5] Crear `apps/api/src/pagos/centavos.ts`, `apps/api/src/pagos/verificar-confirmacion.ts`, `apps/api/src/pagos/pasarela.port.ts` y `apps/api/src/pagos/payphone.cliente.ts`
-- [ ] T068 [US5] Crear `apps/api/src/pagos/depositos.service.ts` (Prepare, Confirm fuera de la transacción, acreditación con bloqueo e idempotencia, reverso por discrepancia, evento tras el commit) y `apps/api/src/pagos/pagos.controller.ts` (`POST /pagos/depositos`, `/depositos/confirmar` con límite de 10 por minuto e IP, `GET /pagos/depositos/:id`)
-- [ ] T069 [US5] Crear `apps/api/src/pagos/caducidad.tarea.ts` (cada minuto marca `CADUCADA` las intenciones vencidas) y `apps/api/src/pagos/pagos.module.ts`
-- [ ] T070 [P] [US5] Crear las pantallas `apps/web/src/app/billetera/depositar/page.tsx` (monto, cupón opcional, redirección a `urlPago`) y `apps/web/src/app/billetera/deposito/retorno/page.tsx` ("Procesando", confirma y muestra el resultado o permite reintentar) con sus pruebas
-- [ ] T071 [US5] Crear la pasarela falsa `apps/web/e2e/pasarela-falsa.ts` (Prepare, página de pago, redirección y Confirm), arrancarla en el `globalSetup` de `apps/web/playwright.config.ts` y escribir `apps/web/e2e/deposito.spec.ts`
-- [ ] T072 [US5] Marcar las tareas del PR 2 en este archivo
+- [x] T066 [US5] Agregar `PAYPHONE_TOKEN`, `PAYPHONE_STORE_ID`, `PAYPHONE_BASE_URL`, `DEPOSITO_MIN` y `DEPOSITO_MAX` con pruebas primero en `apps/api/src/config/env.spec.ts` y `apps/api/src/config/env.ts`, en `apps/api/.env.example`, en `specs/001-fundaciones-stack/contracts/configuracion.md` y con valores de prueba en `.github/workflows/ci.yml` (entran en el PR 2, no antes, para no exigir en staging variables que el PR 1 no usa); luego agregar los enums `EstadoIntencionPago` y `TipoMetodoPago` y los modelos `IntencionPago` y `MetodoPago` a `identidad.prisma` y generar la migración `spec2_pagos` con el disparador de columnas congeladas (`apps/api/prisma/migrations/<fecha>_spec2_pagos/migration.sql`)
+- [x] T067 [US5] Crear `apps/api/src/pagos/centavos.ts`, `apps/api/src/pagos/verificar-confirmacion.ts`, `apps/api/src/pagos/pasarela.port.ts` y `apps/api/src/pagos/payphone.cliente.ts`
+- [x] T068 [US5] Crear `apps/api/src/pagos/depositos.service.ts` (Prepare, Confirm fuera de la transacción, acreditación con bloqueo e idempotencia, reverso por discrepancia, evento tras el commit) y `apps/api/src/pagos/pagos.controller.ts` (`POST /pagos/depositos`, `/depositos/confirmar` con límite de 10 por minuto e IP, `GET /pagos/depositos/:id`)
+- [x] T069 [US5] Crear `apps/api/src/pagos/caducidad.tarea.ts` (cada minuto marca `CADUCADA` las intenciones vencidas) y `apps/api/src/pagos/pagos.module.ts`
+- [x] T070 [P] [US5] Crear las pantallas `apps/web/src/app/billetera/depositar/page.tsx` (monto, cupón opcional, redirección a `urlPago`) y `apps/web/src/app/billetera/deposito/retorno/page.tsx` ("Procesando", confirma y muestra el resultado o permite reintentar) con sus pruebas
+- [ ] ~~T071~~ (quitada por el ritmo del 2026-11-15: los vectores de pagos los cubren `apps/api/test/depositos.e2e-spec.ts` con una pasarela de prueba) Crear la pasarela falsa `apps/web/e2e/pasarela-falsa.ts` (Prepare, página de pago, redirección y Confirm), arrancarla en el `globalSetup` de `apps/web/playwright.config.ts` y escribir `apps/web/e2e/deposito.spec.ts`
+- [x] T072 [US5] Marcar las tareas del PR 2 en este archivo
 
 **Checkpoint**: criterio de cierre de la F2 (concurrencia y doble confirmación); PR 2 listo
 
