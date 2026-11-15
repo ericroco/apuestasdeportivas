@@ -1,5 +1,10 @@
 <!--
 Sync Impact Report
+- Versión: 1.0.0 → 1.0.1 (PATCH, Spec 1): el quality gate nombra Vitest en lugar de Jest para TypeScript,
+  porque NestJS 12 genera proyectos ESM con Vitest (misma API). Ningún principio cambia.
+- Plantillas: sin cambios necesarios. PLAN.md y CLAUDE.md actualizados.
+
+Historial:
 - Versión: plantilla sin versionar → 1.0.0 (ratificación inicial)
 - Principios definidos:
   I. Seguridad y antifraude primero (NO NEGOCIABLE)
@@ -144,7 +149,7 @@ entender, probar y defender.
   pruebas.
 - Un PR solo se integra si:
   1. lint y verificación de tipos pasan;
-  2. las pruebas (Jest, pytest, Playwright) pasan;
+  2. las pruebas (Vitest, pytest, Playwright) pasan;
   3. el quality gate de SonarQube está aprobado;
   4. la revisión confirma el cumplimiento de esta constitución.
 - `develop` despliega a staging y `main` a producción automáticamente.
@@ -165,4 +170,4 @@ entender, probar y defender.
   "Complexity Tracking"; los principios I y II no admiten excepciones.
 - La guía operativa para agentes de IA está en `CLAUDE.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-10 | **Last Amended**: 2026-11-10
+**Version**: 1.0.1 | **Ratified**: 2026-11-10 | **Last Amended**: 2026-11-14

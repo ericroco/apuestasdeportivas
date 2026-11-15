@@ -1,0 +1,16 @@
+// Esquema de Prisma de apps/api, dividido en archivos por spec para evitar conflictos de merge:
+//   base.prisma         generador y datasource (Spec 1, no agregar modelos aquí)
+//   identidad.prisma    Spec 2: usuarios, sesiones, auditoría, ledger, pagos y retiros
+//   partidos.prisma     Spec 3: competiciones, partidos, mercados, cuotas, apuestas y liquidación
+//   promociones.prisma  Spec 4: cupones, rollover y alertas de fraude
+// Las relaciones entre archivos funcionan igual que en un solo archivo. Migraciones en paralelo: CONTRIBUTING.md.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}

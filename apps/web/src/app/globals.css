@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens de diseño. Dirección visual: un boleto de apuesta combinada sobre el mostrador.
+ * Papel frío y tinta azul marino; la franja amarilla y los estados verde/rojo guiñan al tricolor.
+ * Contraste calculado (WCAG 2.1 AA pide 4.5:1 en texto normal): tinta/papel 14.8:1,
+ * tinta-suave/papel 7.4:1, ok/papel 5.1:1, falla/papel y papel/falla 5.9:1, tinta/franja 9.5:1.
+ */
+@theme {
+  --color-mostrador: #14213d;
+  --color-papel: #f5f7f4;
+  --color-tinta: #14213d;
+  --color-tinta-suave: #475166;
+  --color-franja: #f2c230;
+  --color-ok: #17784a;
+  --color-falla: #b42a23;
+  --color-perforado: #c9d1cc;
+
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-barlow), ui-sans-serif, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-mostrador);
+    color: var(--color-tinta);
+  }
+
+  /* Todo lo enfocable está sobre el papel: el anillo va en tinta (14.8:1; WCAG pide 3:1). */
+  :focus-visible {
+    outline: 3px solid var(--color-tinta);
+    outline-offset: 3px;
+  }
+}
+
+/* Corte perforado entre las selecciones y el resultado, con las muescas laterales del boleto. */
+.corte-boleto {
+  position: relative;
+  border-top: 2px dashed var(--color-perforado);
+}
+
+.corte-boleto::before,
+.corte-boleto::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background-color: var(--color-mostrador);
+}
+
+.corte-boleto::before {
+  left: -11px;
+}
+
+.corte-boleto::after {
+  right: -11px;
+}
+
+/* El único momento animado de la página: el sello del resultado se estampa una vez. */
+@keyframes estampar {
+  from {
+    opacity: 0;
+    transform: rotate(-8deg) scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-4deg) scale(1);
+  }
+}
+
+.sello {
+  transform: rotate(-4deg);
+  animation: estampar 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sello {
+    animation: none;
+  }
+}

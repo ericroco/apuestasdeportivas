@@ -22,7 +22,7 @@ Requisitos: [`promtp.md`](promtp.md). Guía técnica: [`CLAUDE.md`](CLAUDE.md).
 | Colas / jobs | BullMQ sobre Redis (sincronización API-Football, liquidación) |
 | Reportes | Python 3.12 + FastAPI + pandas, gestionado con `uv` |
 | Autenticación | JWT de corta duración en cookie httpOnly + refresh rotativo, 2FA TOTP |
-| Pruebas | Jest + Supertest (API), Testing Library (web), Playwright (E2E), pytest (reportes) |
+| Pruebas | Vitest + Supertest (API), Vitest + Testing Library (web), Playwright (E2E), pytest (reportes) |
 | Calidad | SonarQube Cloud (gratis para repos públicos) con quality gate bloqueante |
 | CI/CD | GitHub Actions; deploy a Vercel y Render por rama |
 | Trazabilidad del equipo | Grafana Cloud con datasource de GitHub (commits, PRs, despliegues, métricas DORA) |
@@ -59,7 +59,7 @@ F7 Reportes+Cierre                                               █████
 
 ### F0 — Fundaciones (S0)
 - [ ] Git Flow: ramas `main` y `develop` protegidas (PR obligatorio, CI requerido).
-- [ ] Monorepo con pnpm + Turborepo, ESLint, Prettier, TypeScript estricto, Ruff para Python.
+- [ ] Monorepo con pnpm + Turborepo, ESLint (web) / Oxlint (api), Prettier, TypeScript estricto, Ruff para Python.
 - [ ] Commitlint + Husky para Conventional Commits.
 - [ ] Esqueleto de `apps/web`, `apps/api` (con `/health`) y `apps/reports` (con `/health`).
 - [ ] Docker Compose local con PostgreSQL y Redis.

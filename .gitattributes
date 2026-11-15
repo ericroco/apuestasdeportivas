@@ -1,0 +1,7 @@
+# Finales de línea LF en todo el repo (el equipo trabaja en Windows con core.autocrlf)
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

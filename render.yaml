@@ -1,0 +1,73 @@
+# Blueprint de Render: entorno de STAGING (rama develop). Ver docs/despliegue.md.
+# El plan gratuito permite una sola PostgreSQL; producción (rama main) es una réplica de este archivo
+# con otros nombres y su propia base de datos.
+# Los servicios no se despliegan solos (autoDeployTrigger: off): los dispara el job "Desplegar" de CI
+# con sus deploy hooks, y solo si la compuerta de calidad pasó.
+
+services:
+  - type: web
+    name: apuestas-api-staging
+    runtime: node
+    plan: free
+    region: oregon
+    branch: develop
+    autoDeployTrigger: 'off'
+    buildCommand: npm install -g pnpm@11.9.0 && pnpm install --frozen-lockfile && pnpm --filter "api..." run build
+    # Las migraciones se aplican al arrancar (preDeployCommand no está en el plan gratuito).
+    startCommand: pnpm --filter api exec prisma migrate deploy && node apps/api/dist/main.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY_HOPS
+        value: '1' # el proxy de Render; sin esto el rate limiting no distingue clientes
+      - key: DATABASE_URL
+        fromDatabase:
+          name: apuestas-db-staging
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: apuestas-redis-staging
+          property: connectionString
+      - key: WEB_ORIGIN
+        sync: false # URL de staging de Vercel, p. ej. https://apuestasdeportivas-git-develop.vercel.app
+
+  - type: web
+    name: apuestas-reports-staging
+    runtime: python
+    plan: free
+    region: oregon
+    branch: develop
+    rootDir: apps/reports
+    autoDeployTrigger: 'off'
+    buildCommand: pip install uv==0.11.7 && uv sync --frozen --no-dev
+    startCommand: uv run --no-dev python -m reports
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: HOST
+        value: 0.0.0.0
+      - key: REPORTS_DATABASE_URL
+        sync: false # URL interna con el usuario reportes_lectura (nunca la del dueño)
+      - key: WEB_ORIGIN
+        sync: false
+
+  - type: keyvalue
+    name: apuestas-redis-staging
+    plan: free
+    region: oregon
+    # BullMQ (Spec 3) necesita que Redis no descarte claves.
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # solo conexiones internas de Render
+
+databases:
+  - name: apuestas-db-staging
+    plan: free
+    region: oregon
+    databaseName: apuestas
+    user: apuestas
+    ipAllowList: [] # solo conexiones internas de Render

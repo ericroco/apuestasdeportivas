@@ -1,0 +1,201 @@
+# Compuerta de calidad del monorepo (spec 1, historia 2).
+# Orden de la constitución: lint → tipos → pruebas → SonarQube → despliegue.
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Credenciales efímeras de los contenedores de servicio del job: no son secretos reales.
+  DATABASE_URL: postgresql://apuestas:apuestas_ci@localhost:5432/apuestas
+  REDIS_URL: redis://localhost:6379
+  WEB_ORIGIN: http://localhost:3000
+  REPORTS_DATABASE_URL: postgresql://reportes_lectura:reportes_ci@localhost:5432/apuestas
+  PRUEBAS_DATABASE_URL_PROPIETARIO: postgresql://apuestas:apuestas_ci@localhost:5432/apuestas
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  commits:
+    name: Conventional Commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validar los mensajes de commit del PR
+        run: >-
+          pnpm exec commitlint
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
+  calidad:
+    name: Lint, tipos, pruebas y E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: apuestas
+          POSTGRES_PASSWORD: apuestas_ci
+          POSTGRES_DB: apuestas
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U apuestas -d apuestas"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/reports/uv.lock
+
+      - name: Crear el usuario de solo lectura de reportes
+        run: >-
+          psql "$DATABASE_URL"
+          -v dbname=apuestas -v owner=apuestas -v reportes_password=reportes_ci
+          -f infra/postgres/usuario-solo-lectura.sql
+
+      - name: Instalar dependencias
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm reports:install
+
+      - name: Formato
+        run: pnpm format:check
+      - name: Lint (ESLint, Oxlint, Ruff)
+        run: pnpm lint
+      - name: Tipos (tsc, mypy)
+        run: pnpm typecheck
+      - name: Migraciones
+        run: pnpm db:migrate
+      - name: Pruebas unitarias y de integración (Vitest, pytest)
+        run: pnpm test
+
+      - name: Instalar Chromium para Playwright
+        run: pnpm --filter web exec playwright install --with-deps chromium
+      - name: E2E de punta a punta (Playwright)
+        run: pnpm test:e2e
+
+      - name: Guardar cobertura para SonarQube
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura
+          path: |
+            apps/api/coverage/unit/lcov.info
+            apps/api/coverage/integracion/lcov.info
+            apps/web/coverage/lcov.info
+            apps/reports/coverage.xml
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Guardar el reporte de Playwright si falla
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
+  sonar:
+    name: SonarQube Cloud
+    needs: calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Aviso si SonarQube no está configurado
+        if: env.SONAR_TOKEN == ''
+        run: echo "::notice title=SonarQube omitido::Falta el secreto SONAR_TOKEN. Ver docs/despliegue.md, sección SonarQube."
+      - uses: actions/checkout@v7
+        if: env.SONAR_TOKEN != ''
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        if: env.SONAR_TOKEN != ''
+        with:
+          name: cobertura
+          path: apps
+      - name: Rutas de lcov relativas a la raíz del repo
+        if: env.SONAR_TOKEN != ''
+        run: |
+          sed -i 's#^SF:#SF:apps/api/#' apps/api/coverage/unit/lcov.info apps/api/coverage/integracion/lcov.info
+          sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
+      - uses: SonarSource/sonarqube-scan-action@v8
+        if: env.SONAR_TOKEN != ''
+
+  desplegar:
+    name: Desplegar
+    needs: [calidad, sonar]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Cada entorno de GitHub guarda sus propios secretos (hooks y tokens de staging o de producción).
+    environment: ${{ github.ref_name == 'main' && 'produccion' || 'staging' }}
+    env:
+      RENDER_DEPLOY_HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+      RENDER_DEPLOY_HOOK_REPORTS: ${{ secrets.RENDER_DEPLOY_HOOK_REPORTS }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ENTORNO: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      VERCEL_PROD: ${{ github.ref_name == 'main' && '--prod' || '' }}
+    steps:
+      - name: Render (API y reportes)
+        if: env.RENDER_DEPLOY_HOOK_API != '' && env.RENDER_DEPLOY_HOOK_REPORTS != ''
+        run: |
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_API" > /dev/null
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_REPORTS" > /dev/null
+      - name: Aviso si Render no está configurado
+        if: env.RENDER_DEPLOY_HOOK_API == '' || env.RENDER_DEPLOY_HOOK_REPORTS == ''
+        run: echo "::notice title=Render omitido::Faltan los deploy hooks del entorno. Ver docs/despliegue.md."
+
+      - uses: actions/checkout@v7
+        if: env.VERCEL_TOKEN != ''
+      - uses: pnpm/action-setup@v6
+        if: env.VERCEL_TOKEN != ''
+      - uses: actions/setup-node@v7
+        if: env.VERCEL_TOKEN != ''
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Vercel (web)
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          npx --yes vercel@65.16.0 pull --yes --environment="$VERCEL_ENTORNO" --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.16.0 build $VERCEL_PROD --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.16.0 deploy --prebuilt $VERCEL_PROD --token="$VERCEL_TOKEN"
+      - name: Aviso si Vercel no está configurado
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::notice title=Vercel omitido::Falta el secreto VERCEL_TOKEN del entorno. Ver docs/despliegue.md."
