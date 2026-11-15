@@ -17,6 +17,7 @@ const RUTAS_PUBLICAS = new Set<string>([
   'POST /api/identidad/correo/verificar',
   'POST /api/identidad/sesion',
   'POST /api/identidad/sesion/renovar',
+  'POST /api/identidad/sesion/2fa',
   'POST /api/identidad/contrasena/olvido',
   'POST /api/identidad/contrasena/restablecer',
 ]);

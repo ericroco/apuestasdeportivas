@@ -19,6 +19,7 @@ import { CaptchaService } from './captcha.service.js';
 import { ContrasenasService } from './contrasenas.service.js';
 import type { ClienteHttp } from './http/cliente-http.js';
 import { normalizarEmail } from './politicas.js';
+import { SegundoFactorService } from './segundo-factor.service.js';
 import { type Alcance, TokensService } from './tokens.service.js';
 
 export const MENSAJE_CREDENCIALES = 'Correo o contraseña incorrectos.';
@@ -46,6 +47,7 @@ export class SesionesService {
     private readonly contrasenas: ContrasenasService,
     private readonly captcha: CaptchaService,
     private readonly tokens: TokensService,
+    private readonly segundoFactor: SegundoFactorService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
   ) {}
 
@@ -82,6 +84,48 @@ export class SesionesService {
       return { estado: 'REQUIERE_2FA', desafio: await this.tokens.emitirDesafio2fa(usuario.id) };
     }
     return { estado: 'INICIADA', tokens: await this.abrirSesion(usuario, false, cliente) };
+  }
+
+  /** Segundo paso del inicio de sesión con 2FA (cookie `desafio` + código). Los fallos cuentan para el bloqueo. */
+  async completarSegundoFactor(
+    desafio: string | undefined,
+    codigo: string,
+    cliente: ClienteHttp,
+  ): Promise<TokensSesion> {
+    let usuarioId: string;
+    try {
+      usuarioId = await this.tokens.verificarDesafio2fa(desafio ?? '');
+    } catch {
+      throw new UnauthorizedException('El paso de verificación venció. Vuelve a iniciar sesión.');
+    }
+    const usuario = await this.prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } });
+    this.rechazarSiBloqueado(usuario);
+    if (usuario.estado === 'SUSPENDIDO') {
+      throw new ForbiddenException('Tu cuenta está suspendida. Escribe a soporte para revisarla.');
+    }
+    if (!(await this.segundoFactor.verificarCodigo(usuarioId, codigo))) {
+      await this.registrarFallo(usuarioId, cliente);
+      throw new UnauthorizedException('El código no es correcto o ya se usó.');
+    }
+    await this.prisma.usuario.update({ where: { id: usuarioId }, data: { intentosFallidos: 0 } });
+    return this.abrirSesion(usuario, true, cliente);
+  }
+
+  /** Tras activar el 2FA: cierra la sesión limitada actual y abre una completa. */
+  async reemplazarSesion(
+    sesionId: string,
+    usuarioId: string,
+    cliente: ClienteHttp,
+  ): Promise<TokensSesion> {
+    const actual = await this.prisma.sesion.findUnique({ where: { id: sesionId } });
+    if (actual?.usuarioId === usuarioId) {
+      await this.prisma.sesion.updateMany({
+        where: { familiaId: actual.familiaId, revocadaEn: null },
+        data: { revocadaEn: new Date() },
+      });
+    }
+    const usuario = await this.prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } });
+    return this.abrirSesion(usuario, true, cliente);
   }
 
   /** Crea una sesión nueva (familia nueva) y la audita. `con2fa` = el usuario acaba de pasar su segundo factor. */
