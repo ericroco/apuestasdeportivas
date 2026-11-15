@@ -63,6 +63,9 @@ export default function PaginaCuenta() {
       )}
 
       <nav aria-label="Secciones de la cuenta" className="mb-6 flex flex-col gap-2">
+        {perfil.roles.every((rol) => rol === 'APOSTADOR') && (
+          <Enlace href="/billetera">Billetera</Enlace>
+        )}
         <Enlace href="/seguridad">Seguridad y segundo factor</Enlace>
         {perfil.roles.includes('ADMINISTRADOR') && (
           <>
