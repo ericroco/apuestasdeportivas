@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { ApuestaLiquidadaPayload, EstadoApuesta } from '@apuestas/shared';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -141,6 +142,144 @@ export class LiquidacionService {
     }, OPCIONES_TRANSACCION);
     if (version === null) return { liquidadas: 0, pendientes: 0 };
     return this.liquidarAfectadas(partidoId, version);
+  }
+
+  /**
+   * Re-liquida un partido cuyo resultado se corrigió (FR-036 a FR-038, research.md §7). Vuelve a resolver todas
+   * sus selecciones con el marcador nuevo y, en cada apuesta afectada, mueve solo la diferencia con lo ya pagado:
+   * un premio nuevo con la clave premio:r<n> o una reversión con reversion:r<n> (n = número de corrección), aunque
+   * el saldo quede negativo. Reprocesar la misma corrección no mueve dinero.
+   */
+  async reliquidarPartido(
+    partidoId: string,
+    versionResultado: number,
+  ): Promise<ResumenLiquidacion> {
+    const vigente = await this.prisma.$transaction(async (tx) => {
+      const partido = await tx.partido.findUnique({
+        where: { id: partidoId },
+        include: { mercados: { include: { selecciones: true } } },
+      });
+      if (partido?.estado !== 'FINALIZADO' || partido.versionResultado !== versionResultado) {
+        return false;
+      }
+      if (partido.golesLocal === null || partido.golesVisitante === null) {
+        throw new Error(`El partido ${partidoId} está finalizado sin marcador`);
+      }
+      for (const mercado of partido.mercados) {
+        for (const seleccion of mercado.selecciones.filter((s) => s.resultado !== 'ANULADA')) {
+          const resultado = resolverAlFinal(
+            {
+              tipo: mercado.tipo,
+              codigo: seleccion.codigo,
+              linea: mercado.linea?.toFixed(1) ?? null,
+            },
+            partido.golesLocal,
+            partido.golesVisitante,
+          );
+          if (resultado !== seleccion.resultado) {
+            await tx.seleccion.update({ where: { id: seleccion.id }, data: { resultado } });
+          }
+        }
+      }
+      await tx.$executeRaw`
+        UPDATE seleccion_apostada sa SET resultado = s.resultado
+        FROM seleccion s
+        WHERE sa.seleccion_id = s.id AND sa.partido_id = ${partidoId}::uuid AND sa.resultado <> s.resultado`;
+      return true;
+    }, OPCIONES_TRANSACCION);
+    if (!vigente) return { liquidadas: 0, pendientes: 0 };
+
+    const afectadas = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT DISTINCT sa.apuesta_id::text AS id
+      FROM seleccion_apostada sa JOIN apuesta a ON a.id = sa.apuesta_id
+      WHERE sa.partido_id = ${partidoId}::uuid AND a.estado <> 'ANULADA'
+      ORDER BY id`;
+    let liquidadas = 0;
+    for (const { id } of afectadas) {
+      if (await this.reliquidarApuesta(id, versionResultado)) liquidadas += 1;
+    }
+    return { liquidadas, pendientes: afectadas.length - liquidadas };
+  }
+
+  /** Una transacción por apuesta: aplica solo la diferencia entre lo pagado y lo que corresponde ahora. */
+  private async reliquidarApuesta(apuestaId: string, versionResultado: number): Promise<boolean> {
+    const correccion = versionResultado - 1;
+    const cambio = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM apuesta WHERE id = ${apuestaId}::uuid FOR UPDATE`;
+      const apuesta = await tx.apuesta.findUnique({
+        where: { id: apuestaId },
+        include: { selecciones: true },
+      });
+      if (!apuesta || apuesta.estado === 'ANULADA') return null;
+      const clave = `apuesta:${apuestaId}:reliquidacion:r${correccion}`;
+      if (await tx.liquidacion.findUnique({ where: { claveIdempotencia: clave } })) return null;
+
+      const liquidacion = calcularLiquidacion(apuesta.monto, apuesta.selecciones);
+      const premio = liquidacion.estado === 'GANADA' ? liquidacion.montoAPagar : new Decimal(0);
+      const diferencia = premio.minus(apuesta.premioPagado);
+      if (liquidacion.estado === apuesta.estado && diferencia.isZero()) return null;
+
+      const operacion = { usuarioId: apuesta.usuarioId, apuestaId, tipoSaldo: apuesta.tipoSaldo };
+      if (diferencia.greaterThan(0)) {
+        await this.billetera.acreditarPremio(tx, {
+          ...operacion,
+          monto: diferencia,
+          claveIdempotencia: `apuesta:${apuestaId}:premio:r${correccion}`,
+        });
+      } else if (diferencia.lessThan(0)) {
+        // Puede dejar el saldo negativo (FR-038): con saldo negativo no se apuesta ni se retira.
+        await this.billetera.revertirPremio(tx, {
+          ...operacion,
+          monto: diferencia.negated(),
+          claveIdempotencia: `apuesta:${apuestaId}:reversion:r${correccion}`,
+        });
+      }
+      const ahora = (await tx.$queryRaw<Array<{ ahora: Date }>>`SELECT now() AS ahora`)[0]!.ahora;
+      await tx.liquidacion.create({
+        data: {
+          apuestaId,
+          tipo: 'RELIQUIDACION',
+          estadoResultante: liquidacion.estado,
+          montoMovido: diferencia,
+          versionResultado,
+          claveIdempotencia: clave,
+        },
+      });
+      await tx.apuesta.update({
+        where: { id: apuestaId },
+        data: {
+          estado: liquidacion.estado,
+          premioPagado: premio,
+          liquidadaEn: liquidacion.estado === 'PENDIENTE' ? null : ahora,
+        },
+      });
+      await this.auditoria.registrar(
+        {
+          actorId: null,
+          accion: 'apuesta.reliquidada',
+          entidad: 'apuesta',
+          entidadId: apuestaId,
+          datos: {
+            anterior: apuesta.estado,
+            nuevo: liquidacion.estado,
+            diferencia: aTexto(diferencia),
+            versionResultado,
+          },
+        },
+        tx,
+      );
+      return {
+        usuarioId: apuesta.usuarioId,
+        apuestaId,
+        estado: liquidacion.estado,
+        monto: apuesta.monto,
+        premio,
+        liquidadaEn: ahora,
+      };
+    }, OPCIONES_TRANSACCION);
+    if (!cambio) return false;
+    if (cambio.estado !== 'PENDIENTE') this.anunciar({ ...cambio, estado: cambio.estado });
+    return true;
   }
 
   /** Liquida, una por una y cada una en su transacción, las apuestas pendientes con selecciones del partido. */
@@ -340,8 +479,8 @@ export class LiquidacionService {
 
 /** Claves de contratos.md §2: la misma va a la billetera y a la fila única de `liquidacion`. */
 function claveDe(apuestaId: string, estado: Exclude<EstadoApuesta, 'PENDIENTE'>): string {
-  const operacion = { GANADA: 'premio', ANULADA: 'reembolso', PERDIDA: 'perdida' } as const;
-  return `apuesta:${apuestaId}:${operacion[estado]}`;
+  if (estado === 'PERDIDA') return `apuesta:${apuestaId}:perdida:${randomUUID()}`;
+  return `apuesta:${apuestaId}:${estado === 'GANADA' ? 'premio' : 'reembolso'}`;
 }
 
 /** Copia a las selecciones apostadas el resultado ya resuelto de las selecciones del partido. */

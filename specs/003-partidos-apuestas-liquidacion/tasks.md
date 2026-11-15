@@ -221,8 +221,8 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 **Independent Test**: tras una corrección, las nuevas ganadoras cobran una vez y las que dejan de ganar revierten aunque el saldo quede negativo
 
 - [x] T069 [US8] Acordar con el Spec 2 la operación `revertirPremio` y la convención `:r<n>` (contracts/cambios-contratos.md); sin acuerdo no se integra esta fase
-- [ ] T070 [US8] Prueba e2e de re-liquidación: perdida → ganada paga una vez; ganada → perdida revierte aunque el saldo quede negativo; con saldo negativo se rechazan apuestas (`SALDO_NEGATIVO`); la misma corrección dos veces no tiene efecto; la auditoría guarda resultado anterior, nuevo y motivo; en `apps/api/test/reliquidacion.e2e-spec.ts`
-- [ ] T071 [US8] Implementar la re-liquidación con las claves `:r<n>`, la corrección por `POST /operador/partidos/:id/resultado` sobre un partido finalizado y la corrección que llega del proveedor, en `apps/api/src/liquidacion/liquidacion.service.ts` y `apps/api/src/partidos/partidos.service.ts`
+- [x] T070 [US8] Prueba e2e de re-liquidación: perdida → ganada paga una vez; ganada → perdida revierte aunque el saldo quede negativo; con saldo negativo se rechazan apuestas (`SALDO_NEGATIVO`); la misma corrección dos veces no tiene efecto; la auditoría guarda resultado anterior, nuevo y motivo; en `apps/api/test/reliquidacion.e2e-spec.ts`
+- [x] T071 [US8] Implementar la re-liquidación con las claves `:r<n>`, la corrección por `POST /operador/partidos/:id/resultado` sobre un partido finalizado y la corrección que llega del proveedor, en `apps/api/src/liquidacion/liquidacion.service.ts` y `apps/api/src/partidos/partidos.service.ts`
 - [ ] T072 [US8] Agregar al panel del operador la corrección de resultado con motivo obligatorio y confirmación, en `apps/web/src/app/operador/partidos/`
 
 **Checkpoint PR 3**: HU3, HU6 y HU8 completas; abrir PR 3 a `develop`

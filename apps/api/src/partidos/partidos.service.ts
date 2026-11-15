@@ -25,6 +25,7 @@ import { NotificadorService } from '../tiempo-real/notificador.service.js';
 import {
   encolarAnulacion,
   encolarLiquidacion,
+  encolarReliquidacion,
   encolarVencimiento,
 } from '../liquidacion/liquidacion.processor.js';
 import { ENTORNO, type Entorno } from '../config/env.js';
@@ -263,6 +264,58 @@ export class PartidosService {
   }
 
   /**
+   * Corrige el resultado de un partido finalizado (FR-036): queda auditado con el resultado anterior, el nuevo, quién
+   * y por qué, sube la versión del resultado y encola la re-liquidación de sus apuestas. Reenviar el mismo marcador
+   * no crea otra versión. Las correcciones del proveedor siguen este mismo camino.
+   */
+  async corregirResultado(
+    id: string,
+    datos: { golesLocal: number; golesVisitante: number; motivo: string },
+    contexto: ContextoOperacion,
+  ): Promise<PartidoDetalleDto> {
+    const resultado = await this.prisma.$transaction(async (tx) => {
+      const partido = await bloquearPartido(tx, id);
+      if (partido.estado !== 'FINALIZADO') {
+        throw new ConflictException('Solo se corrige el resultado de un partido finalizado');
+      }
+      if (
+        partido.golesLocal === datos.golesLocal &&
+        partido.golesVisitante === datos.golesVisitante
+      ) {
+        return { detalle: await this.obtener(id, tx), version: null };
+      }
+      const actualizado = await tx.partido.update({
+        where: { id },
+        data: {
+          golesLocal: datos.golesLocal,
+          golesVisitante: datos.golesVisitante,
+          version: { increment: 1 },
+          versionResultado: { increment: 1 },
+        },
+      });
+      await this.auditar(tx, contexto, 'partido.resultado_corregido', 'partido', id, {
+        anterior: [partido.golesLocal, partido.golesVisitante],
+        nuevo: [datos.golesLocal, datos.golesVisitante],
+        motivo: datos.motivo,
+        versionResultado: actualizado.versionResultado,
+      });
+      return { detalle: await this.obtener(id, tx), version: actualizado.versionResultado };
+    });
+    if (resultado.version !== null) {
+      this.notificador.partidoActualizado(resultado.detalle);
+      try {
+        await encolarReliquidacion(this.colaLiquidacion, {
+          partidoId: id,
+          versionResultado: resultado.version,
+        });
+      } catch (error) {
+        this.logger.error(`No se pudo encolar la re-liquidación de ${id}: ${String(error)}`);
+      }
+    }
+    return resultado.detalle;
+  }
+
+  /**
    * Trabajos que dispara un cambio de estado (research.md §7 y §8): finalizar liquida; suspender o aplazar programa
    * el vencimiento del plazo; cancelar anula. La cola los persiste; si Redis falla, se registra y el arranque del
    * procesador recupera los finalizados y cancelados con apuestas pendientes (FR-028).
@@ -306,11 +359,7 @@ export class PartidosService {
     contexto: ContextoOperacion,
   ): Promise<PartidoDetalleDto> {
     const partido = await this.obtener(id);
-    if (partido.estado === 'FINALIZADO') {
-      throw new ConflictException(
-        'El partido ya está finalizado: la corrección de resultados es la HU8',
-      );
-    }
+    if (partido.estado === 'FINALIZADO') return this.corregirResultado(id, datos, contexto);
     const ruta = rutaDeEstados(partido.estado, 'FINALIZADO');
     if (!ruta?.length) validarTransicion(partido.estado, 'FINALIZADO');
     let detalle = partido;
@@ -341,7 +390,8 @@ export class PartidosService {
     cambio: ActualizacionPartido,
   ): Prisma.PartidoUpdateInput {
     const estadoFinal = cambio.estado ?? partido.estado;
-    if (estadoFinal !== 'EN_VIVO' && estadoFinal !== 'FINALIZADO') {
+    // Finalizado solo al finalizar: después, el marcador se cambia por corrección con re-liquidación (HU8).
+    if (estadoFinal !== 'EN_VIVO' && cambio.estado !== 'FINALIZADO') {
       throw new ConflictException('El marcador solo se actualiza con el partido en vivo');
     }
     return {

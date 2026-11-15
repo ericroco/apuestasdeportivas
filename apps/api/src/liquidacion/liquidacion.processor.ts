@@ -22,6 +22,7 @@ export const TRABAJOS_LIQUIDACION = {
   liquidar: 'liquidar-partido',
   vencer: 'vencer-plazo',
   anular: 'anular-partido',
+  reliquidar: 'reliquidar-partido',
 } as const;
 
 const OPCIONES_REINTENTO = {
@@ -39,6 +40,15 @@ export function encolarVencimiento(
   return cola.add(TRABAJOS_LIQUIDACION.vencer, trabajo, {
     jobId: `vencer-${trabajo.partidoId}-${new Date(trabajo.suspendidoEn).getTime()}`,
     delay: Math.max(0, retardoMs),
+    attempts: INTENTOS,
+    ...OPCIONES_REINTENTO,
+  });
+}
+
+/** Re-liquidación tras una corrección de resultado (FR-036): una por versión del resultado. */
+export function encolarReliquidacion(cola: Queue, trabajo: TrabajoLiquidacion): Promise<unknown> {
+  return cola.add(TRABAJOS_LIQUIDACION.reliquidar, trabajo, {
+    jobId: `reliquidar-${trabajo.partidoId}-v${trabajo.versionResultado}`,
     attempts: INTENTOS,
     ...OPCIONES_REINTENTO,
   });
@@ -94,6 +104,12 @@ export class LiquidacionProcessor extends WorkerHost implements OnApplicationBoo
         break;
       case TRABAJOS_LIQUIDACION.anular:
         resumen = await this.liquidacion.anularPartido(partidoId);
+        break;
+      case TRABAJOS_LIQUIDACION.reliquidar:
+        resumen = await this.liquidacion.reliquidarPartido(
+          partidoId,
+          (trabajo.data as TrabajoLiquidacion).versionResultado,
+        );
         break;
       default:
         resumen = await this.liquidacion.liquidarPartido(

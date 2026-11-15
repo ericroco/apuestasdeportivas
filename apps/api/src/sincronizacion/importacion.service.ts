@@ -142,6 +142,19 @@ export class ImportacionService {
       throw new Error(`no hay transición de ${actual} a ${dato.estado}`);
     }
     const marcador = this.marcadorDe(dato);
+    if (ruta.length === 0 && actual === 'FINALIZADO' && marcador) {
+      // El proveedor corrigió el resultado de un partido ya finalizado (FR-036): mismo camino que el operador.
+      await this.partidos.corregirResultado(
+        id,
+        {
+          golesLocal: marcador.golesLocal as number,
+          golesVisitante: marcador.golesVisitante as number,
+          motivo: 'corrección del proveedor',
+        },
+        CONTEXTO,
+      );
+      return;
+    }
     if (ruta.length === 0) {
       if (marcador && ESTADOS_CON_MARCADOR.includes(actual) && actual !== 'FINALIZADO') {
         await this.partidos.aplicarActualizacion(
