@@ -62,18 +62,18 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 - [x] T006 Escribir en `apps/api/prisma/schema/identidad.prisma` los enums `Rol`, `EstadoUsuario` y `PropositoEnlace` y los modelos `Usuario`, `Credencial`, `SegundoFactor`, `CodigoRecuperacion`, `Sesion` y `EnlaceCorreo` según data-model.md (`@@map`/`@map`, `@db.Uuid`, índices y únicos)
 - [x] T007 Generar la migración `spec2_identidad` con `pnpm --filter api exec prisma migrate dev --name spec2_identidad` y agregar a su `migration.sql` el bloque `DO` que hace `REVOKE ALL` de `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` a `reportes_lectura` si el rol existe (`apps/api/prisma/migrations/<fecha>_spec2_identidad/migration.sql`, research §14)
 - [x] T008 Agregar el modelo `EventoAuditoria` a `identidad.prisma` y generar la migración `spec2_auditoria` con los disparadores `BEFORE UPDATE OR DELETE` y `BEFORE TRUNCATE` que lanzan excepción (`apps/api/prisma/migrations/<fecha>_spec2_auditoria/migration.sql`)
-- [ ] T009 [P] Escribir primero `apps/api/src/auditoria/sanitizar.spec.ts` (claves sensibles anidadas, arreglos, valores no objeto) y luego `apps/api/src/auditoria/sanitizar.ts`
-- [ ] T010 Escribir primero `apps/api/test/auditoria.e2e-spec.ts` (inserta con y sin `tx`, se revierte junto con un `tx` fallido, `UPDATE`/`DELETE`/`TRUNCATE` fallan, `datos` sanitizados) y luego `apps/api/src/auditoria/auditoria.service.ts` y `apps/api/src/auditoria/auditoria.module.ts` (global, provee `AUDITORIA_PORT`)
-- [ ] T011 [P] Escribir primero `apps/api/src/identidad/http/cliente-http.spec.ts` (usa `x-cliente-ip` solo con `x-proxy-secreto` válido, comparación en tiempo constante, cae a `request.ip`) y luego `apps/api/src/identidad/http/cliente-http.ts` y el decorador `@ClienteActual()` (IP y dispositivo)
-- [ ] T012 Crear `apps/api/src/identidad/http/throttler-por-cliente.guard.ts` (`getTracker` con la IP resuelta) con su prueba y reemplazar `ThrottlerGuard` por él en `apps/api/src/app.module.ts` (cambios-contratos §5)
-- [ ] T013 [P] Escribir primero `apps/api/src/identidad/contrasenas.service.spec.ts` (Argon2id con los parámetros de research §4, verificación correcta e incorrecta, hash ficticio para correos inexistentes) y luego `apps/api/src/identidad/contrasenas.service.ts`
-- [ ] T014 [P] Escribir primero `apps/api/src/identidad/tokens.service.spec.ts` (claims del contrato 6 más `sid` y `alc`, `exp`, firma alterada, `iss`/`aud` incorrectos, token de desafío 2FA de otro propósito rechazado) y luego `apps/api/src/identidad/tokens.service.ts` con `jose` y EdDSA
-- [ ] T015 Agregar a `apps/api/src/identidad/tokens.service.ts` la revocación en Redis (`identidad:revocado-antes:<usuarioId>` en segundos, con caducidad igual al acceso; se rechaza `iat < revocadoAntes`) y su prueba de integración en `apps/api/test/tokens-revocacion.e2e-spec.ts`
-- [ ] T016 Crear `apps/api/src/identidad/permite-sin-segundo-factor.decorator.ts` y escribir primero `apps/api/test/guard.e2e-spec.ts` (sin token 401; token de cookie `acceso` o `Bearer`; revocado 401; `alc: activar-2fa` solo en rutas marcadas; `@Roles` con varios roles; 403 auditado como `acceso.denegado`; `@Publico` pasa); luego `apps/api/src/identidad/autenticacion.guard.ts` y su registro como `APP_GUARD` después del throttler en `apps/api/src/app.module.ts`, con `cookie-parser` en `apps/api/src/configurar-app.ts`
-- [ ] T017 Crear `apps/api/test/ayudas/app-prueba.ts` (AppModule real y **sin limpieza**: los disparadores impiden borrar el libro contable y la auditoría, y los usuarios con billetera no se pueden borrar, así que cada prueba crea sus propios datos con correos y claves únicos y solo hace aserciones sobre ellos; research §17), `apps/api/test/ayudas/sesion-de-prueba.ts` (tokens reales por rol para los specs 2, 3 y 4) y `apps/api/test/ayudas/fabricas-identidad.ts` (usuario verificado, con 2FA, operador, administrador)
-- [ ] T018 [P] Escribir primero `apps/api/src/identidad/captcha.service.spec.ts` (aprueba, rechaza, Turnstile caído = rechazo, `hostname` en producción) y luego `apps/api/src/identidad/captcha.service.ts`
-- [ ] T019 [P] Crear `apps/api/src/identidad/correo/correo.port.ts` (`CORREO_PORT`), `smtp.adaptador.ts` (nodemailer), `resend.adaptador.ts` (fetch) y `plantillas.ts` (verificación, aviso de cuenta existente, recuperación), con la selección por `CORREO_TRANSPORTE` en `apps/api/src/identidad/correo/correo.module.ts` y la prueba contra Mailpit en `apps/api/test/correo.e2e-spec.ts` con `apps/api/test/ayudas/mailpit.ts`
-- [ ] T020 Registrar `EventEmitterModule.forRoot()` y `ScheduleModule.forRoot()` en `apps/api/src/app.module.ts` y crear `apps/api/src/identidad/identidad.module.ts`
+- [x] T009 [P] Escribir primero `apps/api/src/auditoria/sanitizar.spec.ts` (claves sensibles anidadas, arreglos, valores no objeto) y luego `apps/api/src/auditoria/sanitizar.ts`
+- [x] T010 Escribir primero `apps/api/test/auditoria.e2e-spec.ts` (inserta con y sin `tx`, se revierte junto con un `tx` fallido, `UPDATE`/`DELETE`/`TRUNCATE` fallan, `datos` sanitizados) y luego `apps/api/src/auditoria/auditoria.service.ts` y `apps/api/src/auditoria/auditoria.module.ts` (global, provee `AUDITORIA_PORT`)
+- [x] T011 [P] Escribir primero `apps/api/src/identidad/http/cliente-http.spec.ts` (usa `x-cliente-ip` solo con `x-proxy-secreto` válido, comparación en tiempo constante, cae a `request.ip`) y luego `apps/api/src/identidad/http/cliente-http.ts` y el decorador `@ClienteActual()` (IP y dispositivo)
+- [x] T012 Crear `apps/api/src/identidad/http/throttler-por-cliente.guard.ts` (`getTracker` con la IP resuelta) con su prueba y reemplazar `ThrottlerGuard` por él en `apps/api/src/app.module.ts` (cambios-contratos §5)
+- [x] T013 [P] Escribir primero `apps/api/src/identidad/contrasenas.service.spec.ts` (Argon2id con los parámetros de research §4, verificación correcta e incorrecta, hash ficticio para correos inexistentes) y luego `apps/api/src/identidad/contrasenas.service.ts`
+- [x] T014 [P] Escribir primero `apps/api/src/identidad/tokens.service.spec.ts` (claims del contrato 6 más `sid` y `alc`, `exp`, firma alterada, `iss`/`aud` incorrectos, token de desafío 2FA de otro propósito rechazado) y luego `apps/api/src/identidad/tokens.service.ts` con `jose` y EdDSA
+- [x] T015 Agregar a `apps/api/src/identidad/tokens.service.ts` la revocación en Redis (`identidad:revocado-antes:<usuarioId>` en segundos, con caducidad igual al acceso; se rechaza `iat < revocadoAntes`) y su prueba de integración en `apps/api/test/tokens-revocacion.e2e-spec.ts`
+- [x] T016 Crear `apps/api/src/identidad/permite-sin-segundo-factor.decorator.ts` y escribir primero `apps/api/test/guard.e2e-spec.ts` (sin token 401; token de cookie `acceso` o `Bearer`; revocado 401; `alc: activar-2fa` solo en rutas marcadas; `@Roles` con varios roles; 403 auditado como `acceso.denegado`; `@Publico` pasa); luego `apps/api/src/identidad/autenticacion.guard.ts` y su registro como `APP_GUARD` después del throttler en `apps/api/src/app.module.ts`, con `cookie-parser` en `apps/api/src/configurar-app.ts`
+- [x] T017 Crear `apps/api/test/ayudas/app-prueba.ts` (AppModule real y **sin limpieza**: los disparadores impiden borrar el libro contable y la auditoría, y los usuarios con billetera no se pueden borrar, así que cada prueba crea sus propios datos con correos y claves únicos y solo hace aserciones sobre ellos; research §17), `apps/api/test/ayudas/sesion-de-prueba.ts` (tokens reales por rol para los specs 2, 3 y 4) y `apps/api/test/ayudas/fabricas-identidad.ts` (usuario verificado, con 2FA, operador, administrador)
+- [x] T018 [P] Escribir primero `apps/api/src/identidad/captcha.service.spec.ts` (aprueba, rechaza, Turnstile caído = rechazo, `hostname` en producción) y luego `apps/api/src/identidad/captcha.service.ts`
+- [x] T019 [P] Crear `apps/api/src/identidad/correo/correo.port.ts` (`CORREO_PORT`), `smtp.adaptador.ts` (nodemailer), `resend.adaptador.ts` (fetch) y `plantillas.ts` (verificación, aviso de cuenta existente, recuperación), con la selección por `CORREO_TRANSPORTE` en `apps/api/src/identidad/correo/correo.module.ts` y la prueba contra Mailpit en `apps/api/test/correo.e2e-spec.ts` con `apps/api/test/ayudas/mailpit.ts`
+- [x] T020 Registrar `EventEmitterModule.forRoot()` y `ScheduleModule.forRoot()` en `apps/api/src/app.module.ts` y crear `apps/api/src/identidad/identidad.module.ts`
 - [ ] T021 Escribir primero `apps/web/src/app/api/[...ruta]/route.test.ts` (reenvía método, cuerpo, cookies y `Set-Cookie`; agrega `x-cliente-ip`, `x-cliente-dispositivo` y `x-proxy-secreto`; rechaza no-`GET` con otro `Origin`; nunca reenvía cabeceras `x-proxy-*` del navegador) y luego `apps/web/src/app/api/[...ruta]/route.ts` (research §1)
 - [ ] T022 [P] Crear `apps/web/src/lib/api-servidor.ts` (`llamarApi()` para componentes de servidor, con la cookie y la IP del cliente) con su prueba en `apps/web/src/lib/api-servidor.test.ts`
 - [ ] T023 [P] Crear `apps/web/src/proxy.ts` con la CSP con nonce por petición (permite `challenges.cloudflare.com`) y su prueba en `apps/web/src/proxy.test.ts`; quitar el comentario pendiente de `apps/web/next.config.ts`
@@ -91,7 +91,7 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T025 [P] [US3] Escribir `apps/api/test/cobertura-rutas.e2e-spec.ts`: recorre con `DiscoveryService` todas las rutas de la app y comprueba que sin sesión responden 401, salvo la lista blanca explícita de rutas públicas (research §12)
+- [x] T025 [P] [US3] Escribir `apps/api/test/cobertura-rutas.e2e-spec.ts`: recorre con `DiscoveryService` todas las rutas de la app y comprueba que sin sesión responden 401, salvo la lista blanca explícita de rutas públicas (research §12)
 - [x] T026 [P] [US3] Escribir `apps/api/test/reportes-credenciales.e2e-spec.ts`: con `REPORTS_DATABASE_URL`, leer `credencial`, `segundo_factor`, `codigo_recuperacion`, `sesion` y `enlace_correo` falla y leer `usuario` funciona (FR-064)
 
 ### Implementation for User Story 3
@@ -111,14 +111,14 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T029 [P] [US1] Escribir `apps/api/src/identidad/politicas.spec.ts`: edad con la fecha del servidor (cumple hoy), contraseña de 12 a 128 caracteres y fuera de la lista común, normalización del correo
-- [ ] T030 [P] [US1] Escribir `apps/api/test/registro.e2e-spec.ts`: registro válido crea usuario `PENDIENTE_VERIFICACION` con rol `APOSTADOR`, billetera y correo; menor y sin declaración rechazados; correo repetido responde igual y envía el aviso; registros simultáneos con el mismo correo crean uno; sin CAPTCHA rechazado; enlace válido verifica y no se reutiliza; enlace caducado; reenvío limitado a 3 por hora; evento `usuario.registrado` y auditoría
+- [x] T029 [P] [US1] Escribir `apps/api/src/identidad/politicas.spec.ts`: edad con la fecha del servidor (cumple hoy), contraseña de 12 a 128 caracteres y fuera de la lista común, normalización del correo
+- [x] T030 [P] [US1] Escribir `apps/api/test/registro.e2e-spec.ts`: registro válido crea usuario `PENDIENTE_VERIFICACION` con rol `APOSTADOR`, billetera y correo; menor y sin declaración rechazados; correo repetido responde igual y envía el aviso; registros simultáneos con el mismo correo crean uno; sin CAPTCHA rechazado; enlace válido verifica y no se reutiliza; enlace caducado; reenvío limitado a 3 por hora; evento `usuario.registrado` y auditoría
 
 ### Implementation for User Story 1
 
-- [ ] T031 [P] [US1] Crear `apps/api/src/identidad/politicas.ts` y `apps/api/src/identidad/contrasenas-comunes.txt` (10 000 contraseñas comunes)
-- [ ] T032 [US1] Crear `apps/api/src/identidad/enlaces.service.ts` (token aleatorio, hash SHA-256, caducidad, un solo uso con `UPDATE … WHERE usado_en IS NULL`)
-- [ ] T033 [US1] Crear `apps/api/src/identidad/registro.service.ts` (registro en una transacción con usuario, credencial y, cuando exista el libro contable, billetera; correo y evento tras el commit) y las rutas `POST /identidad/registro`, `POST /identidad/correo/verificar` y `POST /identidad/correo/reenviar` en `apps/api/src/identidad/identidad.controller.ts` con esquemas zod `.strict()`
+- [x] T031 [P] [US1] Crear `apps/api/src/identidad/politicas.ts` y `apps/api/src/identidad/contrasenas-comunes.txt` (10 000 contraseñas comunes)
+- [x] T032 [US1] Crear `apps/api/src/identidad/enlaces.service.ts` (token aleatorio, hash SHA-256, caducidad, un solo uso con `UPDATE … WHERE usado_en IS NULL`)
+- [x] T033 [US1] Crear `apps/api/src/identidad/registro.service.ts` (registro en una transacción con usuario, credencial y, cuando exista el libro contable, billetera; correo y evento tras el commit) y las rutas `POST /identidad/registro`, `POST /identidad/correo/verificar` y `POST /identidad/correo/reenviar` en `apps/api/src/identidad/identidad.controller.ts` con esquemas zod `.strict()`
 - [ ] T034 [P] [US1] Crear las pantallas `apps/web/src/app/(cuenta)/registro/page.tsx` y `apps/web/src/app/(cuenta)/verificar-correo/page.tsx` con el skill `frontend-design` y sus pruebas en `apps/web/src/app/(cuenta)/registro/registro.test.tsx`
 
 **Checkpoint**: se pueden crear cuentas verificadas
@@ -133,13 +133,13 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T035 [P] [US2] Escribir `apps/api/test/sesion.e2e-spec.ts`: inicio correcto deja cookies `httpOnly` con los `Path` de contracts/api-rest.md; mensaje genérico con correo inexistente o contraseña incorrecta; 5 fallos bloquean 15 minutos aun con la contraseña correcta y se audita; renovación rota y la anterior no sirve; reutilización tras 10 s revoca todas las sesiones; dos renovaciones simultáneas responden 409 sin revocar; cerrar sesión invalida la renovación; cuenta suspendida rechazada
-- [ ] T036 [P] [US2] Escribir `apps/api/test/recuperacion.e2e-spec.ts`: respuesta igual exista o no el correo; enlace de 1 hora y un solo uso; cambiar la contraseña cierra todas las sesiones, revoca el acceso y se audita
+- [x] T035 [P] [US2] Escribir `apps/api/test/sesion.e2e-spec.ts`: inicio correcto deja cookies `httpOnly` con los `Path` de contracts/api-rest.md; mensaje genérico con correo inexistente o contraseña incorrecta; 5 fallos bloquean 15 minutos aun con la contraseña correcta y se audita; renovación rota y la anterior no sirve; reutilización tras 10 s revoca todas las sesiones; dos renovaciones simultáneas responden 409 sin revocar; cerrar sesión invalida la renovación; cuenta suspendida rechazada
+- [x] T036 [P] [US2] Escribir `apps/api/test/recuperacion.e2e-spec.ts`: respuesta igual exista o no el correo; enlace de 1 hora y un solo uso; cambiar la contraseña cierra todas las sesiones, revoca el acceso y se audita
 
 ### Implementation for User Story 2
 
-- [ ] T037 [US2] Crear `apps/api/src/identidad/sesiones.service.ts` (inicio con bloqueo, emisión de cookies, renovación rotativa con `FOR UPDATE` y ventana de 10 s, cierre, revocación de todas) y `apps/api/src/identidad/cookies.ts`
-- [ ] T038 [US2] Agregar las rutas `POST /identidad/sesion`, `/sesion/renovar`, `/sesion/cerrar`, `GET /identidad/yo`, `POST /identidad/contrasena/olvido` y `/contrasena/restablecer` con límites de frecuencia de 5 por minuto en `apps/api/src/identidad/identidad.controller.ts`
+- [x] T037 [US2] Crear `apps/api/src/identidad/sesiones.service.ts` (inicio con bloqueo, emisión de cookies, renovación rotativa con `FOR UPDATE` y ventana de 10 s, cierre, revocación de todas) y `apps/api/src/identidad/cookies.ts`
+- [x] T038 [US2] Agregar las rutas `POST /identidad/sesion`, `/sesion/renovar`, `/sesion/cerrar`, `GET /identidad/yo`, `POST /identidad/contrasena/olvido` y `/contrasena/restablecer` con límites de frecuencia de 5 por minuto en `apps/api/src/identidad/identidad.controller.ts`
 - [ ] T039 [P] [US2] Crear `apps/web/src/lib/sesion-cliente.ts` (renueva una vez ante 401 y reintenta; ante 409 espera y reintenta) con su prueba en `apps/web/src/lib/sesion-cliente.test.ts`
 - [ ] T040 [P] [US2] Crear las pantallas `apps/web/src/app/(cuenta)/iniciar-sesion/page.tsx`, `apps/web/src/app/(cuenta)/recuperar/page.tsx` y `apps/web/src/app/(cuenta)/restablecer/page.tsx` con sus pruebas
 
@@ -155,13 +155,13 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T041 [P] [US6] Escribir `apps/api/src/identidad/segundo-factor.service.spec.ts`: ventana ±1 periodo, reutilización del mismo periodo rechazada, cifrado y descifrado del secreto, códigos de recuperación de un solo uso
-- [ ] T042 [P] [US6] Escribir `apps/api/test/segundo-factor.e2e-spec.ts`: activación pendiente hasta confirmar; 10 códigos mostrados una vez; inicio de sesión responde `REQUIERE_2FA` y `/sesion/2fa` lo completa; 5 códigos incorrectos bloquean; desactivar exige código y el operador no puede; operador sin 2FA recibe `alc: activar-2fa` y solo puede activar, ver `yo` y cerrar sesión
+- [x] T041 [P] [US6] Escribir `apps/api/src/identidad/segundo-factor.service.spec.ts`: ventana ±1 periodo, reutilización del mismo periodo rechazada, cifrado y descifrado del secreto, códigos de recuperación de un solo uso
+- [x] T042 [P] [US6] Escribir `apps/api/test/segundo-factor.e2e-spec.ts`: activación pendiente hasta confirmar; 10 códigos mostrados una vez; inicio de sesión responde `REQUIERE_2FA` y `/sesion/2fa` lo completa; 5 códigos incorrectos bloquean; desactivar exige código y el operador no puede; operador sin 2FA recibe `alc: activar-2fa` y solo puede activar, ver `yo` y cerrar sesión
 
 ### Implementation for User Story 6
 
-- [ ] T043 [US6] Crear `apps/api/src/identidad/segundo-factor.service.ts` (`otpauth`, AES-256-GCM con `TOTP_CLAVE_CIFRADO`, QR con `qrcode`, códigos con SHA-256)
-- [ ] T044 [US6] Agregar el desafío 2FA a `apps/api/src/identidad/sesiones.service.ts` y las rutas `POST /identidad/sesion/2fa`, `/2fa/activacion`, `/2fa/activacion/confirmar` y `/2fa/desactivar` en `apps/api/src/identidad/identidad.controller.ts`
+- [x] T043 [US6] Crear `apps/api/src/identidad/segundo-factor.service.ts` (`otpauth`, AES-256-GCM con `TOTP_CLAVE_CIFRADO`, QR con `qrcode`, códigos con SHA-256)
+- [x] T044 [US6] Agregar el desafío 2FA a `apps/api/src/identidad/sesiones.service.ts` y las rutas `POST /identidad/sesion/2fa`, `/2fa/activacion`, `/2fa/activacion/confirmar` y `/2fa/desactivar` en `apps/api/src/identidad/identidad.controller.ts`
 - [ ] T045 [P] [US6] Crear el paso de código en `apps/web/src/app/(cuenta)/iniciar-sesion/codigo/page.tsx` y la pantalla `apps/web/src/app/(cuenta)/seguridad/page.tsx` (QR, confirmación, códigos con opción de copiar) con sus pruebas; redirigir a `seguridad` cuando `alcance` es `activar-2fa`
 
 **Checkpoint**: las cuentas con privilegios no entran sin 2FA
@@ -176,13 +176,13 @@ Para avanzar más rápido en un proyecto académico, sin incumplir la constituci
 
 ### Tests for User Story 9 ⚠️
 
-- [ ] T046 [P] [US9] Escribir `apps/api/test/usuarios-admin.e2e-spec.ts`: cambio de rol exige 2FA, se audita con el anterior y el nuevo y revoca el acceso; el último administrador no se quita el rol ni se suspende; no se promueve a quien tiene saldo o retiros pendientes (cuando exista la billetera); suspender revoca de inmediato; apostador y operador reciben 403 en todas las rutas `/admin/*`; filtros y paginación de la auditoría
+- [x] T046 [P] [US9] Escribir `apps/api/test/usuarios-admin.e2e-spec.ts`: cambio de rol exige 2FA, se audita con el anterior y el nuevo y revoca el acceso; el último administrador no se quita el rol ni se suspende; no se promueve a quien tiene saldo o retiros pendientes (cuando exista la billetera); suspender revoca de inmediato; apostador y operador reciben 403 en todas las rutas `/admin/*`; filtros y paginación de la auditoría
 
 ### Implementation for User Story 9
 
-- [ ] T047 [US9] Crear `apps/api/src/identidad/usuarios-admin.service.ts` y `apps/api/src/identidad/usuarios-admin.controller.ts` (`/admin/usuarios`, roles, suspensión)
-- [ ] T048 [US9] Crear `apps/api/src/auditoria/auditoria.controller.ts` (`GET /admin/auditoria` con paginación por cursor)
-- [ ] T049 [P] [US9] Crear `apps/api/scripts/crear-administrador.ts` (pide correo y contraseña por la terminal, crea un administrador verificado)
+- [x] T047 [US9] Crear `apps/api/src/identidad/usuarios-admin.service.ts` y `apps/api/src/identidad/usuarios-admin.controller.ts` (`/admin/usuarios`, roles, suspensión)
+- [x] T048 [US9] Crear `apps/api/src/auditoria/auditoria.controller.ts` (`GET /admin/auditoria` con paginación por cursor)
+- [x] T049 [P] [US9] Crear `apps/api/scripts/crear-administrador.ts` (pide correo y contraseña por la terminal, crea un administrador verificado)
 - [ ] T050 [P] [US9] Crear las pantallas `apps/web/src/app/admin/usuarios/page.tsx`, `apps/web/src/app/admin/usuarios/[id]/page.tsx` y `apps/web/src/app/admin/usuarios/auditoria/page.tsx` con sus pruebas
 - [ ] T051 [US9] Escribir el E2E `apps/web/e2e/identidad.spec.ts` (registro → verificación con la API de Mailpit → inicio de sesión → activación de 2FA → administrador asigna operador) y ajustar `apps/web/playwright.config.ts` para levantar Mailpit
 - [ ] T052 [US9] Marcar las tareas del PR 1 en este archivo y actualizar `specs/README.md`

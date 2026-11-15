@@ -14,9 +14,16 @@ import { SegundoFactorService } from './segundo-factor.service.js';
 import { SesionController } from './sesion.controller.js';
 import { SesionesService } from './sesiones.service.js';
 import { TokensService } from './tokens.service.js';
+import { UsuariosAdminController } from './usuarios-admin.controller.js';
+import { UsuariosAdminService } from './usuarios-admin.service.js';
 
 @Module({
-  controllers: [IdentidadController, SesionController, SegundoFactorController],
+  controllers: [
+    IdentidadController,
+    SesionController,
+    SegundoFactorController,
+    UsuariosAdminController,
+  ],
   providers: [
     TokensService,
     ContrasenasService,
@@ -27,6 +34,7 @@ import { TokensService } from './tokens.service.js';
     SesionesService,
     RecuperacionService,
     SegundoFactorService,
+    UsuariosAdminService,
     {
       provide: CORREO_PORT,
       inject: [ENTORNO],
@@ -39,6 +47,7 @@ import { TokensService } from './tokens.service.js';
     AutenticacionGuard,
     SesionesService,
     SegundoFactorService,
+    UsuariosAdminService,
     CORREO_PORT,
   ],
 })
