@@ -1,4 +1,9 @@
-import type { ApuestaDto, Pagina } from '@apuestas/shared';
+import type {
+  ApuestaDto,
+  Pagina,
+  SolicitudVivoAceptadaDto,
+  SolicitudVivoDto,
+} from '@apuestas/shared';
 import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -29,7 +34,11 @@ export class ApuestasController {
     private readonly apuestas: ApuestasService,
   ) {}
 
-  /** 201 con la apuesta nueva; 200 con la misma apuesta si la claveSolicitud ya se usó (FR-020). */
+  /**
+   * 201 con la apuesta nueva; 200 con la misma apuesta si la claveSolicitud ya se usó (FR-020).
+   * 202 con `{ solicitudId, ejecutarEn }` si alguna selección es de un partido en vivo (FR-018): el resultado
+   * llega por WebSocket (`apuesta.vivo_resuelta`) y en GET /apuestas/solicitudes-vivo/:id.
+   */
   @Post()
   @Throttle(LIMITE_APUESTAS)
   async apostar(
@@ -37,10 +46,23 @@ export class ApuestasController {
     @Body({ schema: solicitudApuestaEsquema }) solicitud: SolicitudApuesta,
     @ClienteDeLaPeticion() cliente: DatosCliente,
     @Res({ passthrough: true }) respuesta: Response,
-  ): Promise<ApuestaDto> {
-    const { apuesta, nueva } = await this.aceptacion.aceptar(usuario, solicitud, cliente);
-    respuesta.status(nueva ? 201 : 200);
-    return apuesta;
+  ): Promise<ApuestaDto | SolicitudVivoAceptadaDto> {
+    const resultado = await this.aceptacion.aceptar(usuario, solicitud, cliente);
+    if (resultado.tipo === 'vivo') {
+      respuesta.status(202);
+      return resultado.solicitud;
+    }
+    respuesta.status(resultado.nueva ? 201 : 200);
+    return resultado.apuesta;
+  }
+
+  /** Antes de `:id`: si no, "solicitudes-vivo" se tomaría como el id de una apuesta. */
+  @Get('solicitudes-vivo/:id')
+  obtenerSolicitudVivo(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param('id', { schema: idParam }) id: string,
+  ): Promise<SolicitudVivoDto> {
+    return this.apuestas.obtenerSolicitudVivo(usuario.id, id);
   }
 
   @Get()

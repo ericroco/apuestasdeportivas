@@ -163,11 +163,11 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T054 [US7] Prueba e2e en vivo (retardo de 200 ms): queda `EN_ESPERA` sin descuento, se acepta al terminar el retardo, un gol, un cambio de cuota o una suspensión durante el retardo la rechazan sin descuento, y un mercado sin `admiteVivo` se cierra al iniciar el partido, en `apps/api/test/apuestas-vivo.e2e-spec.ts`
+- [x] T054 [US7] Prueba e2e en vivo (retardo de 200 ms): queda `EN_ESPERA` sin descuento, se acepta al terminar el retardo, un gol, un cambio de cuota o una suspensión durante el retardo la rechazan sin descuento, y un mercado sin `admiteVivo` se cierra al iniciar el partido, en `apps/api/test/apuestas-vivo.e2e-spec.ts`
 
 ### Implementation for User Story 7
 
-- [ ] T055 [US7] Implementar la solicitud en vivo y su procesador (research.md §6), `GET /apuestas/solicitudes-vivo/:id` y el evento `apuesta.vivo_resuelta`, en `apps/api/src/apuestas/vivo.processor.ts` y `apps/api/src/apuestas/aceptacion.service.ts`
+- [x] T055 [US7] Implementar la solicitud en vivo y su procesador (research.md §6), `GET /apuestas/solicitudes-vivo/:id` y el evento `apuesta.vivo_resuelta`, en `apps/api/src/apuestas/vivo.processor.ts` y `apps/api/src/apuestas/aceptacion.service.ts`
 - [ ] T056 [US7] Mostrar "en espera" y el resultado recibido por WebSocket en el boleto, en `apps/web/src/components/boleto/`
 
 **Checkpoint PR 2**: HU2, HU4 y HU7 completas; abrir PR 2 a `develop`

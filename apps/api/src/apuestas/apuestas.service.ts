@@ -1,4 +1,4 @@
-import type { ApuestaDto, Pagina } from '@apuestas/shared';
+import type { ApuestaDto, Pagina, SolicitudVivoDto } from '@apuestas/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -30,6 +30,22 @@ export class ApuestasService {
       pagina: consulta.pagina,
       porPagina: consulta.porPagina,
       total,
+    };
+  }
+
+  /** Estado de una apuesta en vivo en espera; una ajena responde 404 como si no existiera. */
+  async obtenerSolicitudVivo(usuarioId: string, id: string): Promise<SolicitudVivoDto> {
+    const solicitud = await this.prisma.solicitudApuestaVivo.findFirst({
+      where: { id, usuarioId },
+    });
+    if (!solicitud) throw new NotFoundException('La solicitud no existe');
+    return {
+      id: solicitud.id,
+      estado: solicitud.estado,
+      apuestaId: solicitud.apuestaId,
+      motivoRechazo: solicitud.motivoRechazo,
+      ejecutarEn: solicitud.ejecutarEn.toISOString(),
+      creadaEn: solicitud.creadaEn.toISOString(),
     };
   }
 

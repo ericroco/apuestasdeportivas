@@ -161,6 +161,17 @@ export interface SolicitudVivoAceptadaDto {
   ejecutarEn: FechaIso;
 }
 
+/** Estado de una apuesta en vivo en espera (GET /apuestas/solicitudes-vivo/:id). */
+export interface SolicitudVivoDto {
+  id: string;
+  estado: EstadoSolicitudVivo;
+  apuestaId: string | null;
+  /** Código legible: CUOTA_CAMBIADA, MERCADO_CERRADO, MARCADOR_CAMBIO, SALDO_INSUFICIENTE… */
+  motivoRechazo: string | null;
+  ejecutarEn: FechaIso;
+  creadaEn: FechaIso;
+}
+
 export interface TicketTiempoRealDto {
   ticket: string;
   expiraEn: FechaIso;
