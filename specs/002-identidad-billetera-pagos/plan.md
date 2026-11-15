@@ -133,14 +133,13 @@ apps/api/
 ├── scripts/crear-administrador.ts
 ├── src/
 │   ├── contracts/billetera.port.ts          # + revertirPremio y ConflictoIdempotenciaError (PR 2)
-│   ├── comun/
-│   │   ├── cliente-http.ts                  # resolutor de IP y dispositivo (x-cliente-ip + secreto)
-│   │   └── throttler-por-cliente.guard.ts
 │   ├── auditoria/
 │   │   ├── sanitizar.ts                     # quita secretos de `datos` (puro)
 │   │   ├── auditoria.service.ts             # AUDITORIA_PORT
 │   │   └── auditoria.controller.ts          # GET /admin/auditoria
 │   ├── identidad/
+│   │   ├── http/cliente-http.ts             # resolutor de IP y dispositivo (x-cliente-ip + secreto)
+│   │   ├── http/throttler-por-cliente.guard.ts
 │   │   ├── politicas.ts                     # contraseña, edad, correo (puro)
 │   │   ├── contrasenas.service.ts           # Argon2id
 │   │   ├── tokens.service.ts                # JWT EdDSA, desafío 2FA, revocación en Redis
