@@ -66,6 +66,20 @@ integrante como revisor.
   envía el retiro a aprobación manual.
 - Los consumidores inyectan ambos con `@Optional()`. Sin el Spec 4 integrado: el Spec 3 rechaza apuestas con cupón y
   el Spec 2 manda a revisión todo retiro sobre el umbral.
+- Comportamiento implementado por el Spec 4 (`apps/api/src/promociones/`, `apps/api/src/fraude/`, ambos módulos
+  `@Global()`):
+  - El Spec 3 llama `aplicarAApuesta` **antes** de `debitarApuesta`: en una apuesta gratis el puerto acredita como bono
+    el monto apostado y devuelve `tipoSaldo: 'BONO'`, y luego el Spec 3 debita ese bono.
+  - El error de rechazo es `CuponRechazadoError` (subclase de `CuponInvalidoError`) con `message` legible y `codigo`
+    estable (`CUPON_VENCIDO`, `LIMITE_USUARIO`, `BONO_ACTIVO`…). Si falta la billetera lanza
+    `DependenciaNoDisponibleError` (503) antes de escribir.
+  - `evaluarRetiro` devuelve los motivos `retiro_tras_deposito_sin_actividad` y `usuario_con_alerta_de_fraude`, y ante
+    cualquier error interno `requiereRevision: true` con `evaluacion_no_disponible` (falla cerrada).
+- El Spec 4 registra `EventEmitterModule.forRoot()` en `app.module.ts`, y `ErrorNegocio` con su filtro y la validación
+  zod global en `configurar-app.ts`: los specs 2 y 3 los reutilizan.
+- Cambios propuestos a los contratos de los specs 2 y 3 (método de pago en `deposito.confirmado`, `cuotaTotal` en
+  `apuesta.aceptada`, tablas para reportes, anulación de saldo de bono): ver
+  [`specs/004-promociones-fraude-reportes/contracts/cambios-contratos.md`](../../specs/004-promociones-fraude-reportes/contracts/cambios-contratos.md).
 
 ## 5. Eventos de dominio
 
