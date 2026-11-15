@@ -26,11 +26,11 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 **Purpose**: dependencias, configuración y tipos compartidos
 
-- [ ] T001 Instalar en la API `@nestjs/bullmq`, `bullmq`, `@nestjs/websockets`, `@nestjs/platform-socket.io` y `@nestjs/event-emitter`, y `socket.io-client` como dependencia de desarrollo (pruebas); en la web, `socket.io-client` (`apps/api/package.json`, `apps/web/package.json`)
-- [ ] T002 [P] Escribir primero las pruebas de las variables nuevas y sus reglas cruzadas en `apps/api/src/config/env.spec.ts` y luego agregarlas al esquema de `apps/api/src/config/env.ts` (contracts/configuracion.md)
-- [ ] T003 [P] Documentar las variables nuevas en `apps/api/.env.example`, `apps/web/.env.example` (`NEXT_PUBLIC_WS_URL`) y `specs/001-fundaciones-stack/contracts/configuracion.md`
-- [ ] T004 [P] Crear los enums, DTOs de respuesta y payloads de tiempo real en `packages/shared/src/partidos.ts` y exportarlos desde `packages/shared/src/index.ts`
-- [ ] T005 Crear `apps/api/src/colas/colas.module.ts` (`BullModule.forRootAsync` con `REDIS_URL` y `maxRetriesPerRequest: null`) y `apps/api/src/colas/nombres.ts`; registrar `ColasModule` y `EventEmitterModule` en `apps/api/src/app.module.ts`
+- [x] T001 Instalar en la API `@nestjs/bullmq`, `bullmq`, `@nestjs/websockets`, `@nestjs/platform-socket.io` y `@nestjs/event-emitter`, y `socket.io-client` como dependencia de desarrollo (pruebas); en la web, `socket.io-client` (`apps/api/package.json`, `apps/web/package.json`)
+- [x] T002 [P] Escribir primero las pruebas de las variables nuevas y sus reglas cruzadas en `apps/api/src/config/env.spec.ts` y luego agregarlas al esquema de `apps/api/src/config/env.ts` (contracts/configuracion.md)
+- [x] T003 [P] Documentar las variables nuevas en `apps/api/.env.example`, `apps/web/.env.example` (`NEXT_PUBLIC_WS_URL`) y `specs/001-fundaciones-stack/contracts/configuracion.md`
+- [x] T004 [P] Crear los enums, DTOs de respuesta y payloads de tiempo real en `packages/shared/src/partidos.ts` y exportarlos desde `packages/shared/src/index.ts`
+- [x] T005 Crear `apps/api/src/colas/colas.module.ts` (`BullModule.forRootAsync` con `REDIS_URL` y `maxRetriesPerRequest: null`) y `apps/api/src/colas/nombres.ts`; registrar `ColasModule` y `EventEmitterModule` en `apps/api/src/app.module.ts`
 
 ---
 
