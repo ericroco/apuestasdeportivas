@@ -33,10 +33,24 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CORREO = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,63}$/;
 const DEPORTE = /^[\p{L}\p{N} _-]{1,50}$/u;
 
-/** `hoy` en UTC (`AAAA-MM-DD`) y los 29 días anteriores. */
-export function rangoPorDefecto(hoy: string): { readonly desde: string; readonly hasta: string } {
-  const inicio = new Date(Date.parse(`${hoy}T00:00:00Z`) - (DIAS_POR_DEFECTO - 1) * MS_DIA);
+export interface Rango {
+  readonly desde: string;
+  readonly hasta: string;
+}
+
+/** Los últimos `dias` días hasta `hoy` (UTC, `AAAA-MM-DD`), hoy incluido. */
+export function rangoUltimosDias(hoy: string, dias: number): Rango {
+  const inicio = new Date(Date.parse(`${hoy}T00:00:00Z`) - (dias - 1) * MS_DIA);
   return { desde: inicio.toISOString().slice(0, 10), hasta: hoy };
+}
+
+export function rangoPorDefecto(hoy: string): Rango {
+  return rangoUltimosDias(hoy, DIAS_POR_DEFECTO);
+}
+
+/** Día de hoy en UTC, como agrupa reportes. */
+export function hoyUtc(ahora: Date = new Date()): string {
+  return ahora.toISOString().slice(0, 10);
 }
 
 function leerFecha(
@@ -107,8 +121,11 @@ export function consultaReporte(
   return construirConsulta({ desde, hasta, deporte, competicionId, usuario, ...extra });
 }
 
-export function hrefReportes(filtros: FiltrosReporte): string {
-  return `/admin/reportes${consultaReporte(filtros)}`;
+export function hrefReportes(
+  filtros: FiltrosReporte,
+  extra: Readonly<Record<string, string>> = {},
+): string {
+  return `/admin/reportes${consultaReporte(filtros, extra)}`;
 }
 
 export type FormatoExportacion = 'csv' | 'pdf';
