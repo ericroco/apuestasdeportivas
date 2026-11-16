@@ -73,7 +73,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T020 [US1] Crear los esquemas zod `.strict()` en `apps/api/src/partidos/partidos.esquemas.ts`, `cartelera.controller.ts`, `operador.controller.ts` (`@Roles('OPERADOR', 'ADMINISTRADOR')`) y `partidos.module.ts`; registrarlo en `apps/api/src/app.module.ts`
 - [x] T021 [P] [US1] Crear el cliente REST de la web con validación de respuestas y sus pruebas en `apps/web/src/lib/api-partidos.ts` y `apps/web/src/lib/api-partidos.test.ts`
 - [x] T022 [US1] Construir la cartelera y el detalle de partido con el skill `frontend-design`, mobile-first desde 360 px, en `apps/web/src/app/partidos/page.tsx` y `apps/web/src/app/partidos/[id]/page.tsx`
-- [ ] T023 [US1] Construir el panel del operador (lista, alta de partido, mercados, cambio de cuota y estados) en `apps/web/src/app/operador/partidos/`
+- [x] T023 [US1] Construir el panel del operador (lista, alta de partido, mercados, cambio de cuota y estados) en `apps/web/src/app/operador/partidos/`
 
 **Checkpoint**: HU1 funcional y probada de forma independiente
 
@@ -102,8 +102,8 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T033 [P] [US5] Implementar `apps/api/src/sincronizacion/simulador.proveedor.ts` y `apps/api/src/sincronizacion/simulacion.controller.ts`
 - [x] T034 [US5] Implementar `apps/api/src/sincronizacion/frecuencia.ts`, el procesador con trabajos repetibles, concurrencia 1 y espera exponencial en `sincronizacion.processor.ts`, y `sincronizacion.module.ts`
 - [x] T035 [US5] Implementar el tiempo real base: `apps/api/src/tiempo-real/tickets.service.ts` (Redis `GETDEL`), `tiempo-real.gateway.ts` (CORS a `WEB_ORIGIN`, salas) y `notificador.service.ts`; emitir `partido.actualizado` tras el commit de `aplicarActualizacion()`
-- [ ] T036 [P] [US5] Exponer `GET /operador/proveedor/consumo` y su vista en `apps/web/src/app/operador/consumo/page.tsx`
-- [ ] T037 [US5] Construir la pantalla de simulación en `apps/web/src/app/operador/simulacion/page.tsx` y el marcador en vivo del detalle con `apps/web/src/lib/tiempo-real.ts`
+- [x] T036 [P] [US5] Exponer `GET /operador/proveedor/consumo` y su vista en `apps/web/src/app/operador/consumo/page.tsx`
+- [x] T037 [US5] Construir la pantalla de simulación en `apps/web/src/app/operador/simulacion/page.tsx` y el marcador en vivo del detalle con `apps/web/src/lib/tiempo-real.ts`
 - [x] T038 [US5] Crear el script de datos de demostración `apps/api/scripts/seed-partidos.ts` y el comando `seed:partidos` en `apps/api/package.json`
 
 **Checkpoint PR 1**: HU1 y HU5 completas; abrir PR 1 a `develop`
@@ -210,7 +210,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ### Implementation for User Story 6
 
 - [x] T067 [US6] Programar el vencimiento con `jobId = vencer:<partidoId>:<n>` al suspender o aplazar, verificarlo al ejecutarse y anular por el camino de la liquidación con `apuesta:<id>:reembolso`, en `apps/api/src/sincronizacion/sincronizacion.processor.ts`, `apps/api/src/partidos/partidos.service.ts` y `apps/api/src/liquidacion/liquidacion.service.ts` — *Implementado en la cola `liquidacion` (no en `sincronizacion`): la anulación es parte de la liquidación y su procesador ya tiene la billetera y la auditoría; ids con guiones (`vencer-<partidoId>-<ms>`) porque BullMQ no admite `:`.*
-- [ ] T068 [US6] Agregar al panel del operador suspender, aplazar, reprogramar y cancelar con motivo, y mostrar el estado en la cartelera, en `apps/web/src/app/operador/partidos/` y `apps/web/src/app/partidos/`
+- [x] T068 [US6] Agregar al panel del operador suspender, aplazar, reprogramar y cancelar con motivo, y mostrar el estado en la cartelera, en `apps/web/src/app/operador/partidos/` y `apps/web/src/app/partidos/`
 
 ---
 
@@ -223,7 +223,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T069 [US8] Acordar con el Spec 2 la operación `revertirPremio` y la convención `:r<n>` (contracts/cambios-contratos.md); sin acuerdo no se integra esta fase
 - [x] T070 [US8] Prueba e2e de re-liquidación: perdida → ganada paga una vez; ganada → perdida revierte aunque el saldo quede negativo; con saldo negativo se rechazan apuestas (`SALDO_NEGATIVO`); la misma corrección dos veces no tiene efecto; la auditoría guarda resultado anterior, nuevo y motivo; en `apps/api/test/reliquidacion.e2e-spec.ts`
 - [x] T071 [US8] Implementar la re-liquidación con las claves `:r<n>`, la corrección por `POST /operador/partidos/:id/resultado` sobre un partido finalizado y la corrección que llega del proveedor, en `apps/api/src/liquidacion/liquidacion.service.ts` y `apps/api/src/partidos/partidos.service.ts`
-- [ ] T072 [US8] Agregar al panel del operador la corrección de resultado con motivo obligatorio y confirmación, en `apps/web/src/app/operador/partidos/`
+- [x] T072 [US8] Agregar al panel del operador la corrección de resultado con motivo obligatorio y confirmación, en `apps/web/src/app/operador/partidos/`
 
 **Checkpoint PR 3**: HU3, HU6 y HU8 completas; abrir PR 3 a `develop`
 
