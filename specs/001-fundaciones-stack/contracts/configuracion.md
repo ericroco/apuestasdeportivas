@@ -46,6 +46,18 @@ mensaje nombra la variable (FR-007). Los valores reales nunca se versionan: cada
 | `FRAUDE_RAFAGA_VENTANA_SEG` | no | `60` | Spec 4. Ventana de la regla de ráfaga en segundos (5–3600) |
 | `FRAUDE_RETIRO_VENTANA_HORAS` | no | `24` | Spec 4. Ventana desde el último depósito al evaluar un retiro (1–720) |
 | `FRAUDE_RETIRO_ACTIVIDAD_MIN_PCT` | no | `50` | Spec 4. % del depósito que debe apostarse para no alertar al retirar (1–1000) |
+| `API_FOOTBALL_SIMULACION` | no | `true` | Spec 3. `true`: modo simulación, no se consulta al proveedor |
+| `API_FOOTBALL_KEY` | si `API_FOOTBALL_SIMULACION=false` | — | Spec 3. **Secreto** de API-Football; solo en el backend |
+| `API_FOOTBALL_BASE_URL` | no | `https://v3.football.api-sports.io` | Spec 3 |
+| `API_FOOTBALL_PRESUPUESTO_DIARIO` | no | `100` | Spec 3. Consultas por día UTC; nunca se supera |
+| `API_FOOTBALL_LIGAS` | si `API_FOOTBALL_SIMULACION=false` | — | Spec 3. Ids de ligas separados por comas |
+| `APUESTA_MONTO_MIN` | no | `0.50` | Spec 3. Monto mínimo por apuesta |
+| `APUESTA_MONTO_MAX` | no | `500.00` | Spec 3. Monto máximo por apuesta (≥ mínimo) |
+| `APUESTA_LIMITE_DIARIO_USUARIO` | no | `1000.00` | Spec 3. Monto total por usuario y día (≥ máximo) |
+| `APUESTA_GANANCIA_MAX` | no | `5000.00` | Spec 3. Ganancia potencial máxima por apuesta |
+| `APUESTA_MAX_SELECCIONES` | no | `10` | Spec 3. Máximo de selecciones de una combinada (≥ 2) |
+| `APUESTA_RETARDO_VIVO_MS` | no | `5000` | Spec 3. Retardo de aceptación de apuestas en vivo |
+| `SUSPENSION_PLAZO_HORAS` | no | `48` | Spec 3. Plazo para reanudar un partido suspendido o aplazado |
 
 Los secretos del Spec 2 para desarrollo y CI se generan con
 `pnpm --filter api exec tsx scripts/generar-secretos.ts` (nunca se versionan ni se reutilizan en staging).
@@ -77,6 +89,7 @@ la clave pública para `.env` y un token de administrador de 15 minutos.
 | `REPORTS_URL` | no | `http://localhost:8000` | URL de reportes usada desde el servidor de Next.js |
 | `WEB_PROXY_SECRETO` | **sí** | — | Spec 2. El mismo valor que en la API; solo en el servidor de Next.js |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | **sí** | — | Spec 2. Clave pública del widget de Turnstile (llega al navegador) |
+| `NEXT_PUBLIC_WS_URL` | no | `http://localhost:3001` | Spec 3. URL del gateway de tiempo real (no es secreto) |
 
 Ninguna variable con secretos lleva el prefijo `NEXT_PUBLIC_`: todo lo que tenga ese prefijo llega al navegador.
 

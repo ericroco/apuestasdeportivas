@@ -1,0 +1,292 @@
+// Spec 3: competiciones, partidos, mercados, cuotas, apuestas y liquidación.
+// Ver specs/003-partidos-apuestas-liquidacion/data-model.md. Tablas y columnas en snake_case (contrato 7);
+// dinero en Decimal(14,2), cuotas en Decimal(8,2), fechas en timestamptz (UTC).
+// `usuario_id` es texto sin relación hasta que el modelo Usuario del Spec 2 esté en develop.
+
+enum EstadoPartido {
+  PROGRAMADO
+  EN_VIVO
+  FINALIZADO
+  SUSPENDIDO
+  APLAZADO
+  CANCELADO
+
+  @@map("estado_partido")
+}
+
+enum OrigenDato {
+  OPERADOR
+  PROVEEDOR
+  SIMULACION
+
+  @@map("origen_dato")
+}
+
+enum TipoMercado {
+  RESULTADO_FINAL
+  DOBLE_OPORTUNIDAD
+  MAS_MENOS_GOLES
+  AMBOS_MARCAN
+
+  @@map("tipo_mercado")
+}
+
+enum EstadoMercado {
+  ABIERTO
+  SUSPENDIDO
+  CERRADO
+
+  @@map("estado_mercado")
+}
+
+enum CodigoSeleccion {
+  LOCAL
+  EMPATE
+  VISITANTE
+  LOCAL_EMPATE
+  EMPATE_VISITANTE
+  LOCAL_VISITANTE
+  MAS
+  MENOS
+  SI
+  NO
+
+  @@map("codigo_seleccion")
+}
+
+enum ResultadoSeleccion {
+  PENDIENTE
+  GANADORA
+  PERDEDORA
+  ANULADA
+
+  @@map("resultado_seleccion")
+}
+
+enum TipoApuesta {
+  SIMPLE
+  COMBINADA
+
+  @@map("tipo_apuesta")
+}
+
+enum EstadoApuesta {
+  PENDIENTE
+  GANADA
+  PERDIDA
+  ANULADA
+
+  @@map("estado_apuesta")
+}
+
+enum TipoSaldoApuesta {
+  REAL
+  BONO
+
+  @@map("tipo_saldo_apuesta")
+}
+
+enum EstadoSolicitudVivo {
+  EN_ESPERA
+  ACEPTADA
+  RECHAZADA
+
+  @@map("estado_solicitud_vivo")
+}
+
+enum TipoLiquidacion {
+  LIQUIDACION
+  ANULACION
+  RELIQUIDACION
+
+  @@map("tipo_liquidacion")
+}
+
+model Competicion {
+  id          String    @id @default(uuid()) @db.Uuid
+  nombre      String
+  pais        String?
+  idProveedor Int?      @unique @map("id_proveedor")
+  creadaEn    DateTime  @default(now()) @map("creada_en") @db.Timestamptz(3)
+  partidos    Partido[]
+
+  @@map("competicion")
+}
+
+model Partido {
+  id                       String        @id @default(uuid()) @db.Uuid
+  competicionId            String        @map("competicion_id") @db.Uuid
+  nombreLocal              String        @map("nombre_local")
+  nombreVisitante          String        @map("nombre_visitante")
+  inicioEn                 DateTime      @map("inicio_en") @db.Timestamptz(3)
+  /// Primera hora de inicio; base del plazo en un aplazamiento.
+  inicioOriginalEn         DateTime      @map("inicio_original_en") @db.Timestamptz(3)
+  estado                   EstadoPartido @default(PROGRAMADO)
+  golesLocal               Int?          @map("goles_local")
+  golesVisitante           Int?          @map("goles_visitante")
+  minuto                   Int?
+  /// +1 en cada gol, cambio de estado o de cuota (revalidación de apuestas en vivo).
+  version                  Int           @default(0)
+  /// +1 cada vez que el partido se finaliza o se corrige su resultado.
+  versionResultado         Int           @default(0) @map("version_resultado")
+  suspendidoEn             DateTime?     @map("suspendido_en") @db.Timestamptz(3)
+  golesLocalSuspension     Int?          @map("goles_local_suspension")
+  golesVisitanteSuspension Int?          @map("goles_visitante_suspension")
+  origen                   OrigenDato
+  idProveedor              Int?          @unique @map("id_proveedor")
+  creadoEn                 DateTime      @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn            DateTime      @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  competicion          Competicion         @relation(fields: [competicionId], references: [id], onDelete: Restrict)
+  mercados             Mercado[]
+  seleccionesApostadas SeleccionApostada[]
+
+  @@index([estado, inicioEn])
+  @@index([competicionId])
+  @@map("partido")
+}
+
+model Mercado {
+  id                    String        @id @default(uuid()) @db.Uuid
+  partidoId             String        @map("partido_id") @db.Uuid
+  tipo                  TipoMercado
+  /// Solo en MAS_MENOS_GOLES; termina en .5.
+  linea                 Decimal?      @db.Decimal(4, 1)
+  estado                EstadoMercado @default(ABIERTO)
+  admiteVivo            Boolean       @default(false) @map("admite_vivo")
+  /// true al cambiar una cuota a mano: la importación ya no la sobrescribe.
+  gestionadoPorOperador Boolean       @default(false) @map("gestionado_por_operador")
+
+  partido     Partido     @relation(fields: [partidoId], references: [id], onDelete: Restrict)
+  selecciones Seleccion[]
+
+  @@unique([partidoId, tipo, linea])
+  @@map("mercado")
+}
+
+model Seleccion {
+  id        String             @id @default(uuid()) @db.Uuid
+  mercadoId String             @map("mercado_id") @db.Uuid
+  codigo    CodigoSeleccion
+  cuota     Decimal            @db.Decimal(8, 2)
+  resultado ResultadoSeleccion @default(PENDIENTE)
+
+  mercado              Mercado             @relation(fields: [mercadoId], references: [id], onDelete: Restrict)
+  historial            HistorialCuota[]
+  seleccionesApostadas SeleccionApostada[]
+
+  @@unique([mercadoId, codigo])
+  @@map("seleccion")
+}
+
+/// Append-only: un disparador impide UPDATE y DELETE.
+model HistorialCuota {
+  id            String     @id @default(uuid()) @db.Uuid
+  seleccionId   String     @map("seleccion_id") @db.Uuid
+  cuotaAnterior Decimal?   @map("cuota_anterior") @db.Decimal(8, 2)
+  cuotaNueva    Decimal    @map("cuota_nueva") @db.Decimal(8, 2)
+  /// null si viene del proveedor.
+  actorId       String?    @map("actor_id")
+  origen        OrigenDato
+  creadoEn      DateTime   @default(now()) @map("creado_en") @db.Timestamptz(3)
+
+  seleccion Seleccion @relation(fields: [seleccionId], references: [id], onDelete: Restrict)
+
+  @@index([seleccionId, creadoEn])
+  @@map("historial_cuota")
+}
+
+/// Inmutable salvo estado, cuota total, ganancia potencial, premio y fecha de liquidación (disparador).
+model Apuesta {
+  id                String           @id @default(uuid()) @db.Uuid
+  usuarioId         String           @map("usuario_id")
+  /// Enviada por el cliente: la misma solicitud produce como máximo una apuesta (FR-020).
+  claveSolicitud    String           @map("clave_solicitud") @db.Uuid
+  tipo              TipoApuesta
+  monto             Decimal          @db.Decimal(14, 2)
+  tipoSaldo         TipoSaldoApuesta @map("tipo_saldo")
+  cuotaTotal        Decimal          @map("cuota_total") @db.Decimal(12, 2)
+  gananciaPotencial Decimal          @map("ganancia_potencial") @db.Decimal(14, 2)
+  estado            EstadoApuesta    @default(PENDIENTE)
+  /// Neto de pagos y reversiones.
+  premioPagado      Decimal          @default(0) @map("premio_pagado") @db.Decimal(14, 2)
+  cuponId           String?          @map("cupon_id")
+  enVivo            Boolean          @map("en_vivo")
+  aceptadaEn        DateTime         @default(now()) @map("aceptada_en") @db.Timestamptz(3)
+  liquidadaEn       DateTime?        @map("liquidada_en") @db.Timestamptz(3)
+
+  selecciones     SeleccionApostada[]
+  liquidaciones   Liquidacion[]
+  solicitudesVivo SolicitudApuestaVivo[]
+
+  @@unique([usuarioId, claveSolicitud])
+  @@index([usuarioId, aceptadaEn])
+  @@map("apuesta")
+}
+
+model SeleccionApostada {
+  id             String             @id @default(uuid()) @db.Uuid
+  apuestaId      String             @map("apuesta_id") @db.Uuid
+  seleccionId    String             @map("seleccion_id") @db.Uuid
+  /// Copia para la regla "un partido por combinada".
+  partidoId      String             @map("partido_id") @db.Uuid
+  cuotaCongelada Decimal            @map("cuota_congelada") @db.Decimal(8, 2)
+  resultado      ResultadoSeleccion @default(PENDIENTE)
+
+  apuesta   Apuesta   @relation(fields: [apuestaId], references: [id], onDelete: Restrict)
+  seleccion Seleccion @relation(fields: [seleccionId], references: [id], onDelete: Restrict)
+  partido   Partido   @relation(fields: [partidoId], references: [id], onDelete: Restrict)
+
+  @@unique([apuestaId, partidoId])
+  @@index([seleccionId])
+  @@index([partidoId])
+  @@map("seleccion_apostada")
+}
+
+model SolicitudApuestaVivo {
+  id             String              @id @default(uuid()) @db.Uuid
+  usuarioId      String              @map("usuario_id")
+  claveSolicitud String              @map("clave_solicitud") @db.Uuid
+  /// Selecciones, cuotas vistas, monto y cupón tal como se pidieron.
+  datos          Json
+  versionPartido Int                 @map("version_partido")
+  estado         EstadoSolicitudVivo @default(EN_ESPERA)
+  motivoRechazo  String?             @map("motivo_rechazo")
+  apuestaId      String?             @map("apuesta_id") @db.Uuid
+  ejecutarEn     DateTime            @map("ejecutar_en") @db.Timestamptz(3)
+  creadaEn       DateTime            @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  apuesta Apuesta? @relation(fields: [apuestaId], references: [id], onDelete: Restrict)
+
+  @@unique([usuarioId, claveSolicitud])
+  @@map("solicitud_apuesta_vivo")
+}
+
+/// Append-only: un disparador impide UPDATE y DELETE.
+model Liquidacion {
+  id                String          @id @default(uuid()) @db.Uuid
+  apuestaId         String          @map("apuesta_id") @db.Uuid
+  tipo              TipoLiquidacion
+  estadoResultante  EstadoApuesta   @map("estado_resultante")
+  /// Positivo: premio o reembolso; negativo: reversión.
+  montoMovido       Decimal         @map("monto_movido") @db.Decimal(14, 2)
+  versionResultado  Int             @map("version_resultado")
+  /// La misma clave que se envía a la billetera.
+  claveIdempotencia String          @unique @map("clave_idempotencia")
+  creadaEn          DateTime        @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  apuesta Apuesta @relation(fields: [apuestaId], references: [id], onDelete: Restrict)
+
+  @@index([apuestaId])
+  @@map("liquidacion")
+}
+
+model ConsumoProveedor {
+  /// Día UTC.
+  fecha         DateTime @id @db.Date
+  consultas     Int      @default(0)
+  limite        Int
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+
+  @@map("consumo_proveedor")
+}

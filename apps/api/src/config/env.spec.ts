@@ -302,3 +302,126 @@ describe('validarEntorno: cupones y fraude (Spec 4)', () => {
     ).toBe('10.00');
   });
 });
+
+describe('validarEntorno: variables del Spec 3', () => {
+  it('aplica los valores por defecto de partidos, apuestas y simulación', () => {
+    const entorno = validarEntorno(ENTORNO_MINIMO);
+
+    expect(entorno).toMatchObject({
+      API_FOOTBALL_SIMULACION: true,
+      API_FOOTBALL_BASE_URL: 'https://v3.football.api-sports.io',
+      API_FOOTBALL_PRESUPUESTO_DIARIO: 100,
+      API_FOOTBALL_LIGAS: [],
+      APUESTA_MONTO_MIN: '0.50',
+      APUESTA_MONTO_MAX: '500.00',
+      APUESTA_LIMITE_DIARIO_USUARIO: '1000.00',
+      APUESTA_GANANCIA_MAX: '5000.00',
+      APUESTA_MAX_SELECCIONES: 10,
+      APUESTA_RETARDO_VIVO_MS: 5000,
+      SUSPENSION_PLAZO_HORAS: 48,
+    });
+    expect(entorno.API_FOOTBALL_KEY).toBeUndefined();
+  });
+
+  it('interpreta API_FOOTBALL_SIMULACION=false como booleano y no como texto verdadero', () => {
+    const entorno = validarEntorno({
+      ...ENTORNO_MINIMO,
+      API_FOOTBALL_SIMULACION: 'false',
+      API_FOOTBALL_KEY: 'clave-secreta-123',
+      API_FOOTBALL_LIGAS: '39, 140',
+    });
+
+    expect(entorno.API_FOOTBALL_SIMULACION).toBe(false);
+    expect(entorno.API_FOOTBALL_LIGAS).toEqual([39, 140]);
+  });
+
+  it('trata API_FOOTBALL_KEY y API_FOOTBALL_LIGAS vacías (como en .env.example) como ausentes', () => {
+    const entorno = validarEntorno({
+      ...ENTORNO_MINIMO,
+      API_FOOTBALL_KEY: '',
+      API_FOOTBALL_LIGAS: '',
+    });
+
+    expect(entorno.API_FOOTBALL_KEY).toBeUndefined();
+    expect(entorno.API_FOOTBALL_LIGAS).toEqual([]);
+  });
+
+  it('rechaza un valor de API_FOOTBALL_SIMULACION que no sea true o false', () => {
+    expect(() => validarEntorno({ ...ENTORNO_MINIMO, API_FOOTBALL_SIMULACION: 'si' })).toThrow(
+      /API_FOOTBALL_SIMULACION/,
+    );
+  });
+
+  it('exige API_FOOTBALL_KEY y API_FOOTBALL_LIGAS cuando la simulación está apagada', () => {
+    const sinSimulacion = { ...ENTORNO_MINIMO, API_FOOTBALL_SIMULACION: 'false' };
+
+    expect(() => validarEntorno(sinSimulacion)).toThrow(/API_FOOTBALL_KEY/);
+    expect(() => validarEntorno(sinSimulacion)).toThrow(/API_FOOTBALL_LIGAS/);
+  });
+
+  it('no muestra la clave del proveedor en el mensaje de error', () => {
+    const conError = {
+      ...ENTORNO_MINIMO,
+      API_FOOTBALL_SIMULACION: 'false',
+      API_FOOTBALL_KEY: 'clave-secreta-123',
+      API_FOOTBALL_LIGAS: 'abc',
+    };
+
+    expect(() => validarEntorno(conError)).toThrow(/API_FOOTBALL_LIGAS/);
+    expect(() => validarEntorno(conError)).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining('clave-secreta-123') }),
+    );
+  });
+
+  it.each(['0', '-1.00', '10.505', 'diez'])('rechaza el monto %s en APUESTA_MONTO_MIN', (valor) => {
+    expect(() => validarEntorno({ ...ENTORNO_MINIMO, APUESTA_MONTO_MIN: valor })).toThrow(
+      /APUESTA_MONTO_MIN/,
+    );
+  });
+
+  it('normaliza los montos a dos decimales', () => {
+    const entorno = validarEntorno({
+      ...ENTORNO_MINIMO,
+      APUESTA_MONTO_MIN: '1',
+      APUESTA_MONTO_MAX: '20.5',
+    });
+
+    expect(entorno.APUESTA_MONTO_MIN).toBe('1.00');
+    expect(entorno.APUESTA_MONTO_MAX).toBe('20.50');
+  });
+
+  it('exige APUESTA_MONTO_MIN ≤ APUESTA_MONTO_MAX', () => {
+    expect(() =>
+      validarEntorno({
+        ...ENTORNO_MINIMO,
+        APUESTA_MONTO_MIN: '600.00',
+        APUESTA_MONTO_MAX: '500.00',
+      }),
+    ).toThrow(/APUESTA_MONTO_MIN/);
+  });
+
+  it('exige APUESTA_MONTO_MAX ≤ APUESTA_LIMITE_DIARIO_USUARIO', () => {
+    expect(() =>
+      validarEntorno({
+        ...ENTORNO_MINIMO,
+        APUESTA_MONTO_MAX: '2000.00',
+        APUESTA_LIMITE_DIARIO_USUARIO: '1000.00',
+      }),
+    ).toThrow(/APUESTA_MONTO_MAX/);
+  });
+
+  it('exige al menos 2 selecciones como máximo de una combinada', () => {
+    expect(() => validarEntorno({ ...ENTORNO_MINIMO, APUESTA_MAX_SELECCIONES: '1' })).toThrow(
+      /APUESTA_MAX_SELECCIONES/,
+    );
+  });
+
+  it('acepta un plazo de suspensión fraccionario (pruebas) y rechaza uno no positivo', () => {
+    const entorno = validarEntorno({ ...ENTORNO_MINIMO, SUSPENSION_PLAZO_HORAS: '0.001' });
+
+    expect(entorno.SUSPENSION_PLAZO_HORAS).toBe(0.001);
+    expect(() => validarEntorno({ ...ENTORNO_MINIMO, SUSPENSION_PLAZO_HORAS: '0' })).toThrow(
+      /SUSPENSION_PLAZO_HORAS/,
+    );
+  });
+});

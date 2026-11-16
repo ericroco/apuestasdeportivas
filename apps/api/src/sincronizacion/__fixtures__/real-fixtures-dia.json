@@ -1,0 +1,435 @@
+{
+  "_nota": "Respuesta REAL de API-Football (plan Free, 2026-11-15), recortada a un partido por estado. Sin la clave.",
+  "get": "fixtures",
+  "parameters": {
+    "date": "2026-11-15"
+  },
+  "errors": [],
+  "results": 6,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "fixture": {
+        "id": 1577596,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T05:00:00+00:00",
+        "timestamp": 1794718800,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": null,
+          "name": "Petrovsky Stadium",
+          "city": "Saint Petersburg"
+        },
+        "status": {
+          "long": "Not Started",
+          "short": "NS",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 236,
+        "name": "First League",
+        "country": "Russia",
+        "logo": "https://media.api-sports.io/football/leagues/236.png",
+        "flag": "https://media.api-sports.io/flags/ru.svg",
+        "season": 2026,
+        "round": "Regular Season - 19",
+        "standings": true
+      },
+      "teams": {
+        "home": {
+          "id": 1087,
+          "name": "Ska-khabarovsk",
+          "logo": "https://media.api-sports.io/football/teams/1087.png",
+          "winner": null
+        },
+        "away": {
+          "id": 6811,
+          "name": "Leningradets",
+          "logo": "https://media.api-sports.io/football/teams/6811.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": 2,
+          "away": 1
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1600661,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T00:00:00+00:00",
+        "timestamp": 1794700800,
+        "periods": {
+          "first": 1794700800,
+          "second": 1794704400
+        },
+        "venue": {
+          "id": null,
+          "name": null,
+          "city": null
+        },
+        "status": {
+          "long": "Match Finished",
+          "short": "FT",
+          "elapsed": 90,
+          "extra": 5
+        }
+      },
+      "league": {
+        "id": 370,
+        "name": "Primera Division",
+        "country": "El-Salvador",
+        "logo": "https://media.api-sports.io/football/leagues/370.png",
+        "flag": "https://media.api-sports.io/flags/sv.svg",
+        "season": 2026,
+        "round": "Apertura - 21",
+        "standings": true
+      },
+      "teams": {
+        "home": {
+          "id": 26154,
+          "name": "Inter",
+          "logo": "https://media.api-sports.io/football/teams/26154.png",
+          "winner": true
+        },
+        "away": {
+          "id": 24530,
+          "name": "Cacahuatique",
+          "logo": "https://media.api-sports.io/football/teams/24530.png",
+          "winner": false
+        }
+      },
+      "goals": {
+        "home": 2,
+        "away": 0
+      },
+      "score": {
+        "halftime": {
+          "home": 2,
+          "away": 0
+        },
+        "fulltime": {
+          "home": 2,
+          "away": 0
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1644838,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T22:00:00+00:00",
+        "timestamp": 1794780000,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": 1240,
+          "name": "Estadio Alberto Gallardo",
+          "city": "Lima"
+        },
+        "status": {
+          "long": "Match Finished",
+          "short": "AET",
+          "elapsed": 120,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 1232,
+        "name": "Copa De La Liga",
+        "country": "Peru",
+        "logo": "https://media.api-sports.io/football/leagues/1232.png",
+        "flag": "https://media.api-sports.io/flags/pe.svg",
+        "season": 2026,
+        "round": "Final",
+        "standings": false
+      },
+      "teams": {
+        "home": {
+          "id": 2560,
+          "name": "Alianza Atletico",
+          "logo": "https://media.api-sports.io/football/teams/2560.png",
+          "winner": false
+        },
+        "away": {
+          "id": 2546,
+          "name": "Sporting Cristal",
+          "logo": "https://media.api-sports.io/football/teams/2546.png",
+          "winner": true
+        }
+      },
+      "goals": {
+        "home": 0,
+        "away": 2
+      },
+      "score": {
+        "halftime": {
+          "home": 0,
+          "away": 0
+        },
+        "fulltime": {
+          "home": 0,
+          "away": 0
+        },
+        "extratime": {
+          "home": 0,
+          "away": 2
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1643183,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T13:00:00+00:00",
+        "timestamp": 1794747600,
+        "periods": {
+          "first": 1794747600,
+          "second": 1794751200
+        },
+        "venue": {
+          "id": null,
+          "name": null,
+          "city": null
+        },
+        "status": {
+          "long": "Match Finished",
+          "short": "PEN",
+          "elapsed": 120,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 1015,
+        "name": "CAF U23 Cup of Nations",
+        "country": "World",
+        "logo": "https://media.api-sports.io/football/leagues/1015.png",
+        "flag": null,
+        "season": 2027,
+        "round": "Semi-finals",
+        "standings": false
+      },
+      "teams": {
+        "home": {
+          "id": 20563,
+          "name": "Zambia U23",
+          "logo": "https://media.api-sports.io/football/teams/20563.png",
+          "winner": true
+        },
+        "away": {
+          "id": 20542,
+          "name": "Burkina Faso U23",
+          "logo": "https://media.api-sports.io/football/teams/20542.png",
+          "winner": false
+        }
+      },
+      "goals": {
+        "home": 1,
+        "away": 0
+      },
+      "score": {
+        "halftime": {
+          "home": 0,
+          "away": 0
+        },
+        "fulltime": {
+          "home": 1,
+          "away": 0
+        },
+        "extratime": {
+          "home": 0,
+          "away": 0
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1591088,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T10:00:00+00:00",
+        "timestamp": 1794736800,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": null,
+          "name": null,
+          "city": null
+        },
+        "status": {
+          "long": "Match Postponed",
+          "short": "PST",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 554,
+        "name": "3. Lig - Group 3",
+        "country": "Turkey",
+        "logo": "https://media.api-sports.io/football/leagues/554.png",
+        "flag": "https://media.api-sports.io/flags/tr.svg",
+        "season": 2026,
+        "round": "3. Lig Group 3 - 12",
+        "standings": true
+      },
+      "teams": {
+        "home": {
+          "id": 6546,
+          "name": "Yeni Mersin Idmanyurdu",
+          "logo": "https://media.api-sports.io/football/teams/6546.png",
+          "winner": null
+        },
+        "away": {
+          "id": 6526,
+          "name": "Karaman FK",
+          "logo": "https://media.api-sports.io/football/teams/6526.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1591087,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-11-15T10:00:00+00:00",
+        "timestamp": 1794736800,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": null,
+          "name": null,
+          "city": null
+        },
+        "status": {
+          "long": "Technical loss",
+          "short": "AWD",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 554,
+        "name": "3. Lig - Group 3",
+        "country": "Turkey",
+        "logo": "https://media.api-sports.io/football/leagues/554.png",
+        "flag": "https://media.api-sports.io/flags/tr.svg",
+        "season": 2026,
+        "round": "3. Lig Group 3 - 12",
+        "standings": true
+      },
+      "teams": {
+        "home": {
+          "id": 7418,
+          "name": "Osmaniyespor",
+          "logo": "https://media.api-sports.io/football/teams/7418.png",
+          "winner": true
+        },
+        "away": {
+          "id": 999,
+          "name": "Yeni Malatyaspor",
+          "logo": "https://media.api-sports.io/football/teams/999.png",
+          "winner": false
+        }
+      },
+      "goals": {
+        "home": 3,
+        "away": 0
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": 3,
+          "away": 0
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    }
+  ]
+}

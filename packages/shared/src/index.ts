@@ -38,3 +38,4 @@ export type {
   VistaCupon,
   VistaPreviaCupon,
 } from './promociones.js';
+export * from './partidos.js';

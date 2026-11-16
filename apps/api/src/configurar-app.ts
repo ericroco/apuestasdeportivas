@@ -5,6 +5,7 @@ import { ErrorNegocioFilter } from './comun/error-negocio.filter.js';
 import { crearPipeDeValidacion } from './comun/validacion.js';
 import type { Entorno } from './config/env.js';
 import { middlewareCliente } from './identidad/http/cliente-http.js';
+import { AdaptadorSocketIo } from './tiempo-real/adaptador-socket-io.js';
 
 /**
  * Configuración HTTP común a main.ts y a las pruebas e2e, para que las pruebas
@@ -18,6 +19,8 @@ export function configurarApp(app: NestExpressApplication, entorno: Entorno): vo
   app.use(cookieParser());
   app.use(middlewareCliente(entorno.WEB_PROXY_SECRETO));
   // Con una lista, la cabecera Access-Control-Allow-Origin solo se envía al origen permitido.
+  // Spec 3: Socket.IO con CORS limitado al mismo origen de la web.
+  app.useWebSocketAdapter(new AdaptadorSocketIo(app, entorno.WEB_ORIGIN));
   app.enableCors({ origin: [entorno.WEB_ORIGIN], credentials: true });
   app.setGlobalPrefix('api', { exclude: ['health'] });
   // Errores de negocio con `codigo` estable y validación zod de `{ schema }` (400 DATOS_INVALIDOS).
