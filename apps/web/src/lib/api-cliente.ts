@@ -9,15 +9,23 @@ export class ErrorApi extends Error {
   constructor(
     readonly estado: number,
     mensaje: string,
+    /** Cuerpo de la respuesta de error: `codigo` y datos de los errores de negocio (p. ej. `cuotasVigentes`). */
+    readonly cuerpo: unknown = null,
   ) {
     super(mensaje);
+  }
+
+  /** Código estable del error de negocio (contracts/api-rest.md del Spec 3), si lo trae. */
+  get codigo(): string | null {
+    const codigo = (this.cuerpo as { codigo?: unknown } | null)?.codigo;
+    return typeof codigo === 'string' ? codigo : null;
   }
 }
 
 /** La sesión no se pudo renovar: hay que volver a iniciar sesión. */
 export class SesionVencida extends ErrorApi {}
 
-type Metodo = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type Metodo = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 function mensajeDe(cuerpo: unknown, estado: number): string {
   const mensaje = (cuerpo as { message?: unknown } | null)?.message;
@@ -56,7 +64,8 @@ export async function api<T = unknown>(
   }
   if (respuesta.status === 204) return undefined as T;
   const cuerpo: unknown = await respuesta.json().catch(() => null);
-  if (!respuesta.ok) throw new ErrorApi(respuesta.status, mensajeDe(cuerpo, respuesta.status));
+  if (!respuesta.ok)
+    throw new ErrorApi(respuesta.status, mensajeDe(cuerpo, respuesta.status), cuerpo);
   return cuerpo as T;
 }
 

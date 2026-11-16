@@ -71,7 +71,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T018 [P] [US1] Implementar el catálogo de tipos de mercado y su validación en `apps/api/src/partidos/mercados.ts`
 - [x] T019 [US1] Implementar `PartidosService` en `apps/api/src/partidos/partidos.service.ts`: alta y edición, `aplicarActualizacion()` (estado, marcador, `version`+1), mercados y cambio de cuota con `FOR UPDATE`, historial, auditoría y `gestionadoPorOperador`
 - [x] T020 [US1] Crear los esquemas zod `.strict()` en `apps/api/src/partidos/partidos.esquemas.ts`, `cartelera.controller.ts`, `operador.controller.ts` (`@Roles('OPERADOR', 'ADMINISTRADOR')`) y `partidos.module.ts`; registrarlo en `apps/api/src/app.module.ts`
-- [ ] T021 [P] [US1] Crear el cliente REST de la web con validación de respuestas y sus pruebas en `apps/web/src/lib/api-partidos.ts` y `apps/web/src/lib/api-partidos.test.ts`
+- [x] T021 [P] [US1] Crear el cliente REST de la web con validación de respuestas y sus pruebas en `apps/web/src/lib/api-partidos.ts` y `apps/web/src/lib/api-partidos.test.ts`
 - [ ] T022 [US1] Construir la cartelera y el detalle de partido con el skill `frontend-design`, mobile-first desde 360 px, en `apps/web/src/app/partidos/page.tsx` y `apps/web/src/app/partidos/[id]/page.tsx`
 - [ ] T023 [US1] Construir el panel del operador (lista, alta de partido, mercados, cambio de cuota y estados) en `apps/web/src/app/operador/partidos/`
 

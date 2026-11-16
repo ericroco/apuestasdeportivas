@@ -3,6 +3,15 @@ import type { NextConfig } from 'next';
 const EN_DESARROLLO = process.env.NODE_ENV === 'development';
 const TURNSTILE = 'https://challenges.cloudflare.com';
 
+// Spec 3: el tiempo real (Socket.IO) es lo único que el navegador abre directo contra la API (contrato 6): su
+// origen, en http(s) y ws(s), se agrega a connect-src. NEXT_PUBLIC_WS_URL no es secreto.
+function origenesTiempoReal(url: string | undefined): string {
+  if (!url) return '';
+  const { origin, protocol, host } = new URL(url);
+  return ` ${origin} ${protocol === 'https:' ? 'wss' : 'ws'}://${host}`;
+}
+const TIEMPO_REAL = origenesTiempoReal(process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:3001');
+
 // Spec 2: CSP fija. Una CSP con nonce obligaría a renderizar cada página por petición (incompatible con el
 // prerender de cacheComponents); esta limita los orígenes a la propia web y a Cloudflare Turnstile. El navegador
 // solo habla con la API a través del proxy /api/* (connect-src 'self').
@@ -13,7 +22,7 @@ const CSP = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   `frame-src ${TURNSTILE}`,
-  `connect-src 'self'${EN_DESARROLLO ? ' ws:' : ''}`,
+  `connect-src 'self'${TIEMPO_REAL}${EN_DESARROLLO ? ' ws:' : ''}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
