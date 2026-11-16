@@ -6,30 +6,70 @@ Windows, todos los comandos desde PowerShell.
 ## 1. Arranque
 
 ```powershell
-docker compose up -d                      # PostgreSQL y Redis
+docker compose up -d                      # PostgreSQL, Redis y Mailpit (buzón de correos de prueba)
 pnpm install
 pnpm db:migrate                           # incluye la migración spec3_*
 pnpm --filter api seed:partidos           # competiciones, partidos y mercados de demostración
+```
+
+Configuración local (una sola vez; los tres archivos están en `.gitignore`):
+
+- `apps/api/.env`: copia de `apps/api/.env.example` con los secretos de `pnpm --filter api exec tsx
+  scripts/generar-secretos.ts`. Deja `API_FOOTBALL_SIMULACION=true` (por defecto): no se consulta API-Football y no
+  hace falta clave.
+- `apps/web/.env.local`: copia de `apps/web/.env.example` con el **mismo** `WEB_PROXY_SECRETO` de `apps/api/.env`.
+- `apps/reports/.env`: copia de `apps/reports/.env.example` con la **misma** `JWT_PUBLIC_KEY` de `apps/api/.env`.
+
+```powershell
 pnpm dev                                  # web :3000, api :3001, reports :8000
 ```
 
-En `apps/api/.env` deja `API_FOOTBALL_SIMULACION=true` (por defecto): no se consulta API-Football y no hace falta
-clave. Para probar contra la API real: `API_FOOTBALL_SIMULACION=false`, `API_FOOTBALL_KEY=<tu clave>` y
-`API_FOOTBALL_LIGAS=<ids>`; vigila el consumo en el panel del operador.
+Si `pnpm` solo existe vía corepack, antepone `corepack` a cada comando (`corepack pnpm dev`).
 
-Mientras el Spec 2 no esté en `develop` no hay login real: las pruebas e2e usan un guard de prueba y la demo
-manual espera a que entre la autenticación.
+Para probar contra la API real: `API_FOOTBALL_SIMULACION=false`, `API_FOOTBALL_KEY=<tu clave>` y
+`API_FOOTBALL_LIGAS=242` (Liga Pro Ecuador); vigila el consumo en **Operador → Consumo del proveedor**. El plan
+gratuito tiene 100 consultas al día y 10 por minuto (research.md §2).
+
+### Cuentas de ejemplo
+
+Con todo corriendo (`pnpm dev` y Docker), en otra terminal:
+
+```powershell
+pnpm --filter api demo:cuentas            # crea las cuentas y guarda las credenciales
+```
+
+Crea, por la web y como lo haría una persona:
+
+| Cuenta | Para qué | Detalle |
+|---|---|---|
+| `admin@demo.local` | Panel del operador (el administrador también es operador) | Segundo factor ya activado |
+| `apostador@demo.local` | Cartelera, boleto, mis apuestas y billetera | Correo confirmado y 100.00 USD de saldo de prueba |
+
+Las contraseñas son aleatorias y quedan en `apps/api/.env.cuentas-demo` (ignorado por git; no lo compartas). Si
+el archivo ya existe, el script no crea nada. El saldo es un asiento de depósito de prueba, porque Payphone sandbox
+no está configurado en local.
+
+El administrador pide un código de 6 dígitos al iniciar sesión. Dos opciones:
+
+- En el celular: Google o Microsoft Authenticator → **Ingresar clave de configuración** → pega `ADMIN_TOTP_SECRETO`
+  del archivo (basada en tiempo).
+- En la PC: `pnpm --filter api demo:codigo` imprime el código vigente (cambia cada 30 s).
 
 ## 2. Demostración en modo simulación (SC-008, menos de 2 minutos)
 
-1. Como operador, en **Operador → Partidos**, abre un partido sembrado y revisa sus mercados y cuotas.
-2. Como apostador, en **Partidos**, agrega "gana el local" al boleto, escribe `10.00` y pulsa
-   **Confirmar apuesta**. La apuesta aparece pendiente en **Mis apuestas**.
-3. Como operador, en **Operador → Simulación**, envía `INICIO`, luego `GOL` del local y luego `FINAL`.
-4. En **Mis apuestas**, sin recargar, la apuesta pasa a ganada y muestra el premio (≤ 5 s).
-5. Envía otra vez `FINAL`: el saldo no cambia (idempotencia).
+Usa dos navegadores (o uno normal y otro en incógnito): las pestañas de un mismo navegador comparten la sesión.
 
-Suspensión: con otro partido, envía `INICIO` y `SUSPENSION`. Para no esperar 48 h, arranca la API con
+1. Como apostador, en **Partidos**, abre un partido de "LigaPro (demo)", elige la cuota del local, escribe `10` en
+   el boleto y pulsa **Confirmar apuesta**. La apuesta aparece pendiente en **Mis apuestas** y el saldo baja en
+   **Mi cuenta → Billetera**.
+2. Como administrador, en `http://localhost:3000/operador/simulacion`, pulsa **Pitazo inicial** y luego **Gol** del
+   local en ese partido. En la página del partido del apostador el marcador cambia sin recargar y se cierran los
+   mercados que no admiten apuestas en vivo.
+3. Pulsa **Pitazo final**. En **Mis apuestas** la apuesta pasa a ganada con el premio (≤ 5 s) y la billetera
+   muestra el depósito, la apuesta y el premio.
+4. Otras pantallas del operador: `/operador/partidos` (alta de partidos y cuotas) y `/operador/consumo`.
+
+Suspensión: con otro partido, pulsa **Pitazo inicial** y **Suspender**. Para no esperar 48 h, arranca la API con
 `SUSPENSION_PLAZO_HORAS=0.01` (36 s): al vencer, las apuestas se reembolsan una sola vez.
 
 ## 3. Pruebas

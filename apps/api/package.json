@@ -17,6 +17,8 @@
     "test:int": "vitest run --config ./vitest.config.e2e.ts",
     "test:watch": "vitest",
     "seed:partidos": "tsx scripts/seed-partidos.ts",
+    "demo:cuentas": "tsx scripts/crear-cuentas-demo.ts",
+    "demo:codigo": "tsx scripts/codigo-2fa-demo.ts",
     "db:seed:spec4": "tsc -p tsconfig.seed.json && node dist/seed/prisma/seed/promociones.js"
   },
   "dependencies": {
