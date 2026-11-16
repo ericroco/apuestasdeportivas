@@ -233,10 +233,10 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 - [ ] T073 [P] Comprobar en Playwright el proyecto `movil-360` y la navegación por teclado de las pantallas nuevas en `apps/web/e2e/`
 - [x] T074 [P] Actualizar la convención de claves en `docs/equipo/contratos.md` §2 cuando el Spec 2 acepte la propuesta
-- [ ] T075 [P] Actualizar el estado del Spec 3 en `specs/README.md` al abrir y cerrar cada PR
-- [ ] T076 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y la demostración de quickstart.md §2
-- [ ] T077 Verificar cobertura ≥ 80 % en los módulos del Spec 3 (`apps/api/coverage/`) y el quality gate de SonarQube (`sonar-project.properties`)
-- [ ] T078 Registrar en quickstart.md la latencia medida en T059 (SC-001) y la demora de detección observada con la API real
+- [x] T075 [P] Actualizar el estado del Spec 3 en `specs/README.md` al abrir y cerrar cada PR — *Estado "En revisión" con el PR #3 abierto; pasa a "Terminada" al integrarlo.*
+- [x] T076 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y la demostración de quickstart.md §2 — *API 759 pruebas en verde; web 200/201 (la que falla es del Spec 4 y depende de la versión de Node: "$25 K"); reportes no corre en local sin `apps/reports/.env`. `pnpm test` con turbo necesita el binario `pnpm` en el PATH (aquí solo hay corepack).*
+- [x] T077 Verificar cobertura ≥ 80 % en los módulos del Spec 3 (`apps/api/coverage/`) y el quality gate de SonarQube (`sonar-project.properties`) — *Cobertura de la API 90.6 % (unitarias + integración). `sonar-project.properties` ya incluye las rutas del Spec 3; el quality gate corre en CI.*
+- [x] T078 Registrar en quickstart.md la latencia medida en T059 (SC-001) y la demora de detección observada con la API real — *Latencia medida: 45 ms (quickstart §4). La demora de detección con la API real queda pendiente de la clave de T029.*
 
 ---
 

@@ -17,14 +17,12 @@ const PARTIDO = {
 function responder(estado: number, cuerpo: unknown) {
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify(cuerpo), {
-          status: estado,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ),
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(cuerpo), {
+        status: estado,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    ),
   );
 }
 

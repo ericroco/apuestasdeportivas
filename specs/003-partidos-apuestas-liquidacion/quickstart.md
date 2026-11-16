@@ -54,3 +54,14 @@ Pruebas obligatorias por la constitución (IV), todas en `apps/api/test/`:
 | El worker no supera el presupuesto (SC-005) | `sincronizacion-presupuesto.e2e-spec.ts` |
 | Sin rutas de edición o borrado de apuestas | `apuestas-inmutables.e2e-spec.ts` |
 | Corrección con reversión de premio | `reliquidacion.e2e-spec.ts` |
+
+## 4. Mediciones
+
+| Medición | Valor | Cómo se midió |
+|----------|-------|---------------|
+| Latencia resultado → aviso al apostador (SC-001, meta ≤ 5 s) | **45 ms** | `test/liquidacion.e2e-spec.ts`, en local: desde que el operador carga el resultado hasta que el navegador del dueño recibe `apuesta.liquidada` por WebSocket (incluye la cola de liquidación y la transacción de la billetera) |
+| Demora de detección con la API real | Pendiente | Necesita una clave de API-Football (T029). Con 100 consultas diarias, el intervalo en vivo lo fija la frecuencia adaptativa (mínimo 15 s), así que la detección domina la latencia total |
+| Cobertura de la API (unitarias + integración) | 90 % de sentencias | `pnpm --filter api test`, informe en `apps/api/coverage/` |
+
+La latencia se mide desde que el sistema **detecta** el resultado, no desde que API-Football lo publica (ver la
+desviación registrada en `plan.md`, Complexity Tracking).
