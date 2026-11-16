@@ -1,8 +1,8 @@
 # Research: Partidos, apuestas y liquidación
 
 Decisiones técnicas del Spec 3. Cada una: decisión, razón y alternativas descartadas. Los datos de API-Football
-marcados con **(verificar)** se confirman contra la API real en la primera tarea del worker, porque el plan
-gratuito y su documentación cambian con el tiempo.
+marcados con **(verificar)** se confirmaron contra la API real en T029 (plan Free, 2026-11-15): ver
+**Verificado en T029** en §2 y §10. Las respuestas de ejemplo están en `apps/api/src/sincronizacion/__fixtures__/real-*.json`.
 
 ## 1. Colas y worker: BullMQ dentro de `apps/api`
 
@@ -25,18 +25,31 @@ gratuito y su documentación cambian con el tiempo.
 - **Decisión**: contador atómico en Redis por día UTC (`api-football:consumo:AAAA-MM-DD`), con un script Lua que
   incrementa solo si no se supera `API_FOOTBALL_PRESUPUESTO_DIARIO`. Toda consulta pasa por
   `PresupuestoProveedor.reservar()`; si no hay cupo, la consulta no se hace. Al recibir la respuesta se toma el
-  menor entre el contador propio y la cabecera `x-ratelimit-requests-remaining` **(verificar)**. Una copia diaria se
+  menor entre el contador propio y la cabecera `x-ratelimit-requests-remaining`. Una copia diaria se
   guarda en la tabla `consumo_proveedor` para el panel del operador.
 - **Frecuencia adaptativa**:
   - Partidos del día: `GET /fixtures?date=` (una consulta trae todas las ligas; se filtran las de
     `API_FOOTBALL_LIGAS`) a las 06:00 UTC y cada 6 h.
-  - Cuotas pre-partido: `GET /odds?league=&season=&date=` por liga configurada, dos veces al día **(verificar
-    paginación)**.
-  - En vivo: `GET /fixtures?live=<ids>` (una consulta para todos los partidos en vivo) solo mientras haya partidos
+  - Cuotas pre-partido: `GET /odds?fixture=<id>` por cada partido importado del día, dos veces al día.
+  - En vivo: `GET /fixtures?live=all` (una consulta para todos los partidos en vivo) solo mientras haya partidos
     en vivo. Intervalo = máx(15 s, minutos de partido restantes / consultas disponibles para vivo).
   - Se reserva el 10 % del presupuesto para consultar el resultado final de los partidos que terminan.
-- **Razón**: el plan gratuito tiene un límite diario bajo (100 consultas/día **(verificar)**); un contador atómico
+- **Razón**: el plan gratuito tiene un límite diario bajo (100 consultas/día); un contador atómico
   garantiza SC-005 incluso con reintentos o con varios procesos.
+- **Verificado en T029** (plan Free):
+  - Límites: `x-ratelimit-requests-limit: 100` y `x-ratelimit-requests-remaining` por día, y además
+    `x-ratelimit-limit: 10` / `x-ratelimit-remaining` **por minuto**. Con las ligas de Ecuador (pocos partidos por
+    día) los ciclos quedan muy por debajo; una ráfaga de más de 10 consultas en un minuto respondería con error y se
+    reintenta en el próximo ciclo.
+  - Por liga y temporada solo hay acceso a 2022–2024 (`errors.plan`: "Free plans do not have access to this
+    season"). Por eso nada se pide con `season`: `fixtures?date=` (todas las ligas, una sola página: 822 partidos el
+    2026-11-15) y `odds?fixture=` sí funcionan para la temporada actual.
+  - `ids=` no está disponible ("Free plans do not have access to the Ids parameter"): el resultado final se pide
+    con `id=` de a un partido. `live=<una liga>` no pasa la validación; `live=all` sí, y se filtran las ligas.
+  - `odds?date=` sin liga trae todas las ligas en páginas de 10 (48 páginas ese día): descartado frente a
+    `odds?fixture=`.
+  - Los errores llegan con HTTP 200 y `errors` como objeto `{ campo: mensaje }` (sin cabeceras de límite); sin
+    error, `errors` es `[]`. El proveedor ya trata ambos casos.
 - **Alternativas**: contar en PostgreSQL (más lento y con más carga en cada consulta); confiar solo en la cabecera
   del proveedor (llega después de gastar la consulta).
 
@@ -151,12 +164,17 @@ gratuito y su documentación cambian con el tiempo.
 
 - **Decididos antes del final** (para FR-031): `MAS` gana en cuanto el total supera la línea; `AMBOS_MARCAN: SI`
   gana en cuanto los dos marcaron. El resto se decide solo al final.
-- **Estados del proveedor → estado del partido** **(verificar códigos)**: `TBD`, `NS` → programado; `1H`, `HT`,
+- **Estados del proveedor → estado del partido** (verificado en T029: `NS`, `FT`, `AET`, `PEN`, `PST` y `AWD`
+  llegaron en la consulta real): `TBD`, `NS` → programado; `1H`, `HT`,
   `2H`, `ET`, `BT`, `P`, `LIVE` → en vivo; `SUSP`, `INT`, `ABD` → suspendido; `PST` → aplazado; `FT`, `AET`, `PEN` →
   finalizado; `CANC`, `AWD`, `WO` → cancelado.
-- **Marcador reglamentario**: `score.fulltime` (90 min con añadido), no `goals` (incluye prórroga) **(verificar)**.
+- **Marcador reglamentario**: `score.fulltime` (90 min con añadido), no `goals` (incluye prórroga). Verificado en
+  T029: un partido `AET` real trae `goals` 0-2 y `score.fulltime` 0-0 (y `score.extratime` 0-2).
 - **Mercados del proveedor**: se mapean por nombre ("Match Winner", "Double Chance", "Goals Over/Under", "Both
-  Teams Score"), no por id numérico, y se validan contra `GET /odds/bets` **(verificar)**. Los demás se ignoran.
+  Teams Score"), no por id numérico. Verificado en T029 contra `GET /odds/bets`: existen con esos nombres exactos
+  (ids 1, 12, 5 y 8) y los valores son `Home`/`Draw`/`Away`, `Home/Draw`/`Draw/Away`/`Home/Away`, `Over 2.5`/
+  `Under 2.5` y `Yes`/`No`. No todos los corredores publican todos los mercados: cada mercado se toma del primero
+  que lo publica completo. Los demás se ignoran.
 - **Puerto**: `PROVEEDOR_DEPORTIVO` con dos adaptadores: `ApiFootballProveedor` y `SimuladorProveedor`
   (`API_FOOTBALL_SIMULACION=true`). Ambos producen `ActualizacionPartido`, que entra por el mismo
   `aplicarActualizacion()`.

@@ -11,13 +11,14 @@ import {
 } from './proveedor-deportivo.port.js';
 
 const TIMEOUT_MS = 10_000;
-/** API-Football acepta hasta 20 ids por consulta en `/fixtures?ids=` (verificar en T029). */
-const MAX_IDS_POR_CONSULTA = 20;
 
 /**
  * Cliente HTTP de API-Football v3 (research.md §2 y §10). Único lugar del sistema que conoce la clave:
  * nunca la registra en el log ni la incluye en los errores, y el navegador nunca llama al proveedor (FR-009).
  * Cada consulta reserva cupo del presupuesto antes de hacerse.
+ *
+ * Plan gratuito (verificado en T029, research.md §2): por liga y temporada solo da acceso a 2022-2024 y no admite
+ * `ids=`. Por eso todo se consulta sin temporada: por fecha, `live=all`, `id=` y `odds?fixture=`.
  */
 @Injectable()
 export class ApiFootballProveedor implements ProveedorDeportivo {
@@ -38,25 +39,25 @@ export class ApiFootballProveedor implements ProveedorDeportivo {
   }
 
   async partidosEnVivo(): Promise<PartidoProveedor[]> {
-    const datos = await this.consultar('/fixtures', { live: [...this.ligas].join('-') });
+    // `live=<liga>` con una sola liga no pasa la validación del proveedor; `all` sí, y se filtra aquí.
+    const datos = await this.consultar('/fixtures', { live: 'all' });
     return this.partidosDeLigas(datos);
   }
 
   async partidosPorId(ids: readonly number[]): Promise<PartidoProveedor[]> {
-    if (ids.length === 0) return [];
-    const lote = ids.slice(0, MAX_IDS_POR_CONSULTA).join('-');
-    const datos = await this.consultar('/fixtures', { ids: lote }, true);
-    return this.partidosDeLigas(datos);
+    // Una consulta por partido: el plan gratuito no admite `ids=`. Son pocos (los que acaban de terminar).
+    const partidos: PartidoProveedor[] = [];
+    for (const id of ids) {
+      const datos = await this.consultar('/fixtures', { id: String(id) }, true);
+      partidos.push(...this.partidosDeLigas(datos));
+    }
+    return partidos;
   }
 
-  async cuotas(liga: number, temporada: number, fecha: string): Promise<CuotasPartidoProveedor[]> {
-    // Solo la primera página: cada página extra cuesta una consulta (verificar paginación en T029).
-    const datos = await this.consultar('/odds', {
-      league: String(liga),
-      season: String(temporada),
-      date: fecha,
-    });
-    return datos.map(mapearCuotas).filter((c): c is CuotasPartidoProveedor => c !== null);
+  async cuotasDePartido(idProveedorPartido: number): Promise<CuotasPartidoProveedor | null> {
+    // Por partido y no por fecha: `odds?date=` trae todas las ligas en decenas de páginas de 10.
+    const [dato] = await this.consultar('/odds', { fixture: String(idProveedorPartido) });
+    return dato === undefined ? null : mapearCuotas(dato);
   }
 
   private partidosDeLigas(datos: unknown[]): PartidoProveedor[] {

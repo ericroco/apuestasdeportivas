@@ -95,7 +95,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ### Implementation for User Story 5
 
-- [ ] T029 [US5] Con una clave gratuita de API-Football, verificar los puntos marcados "(verificar)" en research.md §2 y §10 (cuota del plan, cabeceras, paginación de cuotas, códigos de estado, `score.fulltime`, nombres de mercados), corregir research.md si algo difiere y guardar respuestas de ejemplo sin la clave en `apps/api/src/sincronizacion/__fixtures__/`
+- [x] T029 [US5] Con una clave gratuita de API-Football, verificar los puntos marcados "(verificar)" en research.md §2 y §10 (cuota del plan, cabeceras, paginación de cuotas, códigos de estado, `score.fulltime`, nombres de mercados), corregir research.md si algo difiere y guardar respuestas de ejemplo sin la clave en `apps/api/src/sincronizacion/__fixtures__/` — *Verificado con la liga 242 (Liga Pro Ecuador). El plan Free no da acceso a la temporada 2026 por liga y temporada ni admite `ids=`, y además limita a 10 consultas por minuto: el proveedor pasó a `live=all`, `id=` de a uno y `odds?fixture=` por partido, y cada mercado se toma del primer corredor que lo publica. Respuestas reales en `__fixtures__/real-*.json`.*
 - [x] T030 [P] [US5] Definir `ActualizacionPartido` y el token `PROVEEDOR_DEPORTIVO` en `apps/api/src/sincronizacion/proveedor-deportivo.port.ts`
 - [x] T031 [US5] Implementar el contador atómico con Lua y la copia en `consumo_proveedor` en `apps/api/src/sincronizacion/presupuesto.service.ts`
 - [x] T032 [US5] Implementar el mapeo y el cliente HTTP (timeout, cabecera de la clave, nunca registrar la clave en el log) en `apps/api/src/sincronizacion/api-football.mapeo.ts` y `apps/api/src/sincronizacion/api-football.proveedor.ts`
@@ -255,7 +255,6 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ### Dependencias externas
 
 - Guard, billetera y auditoría del Spec 2: dobles hasta que entren en `develop` (T010, T011, T013).
-- T029 necesita una clave gratuita de API-Football.
 
 ### Within Each User Story
 

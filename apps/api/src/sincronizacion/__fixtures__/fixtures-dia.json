@@ -1,5 +1,5 @@
 {
-  "_nota": "Respuesta SINTÉTICA con la forma documentada de GET /fixtures?date=. Reemplazar por una respuesta real sin la clave en T029.",
+  "_nota": "Respuesta SINTÉTICA con la forma real de GET /fixtures?date= (comprobada en T029 contra real-fixtures-dia.json); se mantiene para las pruebas de integración.",
   "get": "fixtures",
   "parameters": { "date": "2026-11-15" },
   "errors": [],

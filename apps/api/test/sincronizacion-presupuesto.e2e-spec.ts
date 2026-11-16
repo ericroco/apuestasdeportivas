@@ -49,7 +49,9 @@ class ProveedorFalso {
       ...(this.restantes === null ? {} : { 'x-ratelimit-requests-remaining': this.restantes }),
     });
     if (url.pathname === '/odds') {
-      res.end(leer('odds.json'));
+      // Solo el partido 1001 tiene cuotas publicadas; el resto responde sin datos, como el proveedor.
+      const conCuotas = url.searchParams.get('fixture') === '1001';
+      res.end(conCuotas ? leer('odds.json') : JSON.stringify({ errors: [], response: [] }));
     } else if (url.searchParams.has('live')) {
       res.end(JSON.stringify({ errors: [], response: this.enVivo }));
     } else {
@@ -189,8 +191,11 @@ describe('HU5: importación con presupuesto diario (e2e)', () => {
 
     await sincronizacion.cicloVivo(Date.now());
 
-    // Una consulta de vivo (vacía) y una por id para el partido 1002 que estaba en vivo.
-    expect(proveedor.peticiones.map((u) => [...u.searchParams.keys()][0])).toEqual(['live', 'ids']);
+    // Una consulta de vivo (vacía, con live=all) y una por id para el partido 1002 que estaba en vivo.
+    expect(proveedor.peticiones.map((u) => [...u.searchParams][0])).toEqual([
+      ['live', 'all'],
+      ['id', '1002'],
+    ]);
   });
 
   it('la ruta de simulación no existe con el proveedor real (404)', async () => {

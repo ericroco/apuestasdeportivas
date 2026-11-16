@@ -1,5 +1,5 @@
 {
-  "_nota": "Respuesta SINTÉTICA con la forma documentada de GET /odds?league=&season=&date=. Reemplazar por una respuesta real sin la clave en T029.",
+  "_nota": "Respuesta SINTÉTICA con la forma real de GET /odds?fixture= (comprobada en T029 contra real-odds-fixture.json); se mantiene para las pruebas de integración.",
   "get": "odds",
   "errors": [],
   "results": 1,

@@ -55,6 +55,6 @@ describe('SimuladorProveedor', () => {
     await expect(simulador.partidosDelDia('2026-11-15')).resolves.toEqual([]);
     await expect(simulador.partidosEnVivo()).resolves.toEqual([]);
     await expect(simulador.partidosPorId([1])).resolves.toEqual([]);
-    await expect(simulador.cuotas(39, 2026, '2026-11-15')).resolves.toEqual([]);
+    await expect(simulador.cuotasDePartido(1001)).resolves.toBeNull();
   });
 });

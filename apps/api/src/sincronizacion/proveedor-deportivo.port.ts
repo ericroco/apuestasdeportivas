@@ -10,8 +10,6 @@ export interface CompeticionProveedor {
   readonly idProveedor: number;
   readonly nombre: string;
   readonly pais: string | null;
-  /** Temporada del proveedor (las cuotas se piden por liga y temporada); no se guarda en la base. */
-  readonly temporada: number;
 }
 
 /** Foto de un partido según el proveedor, ya traducida a nuestro modelo. */
@@ -48,8 +46,8 @@ export interface ProveedorDeportivo {
   partidosEnVivo(): Promise<PartidoProveedor[]>;
   /** Partidos por id del proveedor; para el resultado final de los que dejaron de estar en vivo. */
   partidosPorId(ids: readonly number[]): Promise<PartidoProveedor[]>;
-  /** Cuotas pre-partido de una liga para un día. */
-  cuotas(liga: number, temporada: number, fecha: string): Promise<CuotasPartidoProveedor[]>;
+  /** Cuotas pre-partido de un partido; null si el proveedor no publica cuotas para él. */
+  cuotasDePartido(idProveedorPartido: number): Promise<CuotasPartidoProveedor | null>;
 }
 
 export const PROVEEDOR_DEPORTIVO = Symbol('PROVEEDOR_DEPORTIVO');

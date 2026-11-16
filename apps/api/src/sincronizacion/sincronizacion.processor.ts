@@ -31,7 +31,7 @@ const PROGRAMACION = [
 ] as const;
 
 const CLAVE_ULTIMA_VIVO = 'api-football:ultima-consulta-vivo';
-const claveTemporada = (liga: number) => `api-football:temporada:${liga}`;
+const DIA_MS = 24 * HORA_MS;
 
 /**
  * Único worker de sincronización (constitución V): cola `sincronizacion` con concurrencia 1.
@@ -87,24 +87,30 @@ export class SincronizacionProcessor extends WorkerHost implements OnApplication
     }
   }
 
-  /** Partidos del día (una consulta para todas las ligas). Guarda la temporada de cada liga para las cuotas. */
+  /** Partidos del día (una consulta para todas las ligas). */
   async cicloDelDia(fecha: string = fechaUtc()): Promise<ResumenImportacion> {
-    const partidos = await this.proveedor.partidosDelDia(fecha);
-    for (const { competicion } of partidos) {
-      await this.redis.set(claveTemporada(competicion.idProveedor), competicion.temporada);
-    }
-    return this.importacion.importarPartidos(partidos);
+    return this.importacion.importarPartidos(await this.proveedor.partidosDelDia(fecha));
   }
 
-  /** Cuotas pre-partido de cada liga configurada cuya temporada ya se conoce. */
+  /**
+   * Cuotas pre-partido de los partidos importados que se juegan ese día UTC: una consulta por partido. Se importan
+   * de a una, así lo traído antes de agotar el presupuesto ya queda guardado.
+   */
   async cicloCuotas(fecha: string = fechaUtc()): Promise<number> {
+    const desde = new Date(`${fecha}T00:00:00Z`);
+    const partidos = await this.prisma.partido.findMany({
+      where: {
+        estado: 'PROGRAMADO',
+        idProveedor: { not: null },
+        inicioEn: { gte: desde, lt: new Date(desde.getTime() + DIA_MS) },
+      },
+      select: { idProveedor: true },
+      orderBy: { inicioEn: 'asc' },
+    });
     let mercados = 0;
-    for (const liga of this.entorno.API_FOOTBALL_LIGAS) {
-      const temporada = Number(await this.redis.get(claveTemporada(liga)));
-      if (!temporada) continue;
-      mercados += await this.importacion.importarCuotas(
-        await this.proveedor.cuotas(liga, temporada, fecha),
-      );
+    for (const { idProveedor } of partidos) {
+      const cuotas = await this.proveedor.cuotasDePartido(idProveedor as number);
+      if (cuotas) mercados += await this.importacion.importarCuotas([cuotas]);
     }
     return mercados;
   }

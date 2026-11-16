@@ -35,7 +35,7 @@ describe('mapearPartido', () => {
   it('mapea un partido programado sin marcador', () => {
     expect(mapearPartido(programado)).toEqual({
       idProveedor: 1001,
-      competicion: { idProveedor: 39, nombre: 'Premier League', pais: 'England', temporada: 2026 },
+      competicion: { idProveedor: 39, nombre: 'Premier League', pais: 'England' },
       nombreLocal: 'Arsenal',
       nombreVisitante: 'Chelsea',
       inicioEn: new Date('2026-11-15T20:00:00Z'),
@@ -108,5 +108,46 @@ describe('mapearCuotas', () => {
 
   it('ignora los mercados de tipos no soportados (FR-004)', () => {
     expect(resultado.mercados).toHaveLength(4);
+  });
+});
+
+// T029: respuestas reales del plan Free (2026-11-15), recortadas y sin la clave.
+describe('con respuestas reales de API-Football', () => {
+  const partidos = leerFixture('real-fixtures-dia.json').response.map(mapearPartido);
+  const porId = (id: number) => partidos.find((p) => p?.idProveedor === id);
+
+  it('mapea todos los estados que llegaron ese día', () => {
+    expect(partidos.map((p) => p?.estado)).toEqual([
+      'PROGRAMADO',
+      'FINALIZADO',
+      'FINALIZADO',
+      'FINALIZADO',
+      'APLAZADO',
+      'CANCELADO',
+    ]);
+  });
+
+  it('con prórroga (AET) liquida con el 0-0 reglamentario y no con el 0-2 final', () => {
+    expect(porId(1644838)).toMatchObject({ golesLocal: 0, golesVisitante: 0 });
+  });
+
+  it('toma cada mercado del primer corredor que lo publica (el primero no publica goles)', () => {
+    const cuotas = mapearCuotas(leerFixture('real-odds-fixture.json').response[0]);
+
+    const tipos = new Set(cuotas?.mercados.map((m) => m.tipo));
+    expect(tipos).toEqual(
+      new Set(['RESULTADO_FINAL', 'DOBLE_OPORTUNIDAD', 'AMBOS_MARCAN', 'MAS_MENOS_GOLES']),
+    );
+    expect(cuotas?.mercados.find((m) => m.tipo === 'RESULTADO_FINAL')?.selecciones).toEqual([
+      { codigo: 'LOCAL', cuota: '2.80' },
+      { codigo: 'EMPATE', cuota: '3.10' },
+      { codigo: 'VISITANTE', cuota: '2.20' },
+    ]);
+    expect(
+      cuotas?.mercados.find((m) => m.tipo === 'MAS_MENOS_GOLES' && m.linea === '2.5')?.selecciones,
+    ).toEqual([
+      { codigo: 'MAS', cuota: '1.62' },
+      { codigo: 'MENOS', cuota: '2.25' },
+    ]);
   });
 });

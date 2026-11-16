@@ -92,7 +92,7 @@ export class SimuladorProveedor implements ProveedorDeportivo {
     return Promise.resolve([]);
   }
 
-  cuotas(_liga: number, _temporada: number, _fecha: string): Promise<CuotasPartidoProveedor[]> {
-    return Promise.resolve([]);
+  cuotasDePartido(_idProveedorPartido: number): Promise<CuotasPartidoProveedor | null> {
+    return Promise.resolve(null);
   }
 }

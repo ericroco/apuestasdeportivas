@@ -59,7 +59,6 @@ const esquemaPartido = z.object({
     id: z.number().int(),
     name: z.string(),
     country: z.string().nullable(),
-    season: z.number().int(),
   }),
   teams: z.object({ home: z.object({ name: z.string() }), away: z.object({ name: z.string() }) }),
   goals: marcador,
@@ -82,7 +81,6 @@ export function mapearPartido(dato: unknown): PartidoProveedor | null {
       idProveedor: league.id,
       nombre: league.name,
       pais: league.country,
-      temporada: league.season,
     },
     nombreLocal: teams.home.name,
     nombreVisitante: teams.away.name,
@@ -134,15 +132,24 @@ const SELECCIONES_FIJAS: Readonly<
 
 const PATRON_GOLES = /^(Over|Under) (\d+(?:\.\d)?)$/;
 
-/** Cuotas pre-partido del primer corredor de apuestas; solo mercados completos y válidos (FR-004). */
+/**
+ * Cuotas pre-partido; solo mercados completos y válidos (FR-004). Cada mercado sale del primer corredor que lo
+ * publica completo, en el orden del proveedor: no todos publican todos (en T029 el primero no traía goles).
+ */
 export function mapearCuotas(dato: unknown): CuotasPartidoProveedor | null {
   const lectura = esquemaCuotas.safeParse(dato);
   if (!lectura.success) return null;
-  const apuestas = lectura.data.bookmakers[0]?.bets ?? [];
-  const candidatos = apuestas.flatMap((apuesta) =>
-    apuesta.name === 'Goals Over/Under' ? mercadosDeGoles(apuesta) : mercadoFijo(apuesta),
-  );
-  return { idProveedorPartido: lectura.data.fixture.id, mercados: candidatos.filter(esValido) };
+  const porMercado = new Map<string, MercadoProveedor>();
+  for (const { bets } of lectura.data.bookmakers) {
+    const candidatos = bets.flatMap((apuesta) =>
+      apuesta.name === 'Goals Over/Under' ? mercadosDeGoles(apuesta) : mercadoFijo(apuesta),
+    );
+    for (const mercado of candidatos.filter(esValido)) {
+      const clave = `${mercado.tipo}:${mercado.linea ?? ''}`;
+      if (!porMercado.has(clave)) porMercado.set(clave, mercado);
+    }
+  }
+  return { idProveedorPartido: lectura.data.fixture.id, mercados: [...porMercado.values()] };
 }
 
 function mercadoFijo(apuesta: Apuesta): MercadoProveedor[] {
