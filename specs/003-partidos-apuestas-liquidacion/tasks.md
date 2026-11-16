@@ -131,7 +131,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T046 [US2] Emitir `apuesta.aceptada` (contrato 5) después del commit y comprobarlo en `apps/api/test/apuestas-abuso.e2e-spec.ts`
 - [x] T047 [P] [US2] Construir el boleto (contexto de React, `sessionStorage`, ganancia potencial solo informativa, reconfirmación con las cuotas nuevas) con sus pruebas en `apps/web/src/components/boleto/`
 - [x] T048 [US2] Construir "Mis apuestas" (estados, selecciones, monto, cuota congelada, premio) en `apps/web/src/app/mis-apuestas/page.tsx`
-- [ ] T049 [US2] Prueba de Playwright del criterio de cierre de F4 (imposible apostar sin saldo, después del inicio o con una cuota distinta) en `apps/web/e2e/apuestas.spec.ts`; depende del login del Spec 2
+- [x] T049 [US2] Prueba de Playwright del criterio de cierre de F4 (imposible apostar sin saldo, después del inicio o con una cuota distinta) en `apps/web/e2e/apuestas.spec.ts`; depende del login del Spec 2 — *Contra la web, la API y PostgreSQL reales: el apostador se registra por el proxy /api/*; los partidos, el cambio de cuota, la hora de inicio y el saldo se preparan en la base (`e2e/utilidades/datos-apuestas.ts`). Comprueba que no se crea apuesta ni se mueve saldo en los tres casos y que con la cuota nueva reconfirmada sí se acepta.*
 
 **Checkpoint**: HU2 funcional; las pruebas de abuso y concurrencia en verde
 
@@ -231,7 +231,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T073 [P] Comprobar en Playwright el proyecto `movil-360` y la navegación por teclado de las pantallas nuevas en `apps/web/e2e/`
+- [x] T073 [P] Comprobar en Playwright el proyecto `movil-360` y la navegación por teclado de las pantallas nuevas en `apps/web/e2e/` — *`apuestas.spec.ts` corre en escritorio y a 360 px: cartelera, detalle, boleto y mis apuestas sin desborde horizontal, y el boleto se arma solo con Tab y Enter. Las pantallas del operador quedan fuera porque su sesión exige segundo factor.*
 - [x] T074 [P] Actualizar la convención de claves en `docs/equipo/contratos.md` §2 cuando el Spec 2 acepte la propuesta
 - [x] T075 [P] Actualizar el estado del Spec 3 en `specs/README.md` al abrir y cerrar cada PR — *Estado "En revisión" con el PR #3 abierto; pasa a "Terminada" al integrarlo.*
 - [x] T076 Correr `pnpm lint`, `pnpm typecheck`, `pnpm test` y la demostración de quickstart.md §2 — *API 759 pruebas en verde; web 200/201 (la que falla es del Spec 4 y depende de la versión de Node: "$25 K"); reportes no corre en local sin `apps/reports/.env`. `pnpm test` con turbo necesita el binario `pnpm` en el PATH (aquí solo hay corepack).*
@@ -255,7 +255,6 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ### Dependencias externas
 
 - Guard, billetera y auditoría del Spec 2: dobles hasta que entren en `develop` (T010, T011, T013).
-- T049 (Playwright) necesita el login del Spec 2.
 - T029 necesita una clave gratuita de API-Football.
 
 ### Within Each User Story
