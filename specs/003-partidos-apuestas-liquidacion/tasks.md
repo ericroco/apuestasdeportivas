@@ -72,7 +72,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T019 [US1] Implementar `PartidosService` en `apps/api/src/partidos/partidos.service.ts`: alta y edición, `aplicarActualizacion()` (estado, marcador, `version`+1), mercados y cambio de cuota con `FOR UPDATE`, historial, auditoría y `gestionadoPorOperador`
 - [x] T020 [US1] Crear los esquemas zod `.strict()` en `apps/api/src/partidos/partidos.esquemas.ts`, `cartelera.controller.ts`, `operador.controller.ts` (`@Roles('OPERADOR', 'ADMINISTRADOR')`) y `partidos.module.ts`; registrarlo en `apps/api/src/app.module.ts`
 - [x] T021 [P] [US1] Crear el cliente REST de la web con validación de respuestas y sus pruebas en `apps/web/src/lib/api-partidos.ts` y `apps/web/src/lib/api-partidos.test.ts`
-- [ ] T022 [US1] Construir la cartelera y el detalle de partido con el skill `frontend-design`, mobile-first desde 360 px, en `apps/web/src/app/partidos/page.tsx` y `apps/web/src/app/partidos/[id]/page.tsx`
+- [x] T022 [US1] Construir la cartelera y el detalle de partido con el skill `frontend-design`, mobile-first desde 360 px, en `apps/web/src/app/partidos/page.tsx` y `apps/web/src/app/partidos/[id]/page.tsx`
 - [ ] T023 [US1] Construir el panel del operador (lista, alta de partido, mercados, cambio de cuota y estados) en `apps/web/src/app/operador/partidos/`
 
 **Checkpoint**: HU1 funcional y probada de forma independiente
@@ -129,8 +129,8 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T044 [US2] Implementar la aceptación atómica de research.md §4 (pasos 1 a 8), con `PROMOCIONES_APUESTA_PORT` inyectado con `@Optional()`, en `apps/api/src/apuestas/aceptacion.service.ts`
 - [x] T045 [US2] Crear `apps/api/src/apuestas/apuestas.esquemas.ts`, `apuestas.controller.ts` (`POST`, lista y detalle solo del dueño, `@Throttle`, rechazo de los roles operador y administrador) y `apuestas.module.ts`
 - [x] T046 [US2] Emitir `apuesta.aceptada` (contrato 5) después del commit y comprobarlo en `apps/api/test/apuestas-abuso.e2e-spec.ts`
-- [ ] T047 [P] [US2] Construir el boleto (contexto de React, `sessionStorage`, ganancia potencial solo informativa, reconfirmación con las cuotas nuevas) con sus pruebas en `apps/web/src/components/boleto/`
-- [ ] T048 [US2] Construir "Mis apuestas" (estados, selecciones, monto, cuota congelada, premio) en `apps/web/src/app/mis-apuestas/page.tsx`
+- [x] T047 [P] [US2] Construir el boleto (contexto de React, `sessionStorage`, ganancia potencial solo informativa, reconfirmación con las cuotas nuevas) con sus pruebas en `apps/web/src/components/boleto/`
+- [x] T048 [US2] Construir "Mis apuestas" (estados, selecciones, monto, cuota congelada, premio) en `apps/web/src/app/mis-apuestas/page.tsx`
 - [ ] T049 [US2] Prueba de Playwright del criterio de cierre de F4 (imposible apostar sin saldo, después del inicio o con una cuota distinta) en `apps/web/e2e/apuestas.spec.ts`; depende del login del Spec 2
 
 **Checkpoint**: HU2 funcional; las pruebas de abuso y concurrencia en verde
@@ -151,7 +151,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ### Implementation for User Story 4
 
 - [x] T052 [US4] Extender `apps/api/src/apuestas/calculo.ts` y `apps/api/src/apuestas/aceptacion.service.ts` para combinadas
-- [ ] T053 [US4] Permitir varias selecciones en el boleto, con el aviso de "mismo partido", en `apps/web/src/components/boleto/`
+- [x] T053 [US4] Permitir varias selecciones en el boleto, con el aviso de "mismo partido", en `apps/web/src/components/boleto/`
 
 ---
 
@@ -168,7 +168,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 ### Implementation for User Story 7
 
 - [x] T055 [US7] Implementar la solicitud en vivo y su procesador (research.md §6), `GET /apuestas/solicitudes-vivo/:id` y el evento `apuesta.vivo_resuelta`, en `apps/api/src/apuestas/vivo.processor.ts` y `apps/api/src/apuestas/aceptacion.service.ts`
-- [ ] T056 [US7] Mostrar "en espera" y el resultado recibido por WebSocket en el boleto, en `apps/web/src/components/boleto/`
+- [x] T056 [US7] Mostrar "en espera" y el resultado recibido por WebSocket en el boleto, en `apps/web/src/components/boleto/`
 
 **Checkpoint PR 2**: HU2, HU4 y HU7 completas; abrir PR 2 a `develop`
 
@@ -193,7 +193,7 @@ partidos en las pruebas de las HU3, HU6 y HU7.
 - [x] T062 [P] [US3] Implementar `apps/api/src/liquidacion/estado-apuesta.ts`
 - [x] T063 [US3] Implementar `apps/api/src/liquidacion/liquidacion.service.ts` (una transacción por apuesta, `FOR UPDATE`, fila en `liquidacion`, billetera y auditoría; evento y aviso después del commit)
 - [x] T064 [US3] Implementar `apps/api/src/liquidacion/liquidacion.processor.ts`, encolar con `jobId = liquidar:<partidoId>:v<versión>` desde `aplicarActualizacion()` al finalizar, y crear `POST /operador/partidos/:id/resultado` para finalizar
-- [ ] T065 [US3] Actualizar "Mis apuestas" en vivo con `apuesta.liquidada` en `apps/web/src/app/mis-apuestas/`
+- [x] T065 [US3] Actualizar "Mis apuestas" en vivo con `apuesta.liquidada` en `apps/web/src/app/mis-apuestas/`
 
 ---
 
